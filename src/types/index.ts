@@ -7,12 +7,22 @@ export interface GenerateTitlesRequest {
   unit: string;
 }
 
+export interface GenerateArticleRequest {
+  openid: string;
+  direction: string;
+  word_count: number;
+  name: string;
+  unit: string;
+  title?: string;
+}
+
 // Response Types
 export interface WorkflowData {
   workflow_id: string;
   progress: string;
   status: string;
   result?: string[];
+  files?: Array<{ url: string }>;
   elapsed_time?: string;
 }
 

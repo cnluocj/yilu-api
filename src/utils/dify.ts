@@ -1,4 +1,4 @@
-import { DifyAPIConfig, GenerateTitlesRequest } from '@/types';
+import { DifyAPIConfig, GenerateTitlesRequest, GenerateArticleRequest } from '@/types';
 
 /**
  * 调用Dify API执行工作流
@@ -281,6 +281,230 @@ export async function callDifyWorkflowAPI(
 }
 
 /**
+ * 调用Dify API执行生成文章工作流
+ */
+export async function callDifyGenerateArticleAPI(
+  config: DifyAPIConfig,
+  request: GenerateArticleRequest
+): Promise<ReadableStream<Uint8Array>> {
+  const encoder = new TextEncoder();
+  
+  return new ReadableStream({
+    async start(controller) {
+      try {
+        // 将请求参数拼接成字符串，用换行符分隔
+        const msgContent = `${request.name}  ${request.unit}
+方向：${request.direction}
+${request.title || ''}`;
+        
+        // 准备请求Dify API的数据
+        const difyRequestBody = {
+          inputs: {
+            msg: msgContent
+          },
+          response_mode: "streaming",
+          user: request.openid // 使用openid作为用户标识
+        };
+        
+        // 记录请求信息
+        console.log(`[${new Date().toISOString()}] 请求生成文章Dify API - 方向: ${request.direction}`);
+        console.log(`[${new Date().toISOString()}] 请求生成文章Dify API - URL: ${config.baseUrl}/workflows/run`);
+        console.log(`[${new Date().toISOString()}] 请求生成文章Dify API - 请求体: ${JSON.stringify(difyRequestBody)}`);
+        
+        // 调用Dify API
+        const response = await fetch(`${config.baseUrl}/workflows/run`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${config.apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(difyRequestBody)
+        });
+        
+        // 记录响应状态
+        console.log(`[${new Date().toISOString()}] 生成文章Dify API响应状态: ${response.status} ${response.statusText}`);
+        
+        if (!response.ok) {
+          throw new Error(`生成文章Dify API 请求失败: ${response.status} ${response.statusText}`);
+        }
+        
+        // 处理SSE流
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('无法读取生成文章Dify API响应');
+        }
+        
+        // 进度跟踪
+        const TOTAL_STEPS = 60; // 文章生成一共有60步
+        let finishedSteps = 0; // 已完成的步数
+        let lastTaskId = '';
+        let lastWorkflowRunId = '';
+        let workflowId = ''; // 从Dify响应中获取的workflowId
+        let lastProgress = 0; // 上次发送的进度
+        
+        console.log(`[${new Date().toISOString()}] 开始处理生成文章Dify API响应流`);
+        
+        // 读取SSE流
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            console.log(`[${new Date().toISOString()}] 生成文章Dify API响应流结束`);
+            break;
+          }
+          
+          const chunk = new TextDecoder().decode(value);
+          const events = chunk.split('\n\n').filter(e => e.trim() !== '');
+          
+          // 记录接收到的原始数据块
+          console.log(`[${new Date().toISOString()}] 接收生成文章Dify数据: ${chunk.replace(/\n/g, '\\n')}`);
+          
+          for (const event of events) {
+            if (event.startsWith('data: ')) {
+              try {
+                const eventData = JSON.parse(event.substring(6));
+                
+                // 记录事件类型
+                console.log(`[${new Date().toISOString()}] 接收到生成文章Dify事件: ${eventData.event || 'unknown'}`);
+                
+                // 提取task_id和workflow_run_id（如果存在）
+                if (eventData.task_id) {
+                  lastTaskId = eventData.task_id;
+                }
+                if (eventData.workflow_run_id) {
+                  lastWorkflowRunId = eventData.workflow_run_id;
+                }
+                
+                // 根据事件类型处理
+                if (eventData.event === 'workflow_started') {
+                  // 从workflow_started事件中提取workflowId
+                  if (eventData.data && eventData.data.workflow_id) {
+                    workflowId = eventData.data.workflow_id;
+                    console.log(`[${new Date().toISOString()}] 获取到生成文章workflowId: ${workflowId}`);
+                  } else if (eventData.data && eventData.data.inputs && eventData.data.inputs['sys.workflow_id']) {
+                    workflowId = eventData.data.inputs['sys.workflow_id'];
+                    console.log(`[${new Date().toISOString()}] 从inputs获取到生成文章workflowId: ${workflowId}`);
+                  } else {
+                    // 如果都获取不到，使用配置的默认值
+                    workflowId = config.workflowId;
+                    console.log(`[${new Date().toISOString()}] 使用默认生成文章workflowId: ${workflowId}`);
+                  }
+                  
+                  // 发送workflow_started事件
+                  const startEvent = {
+                    event: "workflow_started",
+                    task_id: lastTaskId,
+                    workflow_run_id: lastWorkflowRunId,
+                    data: {
+                      workflow_id: workflowId,
+                      progress: "0",
+                      status: "running"
+                    }
+                  };
+                  
+                  // 记录发送的事件
+                  console.log(`[${new Date().toISOString()}] 发送生成文章开始事件: ${JSON.stringify(startEvent)}`);
+                  
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(startEvent)}\n\n`));
+                  lastProgress = 0;
+                }
+                else if (eventData.event === 'node_finished') {
+                  // 节点完成，增加完成步数
+                  finishedSteps += 1;
+                  console.log(`[${new Date().toISOString()}] 生成文章节点完成: ${finishedSteps}/${TOTAL_STEPS}`);
+                  
+                  // 计算进度百分比（最多到99%）
+                  const progressPercent = Math.min(Math.floor((finishedSteps / TOTAL_STEPS) * 100), 99);
+                  
+                  // 只有当进度有变化时才发送更新
+                  if (progressPercent > lastProgress) {
+                    lastProgress = progressPercent;
+                    const progressEvent = {
+                      event: "workflow_running",
+                      task_id: lastTaskId,
+                      workflow_run_id: lastWorkflowRunId,
+                      data: {
+                        workflow_id: workflowId,
+                        progress: progressPercent.toString(),
+                        status: "running"
+                      }
+                    };
+                    
+                    console.log(`[${new Date().toISOString()}] 发送生成文章进度更新: ${progressPercent}%`);
+                    
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
+                  }
+                }
+                else if (eventData.event === 'workflow_finished') {
+                  console.log(`[${new Date().toISOString()}] 生成文章工作流完成`);
+                  
+                  // 如果在workflow_finished事件中可以获取workflowId，则更新
+                  if (eventData.data && eventData.data.workflow_id && !workflowId) {
+                    workflowId = eventData.data.workflow_id;
+                    console.log(`[${new Date().toISOString()}] 从完成事件获取生成文章workflowId: ${workflowId}`);
+                  }
+                  
+                  // 处理文件URL
+                  let files: Array<{ url: string }> = [];
+                  
+                  console.log(`[${new Date().toISOString()}] 生成文章完成事件数据: ${JSON.stringify(eventData.data)}`);
+                  
+                  // 解析文件URL
+                  if (eventData.data && eventData.data.files && Array.isArray(eventData.data.files)) {
+                    // 遍历文件数组并提取URL字段
+                    eventData.data.files.forEach((file: { url?: string }) => {
+                      if (file && file.url) {
+                        // 拼接完整URL
+                        const fullUrl = `http://sandboxai.jinzhibang.com.cn${file.url}`;
+                        files.push({ url: fullUrl });
+                        console.log(`[${new Date().toISOString()}] 解析到生成文章文件URL: ${fullUrl}`);
+                      }
+                    });
+                  }
+                  
+                  // 发送完成事件，进度设为100%
+                  const finishEvent = {
+                    event: "workflow_finished",
+                    task_id: lastTaskId,
+                    workflow_run_id: lastWorkflowRunId,
+                    data: {
+                      workflow_id: workflowId,
+                      progress: "100",
+                      files, // 使用解析的文件数组
+                      elapsed_time: eventData.data?.elapsed_time?.toString() || "0",
+                      status: "succeeded"
+                    }
+                  };
+                  
+                  console.log(`[${new Date().toISOString()}] 发送生成文章完成事件, 文件数: ${files.length}, 耗时: ${eventData.data?.elapsed_time || 'unknown'}`);
+                  
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(finishEvent)}\n\n`));
+                }
+              } catch (e) {
+                console.error(`[${new Date().toISOString()}] 解析生成文章Dify事件数据时出错:`, e);
+              }
+            }
+          }
+        }
+      } catch (error: any) {
+        console.error(`[${new Date().toISOString()}] 调用生成文章Dify API时出错:`, error);
+        
+        // 发送错误事件
+        const errorEvent = {
+          event: "error",
+          data: {
+            message: error.message || "未知错误",
+            status: "failed"
+          }
+        };
+        
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorEvent)}\n\n`));
+        controller.close();
+      }
+    }
+  });
+}
+
+/**
  * 从环境变量中配置Dify API
  */
 export function getDifyConfig(): DifyAPIConfig {
@@ -294,4 +518,24 @@ export function getDifyConfig(): DifyAPIConfig {
   // 不打印API密钥，以保护安全
   
   return config;
+}
+
+/**
+ * 获取生成文章专用的Dify配置
+ */
+export function getArticleDifyConfig(): DifyAPIConfig {
+  // 文章生成专用API Key
+  const apiKey = process.env.ARTICLE_DIFY_API_KEY || 'app-6OQh6LGcITK6CMB1V1q9BlYQ';
+  
+  // 使用与标题生成相同的baseUrl
+  const baseUrl = process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn/v1';
+  
+  // 文章生成工作流ID
+  const workflowId = process.env.ARTICLE_DIFY_WORKFLOW_ID || '68e14b11-c091-4499-ae78-fb77c062ad73';
+  
+  return {
+    apiKey,
+    baseUrl,
+    workflowId
+  };
 } 

@@ -31,6 +31,52 @@ export default function Home() {
               <p>服务器发送事件(SSE)流，包含进度更新和最终结果。</p>
             </div>
           </div>
+          
+          <div className="mb-6">
+            <h3 className="text-xl font-medium mb-2">POST /api/generate_article</h3>
+            <p className="mb-4">根据输入参数生成文章内容，输出Word文档。</p>
+            
+            <div className="mb-4">
+              <h4 className="font-medium mb-2">请求格式:</h4>
+              <pre className="bg-gray-800 p-4 rounded overflow-x-auto">
+                {`{
+  "openid": "wx_abcd1234efgh5678",
+  "direction": "心血管疾病预防与保健",
+  "title": "高血压防治：日常生活中的饮食调理与血压监测",
+  "word_count": 15,
+  "name": "张医生",
+  "unit": "北京协和医院心内科"
+}`}
+              </pre>
+            </div>
+            
+            <div className="mb-4">
+              <h4 className="font-medium mb-2">响应:</h4>
+              <p>服务器发送事件(SSE)流，包含进度更新和最终结果。结果中包含文档下载链接。</p>
+            </div>
+            
+            <div>
+              <h4 className="font-medium mb-2">完成事件示例:</h4>
+              <pre className="bg-gray-800 p-4 rounded overflow-x-auto">
+                {`{
+  "event": "workflow_finished",
+  "task_id": "620ee1c3-3679-4852-b4cc-339b0a1bc419",
+  "workflow_run_id": "620ee1c3-3679-4852-b4cc-339b0a1bc419",
+  "data": {
+    "workflow_id": "68e14b11-c091-4499-ae78-fb77c062ad73",
+    "progress": "100",
+    "files": [
+      {
+        "url": "http://sandboxai.jinzhibang.com.cn/files/tools/e4d272f1-3003-4c0a-a5e5-449c6d2ca48d.docx?timestamp=1743492930&nonce=e468bd528f2acc6c28b06728cc7ce8cd&sign=-oYdGyEXtIGREOguq35m_LsDfnSZYFxwzToPoSxxgfc="
+      }
+    ],
+    "elapsed_time": "12.5",
+    "status": "succeeded"
+  }
+}`}
+              </pre>
+            </div>
+          </div>
         </div>
         
         <div className="bg-white/5 p-6 rounded-lg shadow-lg mb-8">
@@ -76,6 +122,30 @@ USE_MOCK_DATA=false
 # 服务运行在端口9090
 # 启动命令: npm run dev`}
           </pre>
+        </div>
+        
+        <div className="bg-white/5 p-6 rounded-lg shadow-lg">
+          <h2 className="text-2xl font-semibold mb-4">相关链接</h2>
+          <ul className="list-disc pl-6">
+            <li>
+              <a 
+                href="/test.html" 
+                target="_blank"
+                className="text-blue-400 hover:text-blue-300"
+              >
+                标题生成测试页面
+              </a>
+            </li>
+            <li>
+              <a 
+                href="/test-article.html" 
+                target="_blank"
+                className="text-blue-400 hover:text-blue-300"
+              >
+                文章生成测试页面
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
     </main>
