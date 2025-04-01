@@ -16,8 +16,6 @@ services:
       - DIFY_BASE_URL=${DIFY_BASE_URL:-http://sandboxai.jinzhibang.com.cn/v1}
       - DIFY_WORKFLOW_ID=${DIFY_WORKFLOW_ID:-3d3925fb-af9b-4873-ba01-391524d18bbc}
       - USE_MOCK_DATA=${USE_MOCK_DATA:-false}
-      - NODE_OPTIONS=--enable-source-maps --max-http-header-size=16384
-      - NODE_NO_BUFFER_SIZE=1
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090"]
       interval: 30s

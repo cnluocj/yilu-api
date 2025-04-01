@@ -120,10 +120,8 @@ export async function POST(request: NextRequest) {
     return new NextResponse(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no', // 禁用Nginx缓冲
-        'Transfer-Encoding': 'chunked' // 使用分块传输编码
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
       }
     });
   } catch (error) {

@@ -1,18 +1,5 @@
 import { DifyAPIConfig, GenerateTitlesRequest } from '@/types';
 
-// 在文件开头添加一个工具函数来刷新事件流
-// 这个函数用于封装controller.enqueue并确保每个事件立即发送出去
-function enqueueEvent(controller: ReadableStreamDefaultController<Uint8Array>, encoder: TextEncoder, eventData: unknown): void {
-  try {
-    const data = `data: ${JSON.stringify(eventData)}\n\n`;
-    controller.enqueue(encoder.encode(data));
-    // 添加一个flush事件帮助浏览器立即渲染
-    controller.enqueue(encoder.encode(`: flush\n\n`));
-  } catch (error) {
-    console.error('事件推送失败:', error);
-  }
-}
-
 /**
  * 调用Dify API执行工作流
  */
@@ -106,7 +93,7 @@ export async function callDifyWorkflowAPI(
                       status: "running"
                     }
                   };
-                  enqueueEvent(controller, encoder, startEvent);
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(startEvent)}\n\n`));
                   lastProgress = 0;
                 }
                 else if (eventData.event === 'node_finished') {
@@ -129,7 +116,7 @@ export async function callDifyWorkflowAPI(
                         status: "running"
                       }
                     };
-                    enqueueEvent(controller, encoder, progressEvent);
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
                   }
                 }
                 else if (eventData.event === 'node_started') {
@@ -152,7 +139,7 @@ export async function callDifyWorkflowAPI(
                           status: "running"
                         }
                       };
-                      enqueueEvent(controller, encoder, progressEvent);
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
                     }
                   }
                 }
@@ -175,7 +162,7 @@ export async function callDifyWorkflowAPI(
                           status: "running"
                         }
                       };
-                      enqueueEvent(controller, encoder, progressEvent);
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
                     }
                   }
                 }
@@ -207,7 +194,7 @@ export async function callDifyWorkflowAPI(
                       status: "succeeded"
                     }
                   };
-                  enqueueEvent(controller, encoder, finishEvent);
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(finishEvent)}\n\n`));
                 }
               } catch (e) {
                 console.error('解析Dify事件数据时出错:', e);
@@ -233,7 +220,7 @@ export async function callDifyWorkflowAPI(
             status: "failed"
           }
         };
-        enqueueEvent(controller, encoder, errorEvent);
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorEvent)}\n\n`));
       }
       
       controller.close();
