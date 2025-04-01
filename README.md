@@ -1,23 +1,27 @@
 # Yilu API
 
-Next.js API that forwards requests to Dify service.
+Next.js API服务，用于转发请求到Dify服务。
 
-## Project Structure
+## 项目结构
 
 ```
 /src
   /app
     /api
-      /generate_titles - API endpoint for generating titles
+      /generate_titles - 生成标题的API端点
+  /types
+    /index.ts - TypeScript类型定义
+  /utils
+    /dify.ts - Dify API集成工具
 ```
 
-## API Endpoints
+## API端点
 
 ### `POST /generate_titles`
 
-Generates content titles based on input parameters.
+根据输入参数生成内容标题。
 
-**Request Format:**
+**请求格式:**
 
 ```json
 {
@@ -29,22 +33,46 @@ Generates content titles based on input parameters.
 }
 ```
 
-**Response:**
+**响应:**
 
-Server-sent events (SSE) stream with progress updates and final results.
+服务器发送事件(SSE)流，包含进度更新和最终结果。
 
-## Development
+## 开发
+
+1. 克隆项目并安装依赖：
 
 ```bash
-# Install dependencies
+# 安装依赖
 npm install
+```
 
-# Run the development server
+2. 配置环境变量，创建`.env.local`文件：
+
+```
+# Dify API配置
+DIFY_API_KEY=your_dify_api_key_here
+DIFY_BASE_URL=http://sandboxai.jinzhibang.com.cn/v1
+DIFY_WORKFLOW_ID=your_workflow_id_here
+
+# 应用设置
+NODE_ENV=development
+# 设置为true使用模拟数据，false使用实际Dify API
+USE_MOCK_DATA=false
+```
+
+3. 启动开发服务器：
+
+```bash
 npm run dev
 ```
 
-The server will be available at http://localhost:3000.
+服务器将在 http://localhost:3000 上可用。
 
-## Current Implementation
+## 当前实现
 
-Currently, the API returns mock data to simulate the Dify service response. Future versions will forward requests to the actual Dify service.
+API现在支持将请求转发到Dify服务。将`USE_MOCK_DATA`环境变量设置为`true`可以使用模拟数据进行开发和测试。
+
+### 测试接口
+
+1. 浏览器测试：访问 http://localhost:3000/test.html
+2. 命令行测试：运行 `node test-api.mjs`
