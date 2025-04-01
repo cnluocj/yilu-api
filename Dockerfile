@@ -26,6 +26,11 @@ WORKDIR /app
 
 ENV NODE_ENV production
 ENV PORT 9090
+# 禁用Node.js日志缓冲，确保日志立即输出到Docker
+ENV NODE_OPTIONS="--no-warnings --max-http-header-size=16384"
+ENV NODE_NO_WARNINGS=1
+# 禁用日志缓冲
+ENV NODE_LOG_IMMEDIATE_FLUSH=true
 
 # 安装 wget 用于健康检查
 RUN apk add --no-cache wget
@@ -44,5 +49,5 @@ USER nextjs
 # 暴露端口
 EXPOSE 9090
 
-# 启动命令
-CMD ["node", "server.js"] 
+# 启动命令 - 添加参数禁用缓冲
+CMD ["node", "--unhandled-rejections=strict", "server.js"] 

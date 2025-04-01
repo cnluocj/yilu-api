@@ -21,6 +21,11 @@ export async function callDifyWorkflowAPI(
           user: request.openid // 使用openid作为用户标识
         };
         
+        // 记录请求信息
+        console.log(`[${new Date().toISOString()}] 请求Dify API - 用户: ${request.openid}, 方向: ${request.direction}`);
+        console.log(`[${new Date().toISOString()}] 请求Dify API - URL: ${config.baseUrl}/workflows/run`);
+        console.log(`[${new Date().toISOString()}] 请求Dify API - 请求体: ${JSON.stringify(difyRequestBody)}`);
+        
         // 调用Dify API
         const response = await fetch(`${config.baseUrl}/workflows/run`, {
           method: 'POST',
@@ -30,6 +35,9 @@ export async function callDifyWorkflowAPI(
           },
           body: JSON.stringify(difyRequestBody)
         });
+        
+        // 记录响应状态
+        console.log(`[${new Date().toISOString()}] Dify API响应状态: ${response.status} ${response.statusText}`);
         
         if (!response.ok) {
           throw new Error(`Dify API 请求失败: ${response.status} ${response.statusText}`);
@@ -49,18 +57,29 @@ export async function callDifyWorkflowAPI(
         let workflowId = ''; // 从Dify响应中获取的workflowId
         let lastProgress = 0; // 上次发送的进度
         
+        console.log(`[${new Date().toISOString()}] 开始处理Dify API响应流`);
+        
         // 读取SSE流
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            console.log(`[${new Date().toISOString()}] Dify API响应流结束`);
+            break;
+          }
           
           const chunk = new TextDecoder().decode(value);
           const events = chunk.split('\n\n').filter(e => e.trim() !== '');
+          
+          // 记录接收到的原始数据块
+          console.log(`[${new Date().toISOString()}] 接收Dify数据: ${chunk.replace(/\n/g, '\\n')}`);
           
           for (const event of events) {
             if (event.startsWith('data: ')) {
               try {
                 const eventData = JSON.parse(event.substring(6));
+                
+                // 记录事件类型
+                console.log(`[${new Date().toISOString()}] 接收到Dify事件: ${eventData.event || 'unknown'}`);
                 
                 // 提取task_id和workflow_run_id（如果存在）
                 if (eventData.task_id) {
@@ -75,11 +94,14 @@ export async function callDifyWorkflowAPI(
                   // 从workflow_started事件中提取workflowId
                   if (eventData.data && eventData.data.workflow_id) {
                     workflowId = eventData.data.workflow_id;
+                    console.log(`[${new Date().toISOString()}] 获取到workflowId: ${workflowId}`);
                   } else if (eventData.data && eventData.data.inputs && eventData.data.inputs['sys.workflow_id']) {
                     workflowId = eventData.data.inputs['sys.workflow_id'];
+                    console.log(`[${new Date().toISOString()}] 从inputs获取到workflowId: ${workflowId}`);
                   } else {
                     // 如果都获取不到，使用配置的默认值
                     workflowId = config.workflowId;
+                    console.log(`[${new Date().toISOString()}] 使用默认workflowId: ${workflowId}`);
                   }
                   
                   // 发送workflow_started事件
@@ -93,12 +115,17 @@ export async function callDifyWorkflowAPI(
                       status: "running"
                     }
                   };
+                  
+                  // 记录发送的事件
+                  console.log(`[${new Date().toISOString()}] 发送开始事件: ${JSON.stringify(startEvent)}`);
+                  
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify(startEvent)}\n\n`));
                   lastProgress = 0;
                 }
                 else if (eventData.event === 'node_finished') {
                   // 节点完成，增加完成步数
                   finishedSteps += 1;
+                  console.log(`[${new Date().toISOString()}] 节点完成: ${finishedSteps}/${TOTAL_STEPS}`);
                   
                   // 计算进度百分比（最多到99%）
                   const progressPercent = Math.min(Math.floor((finishedSteps / TOTAL_STEPS) * 100), 99);
@@ -116,10 +143,15 @@ export async function callDifyWorkflowAPI(
                         status: "running"
                       }
                     };
+                    
+                    console.log(`[${new Date().toISOString()}] 发送进度更新: ${progressPercent}%`);
+                    
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
                   }
                 }
                 else if (eventData.event === 'node_started') {
+                  console.log(`[${new Date().toISOString()}] 节点开始`);
+                  
                   // 节点开始事件，可以考虑发送进度，但不增加完成步数
                   // 如果当前进度接近100但还未完成，可以降低进度变化速度
                   if (lastProgress >= 90 && lastProgress < 99) {
@@ -139,11 +171,16 @@ export async function callDifyWorkflowAPI(
                           status: "running"
                         }
                       };
+                      
+                      console.log(`[${new Date().toISOString()}] 发送小增量进度更新: ${newProgress}%`);
+                      
                       controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
                     }
                   }
                 }
                 else if (eventData.event === 'text_chunk') {
+                  console.log(`[${new Date().toISOString()}] 接收到文本块`);
+                  
                   // 文本块事件，可以考虑在低进度时发送进度更新
                   if (lastProgress < 90) {
                     // 如果进度较低，可以缓慢增加进度
@@ -162,14 +199,20 @@ export async function callDifyWorkflowAPI(
                           status: "running"
                         }
                       };
+                      
+                      console.log(`[${new Date().toISOString()}] 发送文本块进度更新: ${newProgress}%`);
+                      
                       controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
                     }
                   }
                 }
                 else if (eventData.event === 'workflow_finished') {
+                  console.log(`[${new Date().toISOString()}] 工作流完成`);
+                  
                   // 如果在workflow_finished事件中可以获取workflowId，则更新
                   if (eventData.data && eventData.data.workflow_id && !workflowId) {
                     workflowId = eventData.data.workflow_id;
+                    console.log(`[${new Date().toISOString()}] 从完成事件获取workflowId: ${workflowId}`);
                   }
                   
                   // 完成事件，解析结果
@@ -179,6 +222,10 @@ export async function callDifyWorkflowAPI(
                     // 将结果字符串按换行符分割为标题数组
                     const resultString = eventData.data.outputs.result as string;
                     result = resultString.split('\n\n').filter((title: string) => title.trim() !== '');
+                    
+                    // 记录结果数量和内容
+                    console.log(`[${new Date().toISOString()}] 解析到${result.length}个结果标题`);
+                    console.log(`[${new Date().toISOString()}] 结果内容: ${JSON.stringify(result)}`);
                   }
                   
                   // 发送完成事件，进度设为100%
@@ -194,19 +241,24 @@ export async function callDifyWorkflowAPI(
                       status: "succeeded"
                     }
                   };
+                  
+                  console.log(`[${new Date().toISOString()}] 发送完成事件, 耗时: ${eventData.data?.elapsed_time || 'unknown'}`);
+                  
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify(finishEvent)}\n\n`));
                 }
               } catch (e) {
-                console.error('解析Dify事件数据时出错:', e);
+                console.error(`[${new Date().toISOString()}] 解析Dify事件数据时出错:`, e);
+                console.error(`[${new Date().toISOString()}] 解析失败的数据: ${event.substring(6)}`);
               }
             }
           }
         }
       } catch (error: unknown) {
-        console.error('调用Dify API时出错:', error);
+        console.error(`[${new Date().toISOString()}] 调用Dify API时出错:`, error);
         
         // 获取错误消息
         const errorMessage = error instanceof Error ? error.message : '未知错误';
+        console.error(`[${new Date().toISOString()}] 错误信息: ${errorMessage}`);
         
         // 发送错误事件
         const errorEvent = {
@@ -232,9 +284,14 @@ export async function callDifyWorkflowAPI(
  * 从环境变量中配置Dify API
  */
 export function getDifyConfig(): DifyAPIConfig {
-  return {
+  const config = {
     apiKey: process.env.DIFY_API_KEY || '',
     baseUrl: process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn/v1',
     workflowId: process.env.DIFY_WORKFLOW_ID || '3d3925fb-af9b-4873-ba01-391524d18bbc' // 作为默认值或备用值
   };
+  
+  console.log(`[${new Date().toISOString()}] Dify配置: baseUrl=${config.baseUrl}, workflowId=${config.workflowId}`);
+  // 不打印API密钥，以保护安全
+  
+  return config;
 } 
