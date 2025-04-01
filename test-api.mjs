@@ -2,7 +2,7 @@
 import fetch from 'node-fetch';
 
 async function testApi() {
-  const url = 'http://localhost:3000/api/generate_titles';
+  const url = 'http://localhost:9090/api/generate_titles';
   const payload = {
     openid: "wx_abcd1234efgh5678",
     direction: "心血管疾病预防与保健",

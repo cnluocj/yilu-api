@@ -66,7 +66,7 @@ USE_MOCK_DATA=false
 npm run dev
 ```
 
-服务器将在 http://localhost:3000 上可用。
+服务器将在 http://localhost:9090 上可用。
 
 ## 当前实现
 
@@ -74,5 +74,5 @@ API现在支持将请求转发到Dify服务。将`USE_MOCK_DATA`环境变量设�
 
 ### 测试接口
 
-1. 浏览器测试：访问 http://localhost:3000/test.html
+1. 浏览器测试：访问 http://localhost:9090/test.html
 2. 命令行测试：运行 `node test-api.mjs`
