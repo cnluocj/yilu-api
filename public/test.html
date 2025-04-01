@@ -144,11 +144,20 @@
       };
       
       try {
-        // Send request
+        // 使用原生的EventSource而不是fetch，这将自动处理SSE
+        progressContainer.style.display = 'block';
+        
+        // 准备发送POST请求
+        const params = new URLSearchParams();
+        params.append('data', JSON.stringify(payload));
+        
+        // 使用fetch发送请求，但以更好的方式处理响应
         const response = await fetch('/api/generate_titles', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'text/event-stream',
+            'Cache-Control': 'no-cache'
           },
           body: JSON.stringify(payload),
         });
@@ -157,44 +166,51 @@
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        // Show progress container
-        progressContainer.style.display = 'block';
-        
-        // Handle the SSE stream
+        // 处理响应流
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
+        
+        // 处理EventSource断开的情况
+        let buffer = ''; // 用于存储跨块的不完整消息
         
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
           
-          const chunk = decoder.decode(value, { stream: true });
+          // 将当前块添加到缓冲区
+          const text = decoder.decode(value, { stream: true });
+          buffer += text;
           
-          // Display raw response
-          resultDiv.textContent += chunk;
+          // 处理缓冲区中的所有完整消息
+          const lines = buffer.split('\n\n');
+          // 保留最后一个不完整的消息(如果有的话)
+          buffer = lines.pop() || '';
           
-          // Process each event in the chunk
-          const lines = chunk.split('\n\n');
           for (const line of lines) {
+            // 显示原始响应
+            resultDiv.textContent += line + '\n\n';
+            resultDiv.scrollTop = resultDiv.scrollHeight; // 自动滚动到底部
+            
+            // 处理事件数据
             if (line.startsWith('data: ')) {
               try {
                 const eventData = JSON.parse(line.substring(6));
                 
-                // Update progress
+                // 更新进度
                 if (eventData.data && eventData.data.progress) {
                   progressBar.value = parseInt(eventData.data.progress);
                   progressValue.textContent = eventData.data.progress;
                 }
                 
-                // If we have results, display them
+                // 如果有结果，显示它们
                 if (eventData.event === 'workflow_finished' && 
                     eventData.data && 
                     eventData.data.result) {
                   
-                  // Show titles container
+                  // 显示标题容器
                   titlesContainer.style.display = 'block';
                   
-                  // Add each title
+                  // 添加每个标题
                   eventData.data.result.forEach(title => {
                     const titleDiv = document.createElement('div');
                     titleDiv.className = 'title-item';

@@ -37,7 +37,9 @@ Next.js API服务，用于转发请求到Dify服务。
 
 服务器发送事件(SSE)流，包含进度更新和最终结果。
 
-## 开发
+## 部署方式
+
+### 方式1: 本地开发
 
 1. 克隆项目并安装依赖：
 
@@ -68,11 +70,22 @@ npm run dev
 
 服务器将在 http://localhost:9090 上可用。
 
-## 当前实现
+### 方式2: Docker部署
 
-API现在支持将请求转发到Dify服务。将`USE_MOCK_DATA`环境变量设置为`true`可以使用模拟数据进行开发和测试。
+我们提供了完整的Docker和Docker Compose配置，便于在任何环境中快速部署:
 
-### 测试接口
+```bash
+# 使用Docker Compose构建和启动
+docker-compose up -d
+```
+
+查看 [部署指南](./DEPLOYMENT.md) 获取详细的Docker部署说明。
+
+## 测试接口
 
 1. 浏览器测试：访问 http://localhost:9090/test.html
 2. 命令行测试：运行 `node test-api.mjs`
+
+## 当前实现
+
+API现在支持将请求转发到Dify服务。将`USE_MOCK_DATA`环境变量设置为`true`可以使用模拟数据进行开发和测试。

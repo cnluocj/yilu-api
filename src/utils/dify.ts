@@ -1,4 +1,17 @@
-import { DifyAPIConfig, GenerateTitlesRequest, WorkflowEvent } from '@/types';
+import { DifyAPIConfig, GenerateTitlesRequest } from '@/types';
+
+// 在文件开头添加一个工具函数来刷新事件流
+// 这个函数用于封装controller.enqueue并确保每个事件立即发送出去
+function enqueueEvent(controller: ReadableStreamDefaultController<Uint8Array>, encoder: TextEncoder, eventData: unknown): void {
+  try {
+    const data = `data: ${JSON.stringify(eventData)}\n\n`;
+    controller.enqueue(encoder.encode(data));
+    // 添加一个flush事件帮助浏览器立即渲染
+    controller.enqueue(encoder.encode(`: flush\n\n`));
+  } catch (error) {
+    console.error('事件推送失败:', error);
+  }
+}
 
 /**
  * 调用Dify API执行工作流
@@ -47,7 +60,6 @@ export async function callDifyWorkflowAPI(
         let lastTaskId = '';
         let lastWorkflowRunId = '';
         let workflowId = ''; // 从Dify响应中获取的workflowId
-        let titlesResult: string[] = [];
         let lastProgress = 0; // 上次发送的进度
         
         // 读取SSE流
@@ -94,7 +106,7 @@ export async function callDifyWorkflowAPI(
                       status: "running"
                     }
                   };
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(startEvent)}\n\n`));
+                  enqueueEvent(controller, encoder, startEvent);
                   lastProgress = 0;
                 }
                 else if (eventData.event === 'node_finished') {
@@ -117,7 +129,7 @@ export async function callDifyWorkflowAPI(
                         status: "running"
                       }
                     };
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
+                    enqueueEvent(controller, encoder, progressEvent);
                   }
                 }
                 else if (eventData.event === 'node_started') {
@@ -140,7 +152,7 @@ export async function callDifyWorkflowAPI(
                           status: "running"
                         }
                       };
-                      controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
+                      enqueueEvent(controller, encoder, progressEvent);
                     }
                   }
                 }
@@ -163,7 +175,7 @@ export async function callDifyWorkflowAPI(
                           status: "running"
                         }
                       };
-                      controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
+                      enqueueEvent(controller, encoder, progressEvent);
                     }
                   }
                 }
@@ -195,7 +207,7 @@ export async function callDifyWorkflowAPI(
                       status: "succeeded"
                     }
                   };
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(finishEvent)}\n\n`));
+                  enqueueEvent(controller, encoder, finishEvent);
                 }
               } catch (e) {
                 console.error('解析Dify事件数据时出错:', e);
@@ -203,8 +215,11 @@ export async function callDifyWorkflowAPI(
             }
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('调用Dify API时出错:', error);
+        
+        // 获取错误消息
+        const errorMessage = error instanceof Error ? error.message : '未知错误';
         
         // 发送错误事件
         const errorEvent = {
@@ -214,11 +229,11 @@ export async function callDifyWorkflowAPI(
           data: {
             workflow_id: config.workflowId, // 错误情况下使用配置的workflowId
             progress: "100",
-            result: [`调用Dify API时出错: ${error.message}`],
+            result: [`调用Dify API时出错: ${errorMessage}`],
             status: "failed"
           }
         };
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorEvent)}\n\n`));
+        enqueueEvent(controller, encoder, errorEvent);
       }
       
       controller.close();

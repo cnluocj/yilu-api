@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  yilu-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: yilu-api:latest
+    container_name: yilu-api
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    environment:
+      - NODE_ENV=production
+      - DIFY_API_KEY=${DIFY_API_KEY:-app-HCeGiaG645S3iQprJr6AKgvv}
+      - DIFY_BASE_URL=${DIFY_BASE_URL:-http://sandboxai.jinzhibang.com.cn/v1}
+      - DIFY_WORKFLOW_ID=${DIFY_WORKFLOW_ID:-3d3925fb-af9b-4873-ba01-391524d18bbc}
+      - USE_MOCK_DATA=${USE_MOCK_DATA:-false}
+      - NODE_OPTIONS=--enable-source-maps --max-http-header-size=16384
+      - NODE_NO_BUFFER_SIZE=1
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - yilu-network
+
+networks:
+  yilu-network:
+    driver: bridge 
