@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yilu API 测试</title>
+  <style>
+    body {
+      font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #2c3e50;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    
+    /* 选项卡样式 */
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #eee;
+      margin-bottom: 20px;
+    }
+    
+    .tab-button {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      color: #7f8c8d;
+      transition: all 0.3s;
+    }
+    
+    .tab-button:hover {
+      color: #3498db;
+    }
+    
+    .tab-button.active {
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* 表单样式 */
+    .form-container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    
+    button.submit-button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      display: block;
+      margin: 20px auto;
+      transition: background-color 0.2s;
+    }
+    
+    button.submit-button:hover {
+      background-color: #2980b9;
+    }
+    
+    button.submit-button:disabled {
+      background-color: #bdc3c7;
+      cursor: not-allowed;
+    }
+    
+    /* 进度条样式 */
+    .progress-container {
+      display: none;
+      margin-top: 30px;
+      margin-bottom: 30px;
+    }
+    
+    progress {
+      width: 100%;
+      height: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    /* 结果样式 */
+    .titles-container {
+      display: none;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .title-item {
+      background: #f8f9fa;
+      padding: 12px 15px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border-left: 4px solid #3498db;
+    }
+    
+    .file-container {
+      display: none;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .file-link {
+      display: block;
+      padding: 15px;
+      background-color: #e8f5fe;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      color: #2980b9;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+    
+    .file-link:hover {
+      background-color: #d1edff;
+    }
+    
+    .result-container {
+      margin-top: 20px;
+    }
+    
+    .result {
+      background-color: #f9f9f9;
+      padding: 15px;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+    }
+    
+    .error {
+      color: #e74c3c;
+      font-weight: bold;
+      padding: 10px;
+      background-color: #fadbd8;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Yilu API 测试平台</h1>
+  
+  <!-- 选项卡头部 -->
+  <div class="tabs">
+    <button class="tab-button active" data-tab="titles">生成标题</button>
+    <button class="tab-button" data-tab="article">生成文章</button>
+  </div>
+  
+  <!-- 标题生成选项卡内容 -->
+  <div id="titles-tab" class="tab-content active">
+    <div class="form-container">
+      <h2>标题生成</h2>
+      <div class="form-group">
+        <label for="titles-openid">OpenID:</label>
+        <input type="text" id="titles-openid" value="wx_abcd1234efgh5678">
+      </div>
+      
+      <div class="form-group">
+        <label for="titles-direction">方向/主题:</label>
+        <input type="text" id="titles-direction" value="心血管疾病预防与保健">
+      </div>
+      
+      <div class="form-group">
+        <label for="titles-word_count">字数:</label>
+        <input type="number" id="titles-word_count" value="15">
+      </div>
+      
+      <div class="form-group">
+        <label for="titles-name">名字:</label>
+        <input type="text" id="titles-name" value="张医生">
+      </div>
+      
+      <div class="form-group">
+        <label for="titles-unit">单位:</label>
+        <input type="text" id="titles-unit" value="北京协和医院心内科">
+      </div>
+      
+      <button id="generate-titles" class="submit-button">生成标题</button>
+    </div>
+    
+    <div class="progress-container" id="titles-progress-container">
+      <h3>生成进度: <span id="titles-progress-value">0</span>%</h3>
+      <progress id="titles-progress-bar" value="0" max="100"></progress>
+    </div>
+    
+    <div class="titles-container" id="titles-container">
+      <h3>生成的标题:</h3>
+      <div id="titles-list"></div>
+    </div>
+    
+    <div class="result-container">
+      <h3>原始响应:</h3>
+      <div id="titles-result" class="result"></div>
+    </div>
+  </div>
+  
+  <!-- 文章生成选项卡内容 -->
+  <div id="article-tab" class="tab-content">
+    <div class="form-container">
+      <h2>文章生成</h2>
+      <div class="form-group">
+        <label for="article-openid">OpenID:</label>
+        <input type="text" id="article-openid" value="wx_abcd1234efgh5678">
+      </div>
+      
+      <div class="form-group">
+        <label for="article-direction">方向/主题:</label>
+        <input type="text" id="article-direction" value="心血管疾病预防与保健">
+      </div>
+      
+      <div class="form-group">
+        <label for="article-title">文章标题:</label>
+        <input type="text" id="article-title" value="高血压防治：日常生活中的饮食调理与血压监测">
+      </div>
+      
+      <div class="form-group">
+        <label for="article-word_count">字数:</label>
+        <input type="number" id="article-word_count" value="1500">
+      </div>
+      
+      <div class="form-group">
+        <label for="article-name">名字:</label>
+        <input type="text" id="article-name" value="张医生">
+      </div>
+      
+      <div class="form-group">
+        <label for="article-unit">单位:</label>
+        <input type="text" id="article-unit" value="北京协和医院心内科">
+      </div>
+      
+      <button id="generate-article" class="submit-button">生成文章</button>
+    </div>
+    
+    <div class="progress-container" id="article-progress-container">
+      <h3>生成进度: <span id="article-progress-value">0</span>%</h3>
+      <progress id="article-progress-bar" value="0" max="100"></progress>
+    </div>
+    
+    <div class="file-container" id="article-file-container">
+      <h3>生成的文章:</h3>
+      <div id="article-file-list"></div>
+    </div>
+    
+    <div class="result-container">
+      <h3>原始响应:</h3>
+      <div id="article-result" class="result"></div>
+    </div>
+  </div>
+  
+  <script>
+    // 选项卡切换功能
+    document.addEventListener('DOMContentLoaded', function() {
+      const tabButtons = document.querySelectorAll('.tab-button');
+      
+      tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          // 移除所有活动状态
+          tabButtons.forEach(btn => btn.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+          
+          // 添加当前活动状态
+          this.classList.add('active');
+          const tabId = this.getAttribute('data-tab') + '-tab';
+          document.getElementById(tabId).classList.add('active');
+        });
+      });
+    });
+    
+    // 标题生成功能
+    document.getElementById('generate-titles').addEventListener('click', async () => {
+      const generateButton = document.getElementById('generate-titles');
+      const resultDiv = document.getElementById('titles-result');
+      const progressContainer = document.getElementById('titles-progress-container');
+      const progressBar = document.getElementById('titles-progress-bar');
+      const progressValue = document.getElementById('titles-progress-value');
+      const titlesContainer = document.getElementById('titles-container');
+      const titlesList = document.getElementById('titles-list');
+      
+      // 禁用生成按钮
+      generateButton.disabled = true;
+      generateButton.textContent = '生成中...';
+      
+      // 重置UI
+      resultDiv.textContent = '';
+      progressBar.value = 0;
+      progressValue.textContent = '0';
+      titlesList.innerHTML = '';
+      progressContainer.style.display = 'none';
+      titlesContainer.style.display = 'none';
+      
+      // 收集表单数据
+      const payload = {
+        openid: document.getElementById('titles-openid').value,
+        direction: document.getElementById('titles-direction').value,
+        word_count: parseInt(document.getElementById('titles-word_count').value),
+        name: document.getElementById('titles-name').value,
+        unit: document.getElementById('titles-unit').value
+      };
+      
+      try {
+        // 显示进度条
+        progressContainer.style.display = 'block';
+        
+        // 发送请求
+        const response = await fetch('/api/generate_titles', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // 处理SSE响应
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          const text = decoder.decode(value, { stream: true });
+          resultDiv.textContent += text;
+          
+          // 处理SSE事件
+          const events = text.split('\n\n').filter(event => event.trim().startsWith('data:'));
+          
+          for (const event of events) {
+            try {
+              const eventData = JSON.parse(event.replace('data:', '').trim());
+              
+              // 更新进度条
+              if (eventData.data && eventData.data.progress) {
+                const progress = parseInt(eventData.data.progress);
+                progressBar.value = progress;
+                progressValue.textContent = progress;
+              }
+              
+              // 如果有标题结果，显示
+              if (eventData.event === 'workflow_finished' && 
+                  eventData.data && 
+                  eventData.data.result) {
+                
+                // 显示标题容器
+                titlesContainer.style.display = 'block';
+                
+                // 添加每个标题
+                eventData.data.result.forEach(title => {
+                  const titleDiv = document.createElement('div');
+                  titleDiv.className = 'title-item';
+                  titleDiv.textContent = title;
+                  titlesList.appendChild(titleDiv);
+                });
+              }
+            } catch (e) {
+              console.error('Error parsing event data:', e);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.innerHTML = `<div class="error">错误: ${error.message}</div>`;
+      } finally {
+        // 重新启用生成按钮
+        generateButton.disabled = false;
+        generateButton.textContent = '生成标题';
+      }
+    });
+    
+    // 文章生成功能
+    document.getElementById('generate-article').addEventListener('click', async () => {
+      const generateButton = document.getElementById('generate-article');
+      const resultDiv = document.getElementById('article-result');
+      const progressContainer = document.getElementById('article-progress-container');
+      const progressBar = document.getElementById('article-progress-bar');
+      const progressValue = document.getElementById('article-progress-value');
+      const fileContainer = document.getElementById('article-file-container');
+      const fileList = document.getElementById('article-file-list');
+      
+      // 禁用生成按钮
+      generateButton.disabled = true;
+      generateButton.textContent = '生成中...';
+      
+      // 重置UI
+      resultDiv.textContent = '';
+      progressBar.value = 0;
+      progressValue.textContent = '0';
+      fileList.innerHTML = '';
+      progressContainer.style.display = 'none';
+      fileContainer.style.display = 'none';
+      
+      // 收集表单数据
+      const payload = {
+        openid: document.getElementById('article-openid').value,
+        direction: document.getElementById('article-direction').value,
+        title: document.getElementById('article-title').value,
+        word_count: parseInt(document.getElementById('article-word_count').value),
+        name: document.getElementById('article-name').value,
+        unit: document.getElementById('article-unit').value
+      };
+      
+      try {
+        // 显示进度条
+        progressContainer.style.display = 'block';
+        
+        // 发送请求
+        const response = await fetch('/api/generate_article', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // 处理SSE响应
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          const text = decoder.decode(value, { stream: true });
+          resultDiv.textContent += text;
+          
+          // 处理SSE事件
+          const events = text.split('\n\n').filter(event => event.trim().startsWith('data:'));
+          
+          for (const event of events) {
+            try {
+              const eventData = JSON.parse(event.replace('data:', '').trim());
+              
+              // 更新进度条
+              if (eventData.data && eventData.data.progress) {
+                const progress = parseInt(eventData.data.progress);
+                progressBar.value = progress;
+                progressValue.textContent = progress;
+              }
+              
+              // 如果有文件链接，显示
+              if (eventData.event === 'workflow_finished' && 
+                  eventData.data && 
+                  eventData.data.files && 
+                  eventData.data.files.length > 0) {
+                
+                // 显示文件容器
+                fileContainer.style.display = 'block';
+                
+                // 添加每个文件链接
+                eventData.data.files.forEach((file, index) => {
+                  const fileLink = document.createElement('a');
+                  fileLink.className = 'file-link';
+                  fileLink.href = file.url;
+                  fileLink.target = '_blank';
+                  fileLink.textContent = `文章文件 #${index + 1} (Word文档)`;
+                  fileList.appendChild(fileLink);
+                });
+              }
+            } catch (e) {
+              console.error('Error parsing event data:', e);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.innerHTML = `<div class="error">错误: ${error.message}</div>`;
+      } finally {
+        // 重新启用生成按钮
+        generateButton.disabled = false;
+        generateButton.textContent = '生成文章';
+      }
+    });
+  </script>
+</body>
+</html> 

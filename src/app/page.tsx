@@ -129,20 +129,11 @@ USE_MOCK_DATA=false
           <ul className="list-disc pl-6">
             <li>
               <a 
-                href="/test.html" 
+                href="/test-unified.html" 
                 target="_blank"
                 className="text-blue-400 hover:text-blue-300"
               >
-                标题生成测试页面
-              </a>
-            </li>
-            <li>
-              <a 
-                href="/test-article.html" 
-                target="_blank"
-                className="text-blue-400 hover:text-blue-300"
-              >
-                文章生成测试页面
+                API测试页面（标题生成与文章生成）
               </a>
             </li>
           </ul>
