@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yilu API 测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #4A90E2;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #3B7ED5;
+    }
+    #result {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      min-height: 200px;
+      background: #f9f9f9;
+      white-space: pre-wrap;
+    }
+    .progress-container {
+      margin-top: 20px;
+      display: none;
+    }
+    progress {
+      width: 100%;
+      height: 20px;
+    }
+    .titles-container {
+      margin-top: 20px;
+      display: none;
+    }
+    .title-item {
+      background: white;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border-left: 4px solid #4A90E2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Yilu API 生成标题测试</h1>
+  
+  <div class="form-group">
+    <label for="openid">OpenID:</label>
+    <input type="text" id="openid" value="wx_abcd1234efgh5678">
+  </div>
+  
+  <div class="form-group">
+    <label for="direction">方向:</label>
+    <input type="text" id="direction" value="心血管疾病预防与保健">
+  </div>
+  
+  <div class="form-group">
+    <label for="word_count">字数:</label>
+    <input type="number" id="word_count" value="15">
+  </div>
+  
+  <div class="form-group">
+    <label for="name">名字:</label>
+    <input type="text" id="name" value="张医生">
+  </div>
+  
+  <div class="form-group">
+    <label for="unit">单位:</label>
+    <input type="text" id="unit" value="北京协和医院心内科">
+  </div>
+  
+  <button id="generate">生成标题</button>
+  
+  <div class="progress-container" id="progressContainer">
+    <h3>生成进度: <span id="progressValue">0</span>%</h3>
+    <progress id="progressBar" value="0" max="100"></progress>
+  </div>
+  
+  <div class="titles-container" id="titlesContainer">
+    <h3>生成的标题:</h3>
+    <div id="titlesList"></div>
+  </div>
+  
+  <h3>原始响应:</h3>
+  <div id="result"></div>
+  
+  <script>
+    document.getElementById('generate').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('result');
+      const progressContainer = document.getElementById('progressContainer');
+      const progressBar = document.getElementById('progressBar');
+      const progressValue = document.getElementById('progressValue');
+      const titlesContainer = document.getElementById('titlesContainer');
+      const titlesList = document.getElementById('titlesList');
+      
+      // Reset UI
+      resultDiv.textContent = '';
+      progressBar.value = 0;
+      progressValue.textContent = '0';
+      titlesList.innerHTML = '';
+      progressContainer.style.display = 'none';
+      titlesContainer.style.display = 'none';
+      
+      // Collect form data
+      const payload = {
+        openid: document.getElementById('openid').value,
+        direction: document.getElementById('direction').value,
+        word_count: parseInt(document.getElementById('word_count').value),
+        name: document.getElementById('name').value,
+        unit: document.getElementById('unit').value
+      };
+      
+      try {
+        // Send request
+        const response = await fetch('/api/generate_titles', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Show progress container
+        progressContainer.style.display = 'block';
+        
+        // Handle the SSE stream
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value, { stream: true });
+          
+          // Display raw response
+          resultDiv.textContent += chunk;
+          
+          // Process each event in the chunk
+          const lines = chunk.split('\n\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const eventData = JSON.parse(line.substring(6));
+                
+                // Update progress
+                if (eventData.data && eventData.data.progress) {
+                  progressBar.value = parseInt(eventData.data.progress);
+                  progressValue.textContent = eventData.data.progress;
+                }
+                
+                // If we have results, display them
+                if (eventData.event === 'workflow_finished' && 
+                    eventData.data && 
+                    eventData.data.result) {
+                  
+                  // Show titles container
+                  titlesContainer.style.display = 'block';
+                  
+                  // Add each title
+                  eventData.data.result.forEach(title => {
+                    const titleDiv = document.createElement('div');
+                    titleDiv.className = 'title-item';
+                    titleDiv.textContent = title;
+                    titlesList.appendChild(titleDiv);
+                  });
+                }
+              } catch (e) {
+                console.error('Error parsing event data:', e);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.textContent = `Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html> 
