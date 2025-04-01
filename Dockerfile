@@ -33,7 +33,7 @@ ENV NODE_NO_WARNINGS=1
 ENV NODE_LOG_IMMEDIATE_FLUSH=true
 
 # 安装 wget 用于健康检查
-RUN apk add --no-cache wget
+RUN apk add --no-cache wget jq curl
 
 # 复制必要文件
 COPY --from=builder /app/public ./public
