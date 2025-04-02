@@ -93,10 +93,12 @@ export async function callDifyWorkflowAPI(
                 if (eventData.event === 'workflow_started') {
                   // 从workflow_started事件中提取workflowId
                   if (eventData.data && eventData.data.workflow_id) {
-                    workflowId = eventData.data.workflow_id;
+                    workflowId = String(eventData.data.workflow_id);
                     console.log(`[${new Date().toISOString()}] 获取到workflowId: ${workflowId}`);
                   } else if (eventData.data && eventData.data.inputs && eventData.data.inputs['sys.workflow_id']) {
-                    workflowId = eventData.data.inputs['sys.workflow_id'];
+                    // 确保转换为字符串
+                    const inputWorkflowId = eventData.data.inputs['sys.workflow_id'];
+                    workflowId = typeof inputWorkflowId === 'string' ? inputWorkflowId : String(inputWorkflowId);
                     console.log(`[${new Date().toISOString()}] 从inputs获取到workflowId: ${workflowId}`);
                   } else {
                     // 如果都获取不到，使用配置的默认值
@@ -406,7 +408,7 @@ ${request.title || ''}`;
             const jsonStr = event.substring(6);
             
             // 尝试解析JSON
-            let eventData: any;
+            let eventData: DifyEventData = {}; // 初始化为空对象以避免undefined问题
             try {
               eventData = JSON.parse(jsonStr);
             } catch (jsonError) {
@@ -437,8 +439,12 @@ ${request.title || ''}`;
                   const fullUrl = urlPath.startsWith('http') 
                     ? urlPath 
                     : `http://sandboxai.jinzhibang.com.cn${urlPath}`;
-                  eventData.data.files = [{ url: fullUrl }];
-                  console.log(`[${new Date().toISOString()}] 从损坏的JSON中成功提取URL: ${fullUrl}`);
+                  
+                  // 确保eventData.data存在并且可以赋值
+                  if (eventData.data) {
+                    eventData.data.files = [{ url: fullUrl }];
+                    console.log(`[${new Date().toISOString()}] 从损坏的JSON中成功提取URL: ${fullUrl}`);
+                  }
                 }
               } else {
                 // 如果不是工作流完成事件或无法修复，则跳过
@@ -462,10 +468,12 @@ ${request.title || ''}`;
             if (eventData.event === 'workflow_started') {
               // 从workflow_started事件中提取workflowId
               if (eventData.data && eventData.data.workflow_id) {
-                workflowId = eventData.data.workflow_id;
+                workflowId = String(eventData.data.workflow_id);
                 console.log(`[${new Date().toISOString()}] 获取到生成文章workflowId: ${workflowId}`);
               } else if (eventData.data && eventData.data.inputs && eventData.data.inputs['sys.workflow_id']) {
-                workflowId = eventData.data.inputs['sys.workflow_id'];
+                // 确保转换为字符串
+                const inputWorkflowId = eventData.data.inputs['sys.workflow_id'];
+                workflowId = typeof inputWorkflowId === 'string' ? inputWorkflowId : String(inputWorkflowId);
                 console.log(`[${new Date().toISOString()}] 从inputs获取到生成文章workflowId: ${workflowId}`);
               } else {
                 // 如果都获取不到，使用配置的默认值
@@ -529,13 +537,13 @@ ${request.title || ''}`;
                 }
                 
                 // 处理文件URL
-                const files: Array<{ url: string }> = [];
+                const files: Array<FileData> = [];
                 
                 // 如果eventData中已经包含提取的文件，直接使用
-                if (eventData.data && eventData.data.files && Array.isArray(eventData.data.files) && eventData.data.files.length > 0) {
+                if (eventData.data?.files && Array.isArray(eventData.data.files) && eventData.data.files.length > 0) {
                   console.log(`[${new Date().toISOString()}] 使用预提取的文件: ${JSON.stringify(eventData.data.files)}`);
                   // 不直接使用预提取的files，而是确保URL正确拼接
-                  eventData.data.files.forEach((file: any) => {
+                  eventData.data.files.forEach((file: FileData) => {
                     if (file && file.url) {
                       // 拼接完整URL
                       const fullUrl = file.url.startsWith('http') 
@@ -554,7 +562,7 @@ ${request.title || ''}`;
                     
                     if (eventData.data.files && Array.isArray(eventData.data.files)) {
                       // 遍历文件数组并提取URL字段
-                      eventData.data.files.forEach((file: { url?: string }) => {
+                      eventData.data.files.forEach((file: FileData) => {
                         if (file && file.url) {
                           // 拼接完整URL
                           const fullUrl = file.url.startsWith('http') 
@@ -572,9 +580,9 @@ ${request.title || ''}`;
                     console.log(`[${new Date().toISOString()}] 尝试从原始数据中提取文件URL`);
                     
                     // 解析文件URL
-                    if (eventData.data && eventData.data.files && Array.isArray(eventData.data.files)) {
+                    if (eventData.data?.files && Array.isArray(eventData.data.files)) {
                       // 遍历文件数组并提取URL字段
-                      eventData.data.files.forEach((file: any) => {
+                      eventData.data.files.forEach((file: FileData) => {
                         if (file && typeof file === 'object') {
                           if (file.url) {
                             // 拼接完整URL
@@ -615,11 +623,13 @@ ${request.title || ''}`;
                   if (files.length === 0 && eventData.data) {
                     console.log(`[${new Date().toISOString()}] 尝试递归搜索data对象寻找URL`);
                     
-                    const findUrls = (obj: any, prefix: string = '') => {
+                    type RecordObject = Record<string, unknown>;
+                    
+                    const findUrls = (obj: RecordObject, prefix: string = ''): void => {
                       if (!obj || typeof obj !== 'object') return;
                       
                       // 检查当前对象是否有url属性
-                      if (obj.url && typeof obj.url === 'string') {
+                      if ('url' in obj && typeof obj.url === 'string') {
                         // 确保URL不会重复添加前缀
                         const fullUrl = obj.url.startsWith('http') 
                           ? obj.url 
@@ -631,12 +641,13 @@ ${request.title || ''}`;
                       // 递归搜索子对象
                       for (const key in obj) {
                         if (obj[key] && typeof obj[key] === 'object') {
-                          findUrls(obj[key], `${prefix}.${key}`);
+                          findUrls(obj[key] as RecordObject, `${prefix}.${key}`);
                         }
                       }
                     };
                     
-                    findUrls(eventData.data, 'data');
+                    // 确保传递的是对象
+                    findUrls(eventData.data as RecordObject, 'data');
                   }
                 }
                 
@@ -767,4 +778,28 @@ export function getArticleDifyConfig(): DifyAPIConfig {
     baseUrl,
     workflowId
   };
+}
+
+// 定义事件数据接口
+interface DifyEventData {
+  event?: string;
+  task_id?: string;
+  workflow_run_id?: string;
+  data?: {
+    workflow_id?: string;
+    id?: string;
+    inputs?: Record<string, unknown>;
+    outputs?: Record<string, unknown>;
+    elapsed_time?: number | string;
+    files?: Array<FileData>;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+// 文件数据接口
+interface FileData {
+  url?: string;
+  remote_url?: string;
+  [key: string]: unknown;
 } 
