@@ -50,7 +50,7 @@ export async function callDifyWorkflowAPI(
         }
         
         // 进度跟踪
-        const TOTAL_STEPS = 6; // 默认总步数为6步
+        const TOTAL_STEPS = 9; // 默认总步数为9步
         let finishedSteps = 0; // 已完成的步数
         let lastTaskId = '';
         let lastWorkflowRunId = '';
@@ -219,9 +219,17 @@ export async function callDifyWorkflowAPI(
                   let result: string[] = [];
                   
                   if (eventData.data && eventData.data.outputs && eventData.data.outputs.result) {
-                    // 将结果字符串按换行符分割为标题数组
-                    const resultString = eventData.data.outputs.result as string;
-                    result = resultString.split('\n\n').filter((title: string) => title.trim() !== '');
+                    // 检查result的类型
+                    const outputResult = eventData.data.outputs.result;
+                    if (Array.isArray(outputResult)) {
+                      // 如果已经是数组，直接使用
+                      result = outputResult.filter((title: string) => title && typeof title === 'string' && title.trim() !== '');
+                      console.log(`[${new Date().toISOString()}] 直接使用数组结果，共${result.length}个标题`);
+                    } else if (typeof outputResult === 'string') {
+                      // 向后兼容：如果是字符串，按换行符分割
+                      result = outputResult.split('\n\n').filter((title: string) => title.trim() !== '');
+                      console.log(`[${new Date().toISOString()}] 将字符串结果分割为数组，共${result.length}个标题`);
+                    }
                     
                     // 记录结果数量和内容
                     console.log(`[${new Date().toISOString()}] 解析到${result.length}个结果标题`);
