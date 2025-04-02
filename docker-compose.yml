@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # image: cnluocj/yilu-api:latest
+    image: cnluocj/yilu-api:latest
     container_name: yilu-api
     restart: unless-stopped
     ports:
