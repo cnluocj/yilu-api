@@ -335,7 +335,7 @@ ${request.title || ''}`;
         }
         
         // 进度跟踪
-        const TOTAL_STEPS = 60; // 文章生成一共有60步
+        const TOTAL_STEPS = 62; // 文章生成一共有62步
         let finishedSteps = 0; // 已完成的步数
         let lastTaskId = '';
         let lastWorkflowRunId = '';
@@ -344,155 +344,376 @@ ${request.title || ''}`;
         
         console.log(`[${new Date().toISOString()}] 开始处理生成文章Dify API响应流`);
         
+        // 缓冲区，用于拼接可能被截断的JSON数据
+        let buffer = '';
+        
         // 读取SSE流
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
             console.log(`[${new Date().toISOString()}] 生成文章Dify API响应流结束`);
+            
+            // 流结束时，尝试处理缓冲区中可能剩余的数据
+            if (buffer.trim()) {
+              console.log(`[${new Date().toISOString()}] 处理流结束时缓冲区中的剩余数据: ${buffer.length} 字节`);
+              try {
+                processEvent('data: ' + buffer);
+              } catch (e) {
+                console.error(`[${new Date().toISOString()}] 处理结束缓冲数据时出错:`, e);
+              }
+            }
+            
             break;
           }
           
           const chunk = new TextDecoder().decode(value);
-          const events = chunk.split('\n\n').filter(e => e.trim() !== '');
+          // 将新chunk添加到缓冲区
+          buffer += chunk;
           
           // 记录接收到的原始数据块
           console.log(`[${new Date().toISOString()}] 接收生成文章Dify数据: ${chunk.replace(/\n/g, '\\n')}`);
           
-          for (const event of events) {
-            if (event.startsWith('data: ')) {
-              try {
-                const eventData = JSON.parse(event.substring(6));
-                
-                // 记录事件类型
-                console.log(`[${new Date().toISOString()}] 接收到生成文章Dify事件: ${eventData.event || 'unknown'}`);
-                
-                // 提取task_id和workflow_run_id（如果存在）
-                if (eventData.task_id) {
-                  lastTaskId = eventData.task_id;
-                }
-                if (eventData.workflow_run_id) {
-                  lastWorkflowRunId = eventData.workflow_run_id;
-                }
-                
-                // 根据事件类型处理
-                if (eventData.event === 'workflow_started') {
-                  // 从workflow_started事件中提取workflowId
-                  if (eventData.data && eventData.data.workflow_id) {
-                    workflowId = eventData.data.workflow_id;
-                    console.log(`[${new Date().toISOString()}] 获取到生成文章workflowId: ${workflowId}`);
-                  } else if (eventData.data && eventData.data.inputs && eventData.data.inputs['sys.workflow_id']) {
-                    workflowId = eventData.data.inputs['sys.workflow_id'];
-                    console.log(`[${new Date().toISOString()}] 从inputs获取到生成文章workflowId: ${workflowId}`);
-                  } else {
-                    // 如果都获取不到，使用配置的默认值
-                    workflowId = config.workflowId;
-                    console.log(`[${new Date().toISOString()}] 使用默认生成文章workflowId: ${workflowId}`);
-                  }
-                  
-                  // 发送workflow_started事件
-                  const startEvent = {
-                    event: "workflow_started",
-                    task_id: lastTaskId,
-                    workflow_run_id: lastWorkflowRunId,
-                    data: {
-                      workflow_id: workflowId,
-                      progress: "0",
-                      status: "running"
-                    }
-                  };
-                  
-                  // 记录发送的事件
-                  console.log(`[${new Date().toISOString()}] 发送生成文章开始事件: ${JSON.stringify(startEvent)}`);
-                  
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(startEvent)}\n\n`));
-                  lastProgress = 0;
-                }
-                else if (eventData.event === 'node_finished') {
-                  // 节点完成，增加完成步数
-                  finishedSteps += 1;
-                  console.log(`[${new Date().toISOString()}] 生成文章节点完成: ${finishedSteps}/${TOTAL_STEPS}`);
-                  
-                  // 计算进度百分比（最多到99%）
-                  const progressPercent = Math.min(Math.floor((finishedSteps / TOTAL_STEPS) * 100), 99);
-                  
-                  // 只有当进度有变化时才发送更新
-                  if (progressPercent > lastProgress) {
-                    lastProgress = progressPercent;
-                    const progressEvent = {
-                      event: "workflow_running",
-                      task_id: lastTaskId,
-                      workflow_run_id: lastWorkflowRunId,
-                      data: {
-                        workflow_id: workflowId,
-                        progress: progressPercent.toString(),
-                        status: "running"
-                      }
-                    };
-                    
-                    console.log(`[${new Date().toISOString()}] 发送生成文章进度更新: ${progressPercent}%`);
-                    
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
-                  }
-                }
-                else if (eventData.event === 'workflow_finished') {
-                  console.log(`[${new Date().toISOString()}] 生成文章工作流完成`);
-                  
-                  // 如果在workflow_finished事件中可以获取workflowId，则更新
-                  if (eventData.data && eventData.data.workflow_id && !workflowId) {
-                    workflowId = eventData.data.workflow_id;
-                    console.log(`[${new Date().toISOString()}] 从完成事件获取生成文章workflowId: ${workflowId}`);
-                  }
-                  
-                  // 处理文件URL
-                  let files: Array<{ url: string }> = [];
-                  
-                  console.log(`[${new Date().toISOString()}] 生成文章完成事件数据: ${JSON.stringify(eventData.data)}`);
-                  
-                  // 解析文件URL
-                  if (eventData.data && eventData.data.files && Array.isArray(eventData.data.files)) {
-                    // 遍历文件数组并提取URL字段
-                    eventData.data.files.forEach((file: { url?: string }) => {
-                      if (file && file.url) {
-                        // 拼接完整URL
-                        const fullUrl = `http://sandboxai.jinzhibang.com.cn${file.url}`;
-                        files.push({ url: fullUrl });
-                        console.log(`[${new Date().toISOString()}] 解析到生成文章文件URL: ${fullUrl}`);
-                      }
-                    });
-                  }
-                  
-                  // 发送完成事件，进度设为100%
-                  const finishEvent = {
-                    event: "workflow_finished",
-                    task_id: lastTaskId,
-                    workflow_run_id: lastWorkflowRunId,
-                    data: {
-                      workflow_id: workflowId,
-                      progress: "100",
-                      files, // 使用解析的文件数组
-                      elapsed_time: eventData.data?.elapsed_time?.toString() || "0",
-                      status: "succeeded"
-                    }
-                  };
-                  
-                  console.log(`[${new Date().toISOString()}] 发送生成文章完成事件, 文件数: ${files.length}, 耗时: ${eventData.data?.elapsed_time || 'unknown'}`);
-                  
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(finishEvent)}\n\n`));
-                }
-              } catch (e) {
-                console.error(`[${new Date().toISOString()}] 解析生成文章Dify事件数据时出错:`, e);
-              }
+          // 尝试从缓冲区中提取完整的SSE事件
+          const events = buffer.split('\n\n');
+          
+          // 保留最后一个可能不完整的事件到缓冲区
+          buffer = events.pop() || '';
+          
+          // 处理所有完整的事件
+          for (const event of events.filter(e => e.trim() !== '')) {
+            try {
+              processEvent(event);
+            } catch (e) {
+              console.error(`[${new Date().toISOString()}] 处理事件时出错:`, e);
             }
           }
         }
-      } catch (error: any) {
+        
+        // 处理单个SSE事件的函数
+        function processEvent(event: string) {
+          if (!event.startsWith('data: ')) return;
+          
+          try {
+            // 从事件文本中提取JSON数据
+            const jsonStr = event.substring(6);
+            
+            // 尝试解析JSON
+            let eventData: any;
+            try {
+              eventData = JSON.parse(jsonStr);
+            } catch (jsonError) {
+              console.error(`[${new Date().toISOString()}] JSON解析错误:`, jsonError);
+              console.log(`[${new Date().toISOString()}] 尝试修复可能的JSON格式问题`);
+              
+              // 如果是文章完成事件但JSON解析失败，尝试从原始文本中提取关键信息
+              if (jsonStr.includes('"event": "workflow_finished"')) {
+                console.log(`[${new Date().toISOString()}] 检测到工作流完成事件，尝试手动提取信息`);
+                
+                // 创建基本的完成事件
+                eventData = {
+                  event: "workflow_finished",
+                  task_id: lastTaskId || `recover-${Date.now()}`,
+                  workflow_run_id: lastWorkflowRunId || `recover-${Date.now()}`,
+                  data: {
+                    workflow_id: workflowId || config.workflowId,
+                    id: extractValue(jsonStr, '"id":', ','),
+                    files: []
+                  }
+                };
+                
+                // 尝试提取文件URL
+                const fileUrlMatch = jsonStr.match(/\/files\/tools\/[^"\\]+\.docx[^"\\]*/);
+                if (fileUrlMatch && fileUrlMatch[0]) {
+                  const urlPath = fileUrlMatch[0];
+                  // 确保URL不会重复添加前缀
+                  const fullUrl = urlPath.startsWith('http') 
+                    ? urlPath 
+                    : `http://sandboxai.jinzhibang.com.cn${urlPath}`;
+                  eventData.data.files = [{ url: fullUrl }];
+                  console.log(`[${new Date().toISOString()}] 从损坏的JSON中成功提取URL: ${fullUrl}`);
+                }
+              } else {
+                // 如果不是工作流完成事件或无法修复，则跳过
+                console.log(`[${new Date().toISOString()}] 无法修复JSON，跳过此事件`);
+                return;
+              }
+            }
+            
+            // 记录事件类型
+            console.log(`[${new Date().toISOString()}] 接收到生成文章Dify事件: ${eventData.event || 'unknown'}`);
+            
+            // 提取task_id和workflow_run_id（如果存在）
+            if (eventData.task_id) {
+              lastTaskId = eventData.task_id;
+            }
+            if (eventData.workflow_run_id) {
+              lastWorkflowRunId = eventData.workflow_run_id;
+            }
+            
+            // 根据事件类型处理
+            if (eventData.event === 'workflow_started') {
+              // 从workflow_started事件中提取workflowId
+              if (eventData.data && eventData.data.workflow_id) {
+                workflowId = eventData.data.workflow_id;
+                console.log(`[${new Date().toISOString()}] 获取到生成文章workflowId: ${workflowId}`);
+              } else if (eventData.data && eventData.data.inputs && eventData.data.inputs['sys.workflow_id']) {
+                workflowId = eventData.data.inputs['sys.workflow_id'];
+                console.log(`[${new Date().toISOString()}] 从inputs获取到生成文章workflowId: ${workflowId}`);
+              } else {
+                // 如果都获取不到，使用配置的默认值
+                workflowId = config.workflowId;
+                console.log(`[${new Date().toISOString()}] 使用默认生成文章workflowId: ${workflowId}`);
+              }
+              
+              // 发送workflow_started事件
+              const startEvent = {
+                event: "workflow_started",
+                task_id: lastTaskId,
+                workflow_run_id: lastWorkflowRunId,
+                data: {
+                  workflow_id: workflowId,
+                  progress: "0",
+                  status: "running"
+                }
+              };
+              
+              // 记录发送的事件
+              console.log(`[${new Date().toISOString()}] 发送生成文章开始事件: ${JSON.stringify(startEvent)}`);
+              
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify(startEvent)}\n\n`));
+              lastProgress = 0;
+            }
+            else if (eventData.event === 'node_finished') {
+              // 节点完成，增加完成步数
+              finishedSteps += 1;
+              console.log(`[${new Date().toISOString()}] 生成文章节点完成: ${finishedSteps}/${TOTAL_STEPS}`);
+              
+              // 计算进度百分比（最多到99%）
+              const progressPercent = Math.min(Math.floor((finishedSteps / TOTAL_STEPS) * 100), 99);
+              
+              // 只有当进度有变化时才发送更新
+              if (progressPercent > lastProgress) {
+                lastProgress = progressPercent;
+                const progressEvent = {
+                  event: "workflow_running",
+                  task_id: lastTaskId,
+                  workflow_run_id: lastWorkflowRunId,
+                  data: {
+                    workflow_id: workflowId,
+                    progress: progressPercent.toString(),
+                    status: "running"
+                  }
+                };
+                
+                console.log(`[${new Date().toISOString()}] 发送生成文章进度更新: ${progressPercent}%`);
+                
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
+              }
+            }
+            else if (eventData.event === 'workflow_finished') {
+              console.log(`[${new Date().toISOString()}] 生成文章工作流完成`);
+              
+              try {
+                // 如果在workflow_finished事件中可以获取workflowId，则更新
+                if (eventData.data && eventData.data.workflow_id && !workflowId) {
+                  workflowId = eventData.data.workflow_id;
+                  console.log(`[${new Date().toISOString()}] 从完成事件获取生成文章workflowId: ${workflowId}`);
+                }
+                
+                // 处理文件URL
+                const files: Array<{ url: string }> = [];
+                
+                // 如果eventData中已经包含提取的文件，直接使用
+                if (eventData.data && eventData.data.files && Array.isArray(eventData.data.files) && eventData.data.files.length > 0) {
+                  console.log(`[${new Date().toISOString()}] 使用预提取的文件: ${JSON.stringify(eventData.data.files)}`);
+                  // 不直接使用预提取的files，而是确保URL正确拼接
+                  eventData.data.files.forEach((file: any) => {
+                    if (file && file.url) {
+                      // 拼接完整URL
+                      const fullUrl = file.url.startsWith('http') 
+                        ? file.url 
+                        : `http://sandboxai.jinzhibang.com.cn${file.url}`;
+                      files.push({ url: fullUrl });
+                      console.log(`[${new Date().toISOString()}] 处理预提取文件URL: ${fullUrl}`);
+                    }
+                  });
+                } else {
+                  console.log(`[${new Date().toISOString()}] 生成文章完成事件数据: ${JSON.stringify(eventData.data)}`);
+                  
+                  // 优先检查存在id和files的情况（新格式）
+                  if (eventData.data && eventData.data.id) {
+                    console.log(`[${new Date().toISOString()}] 检测到id格式的完成事件: ${eventData.data.id}`);
+                    
+                    if (eventData.data.files && Array.isArray(eventData.data.files)) {
+                      // 遍历文件数组并提取URL字段
+                      eventData.data.files.forEach((file: { url?: string }) => {
+                        if (file && file.url) {
+                          // 拼接完整URL
+                          const fullUrl = file.url.startsWith('http') 
+                            ? file.url 
+                            : `http://sandboxai.jinzhibang.com.cn${file.url}`;
+                          files.push({ url: fullUrl });
+                          console.log(`[${new Date().toISOString()}] 解析到生成文章文件URL(id格式): ${fullUrl}`);
+                        }
+                      });
+                    }
+                  }
+                  
+                  // 如果没有找到URL，尝试从原始eventData.data直接提取
+                  if (files.length === 0) {
+                    console.log(`[${new Date().toISOString()}] 尝试从原始数据中提取文件URL`);
+                    
+                    // 解析文件URL
+                    if (eventData.data && eventData.data.files && Array.isArray(eventData.data.files)) {
+                      // 遍历文件数组并提取URL字段
+                      eventData.data.files.forEach((file: any) => {
+                        if (file && typeof file === 'object') {
+                          if (file.url) {
+                            // 拼接完整URL
+                            const fullUrl = file.url.startsWith('http') 
+                              ? file.url 
+                              : `http://sandboxai.jinzhibang.com.cn${file.url}`;
+                            files.push({ url: fullUrl });
+                            console.log(`[${new Date().toISOString()}] 解析到生成文章文件URL: ${fullUrl}`);
+                          } else if (file.remote_url) {
+                            const fullUrl = file.remote_url.startsWith('http')
+                              ? file.remote_url
+                              : `http://sandboxai.jinzhibang.com.cn${file.remote_url}`;
+                            files.push({ url: fullUrl });
+                            console.log(`[${new Date().toISOString()}] 解析到生成文章远程URL: ${fullUrl}`);
+                          }
+                        }
+                      });
+                    }
+                  }
+                  
+                  // 如果还是没有找到URL，尝试从原始JSON字符串中提取
+                  if (files.length === 0) {
+                    console.log(`[${new Date().toISOString()}] 尝试从原始JSON字符串中提取URL`);
+                    const fileUrlMatches = jsonStr.match(/\/files\/tools\/[^"\\]+\.docx[^"\\]*/g);
+                    if (fileUrlMatches && fileUrlMatches.length > 0) {
+                      fileUrlMatches.forEach(urlPart => {
+                        // 确保URL不会重复添加前缀
+                        const fullUrl = urlPart.startsWith('http') 
+                          ? urlPart 
+                          : `http://sandboxai.jinzhibang.com.cn${urlPart}`;
+                        files.push({ url: fullUrl });
+                        console.log(`[${new Date().toISOString()}] 从字符串中提取到URL: ${fullUrl}`);
+                      });
+                    }
+                  }
+                  
+                  // 如果还是没有找到URL，尝试递归搜索data对象
+                  if (files.length === 0 && eventData.data) {
+                    console.log(`[${new Date().toISOString()}] 尝试递归搜索data对象寻找URL`);
+                    
+                    const findUrls = (obj: any, prefix: string = '') => {
+                      if (!obj || typeof obj !== 'object') return;
+                      
+                      // 检查当前对象是否有url属性
+                      if (obj.url && typeof obj.url === 'string') {
+                        // 确保URL不会重复添加前缀
+                        const fullUrl = obj.url.startsWith('http') 
+                          ? obj.url 
+                          : `http://sandboxai.jinzhibang.com.cn${obj.url}`;
+                        files.push({ url: fullUrl });
+                        console.log(`[${new Date().toISOString()}] 在${prefix}找到URL: ${fullUrl}`);
+                      }
+                      
+                      // 递归搜索子对象
+                      for (const key in obj) {
+                        if (obj[key] && typeof obj[key] === 'object') {
+                          findUrls(obj[key], `${prefix}.${key}`);
+                        }
+                      }
+                    };
+                    
+                    findUrls(eventData.data, 'data');
+                  }
+                }
+                
+                // 强制设置进度为100%
+                lastProgress = 100;
+                
+                // 发送完成事件，进度设为100%
+                const finishEvent = {
+                  event: "workflow_finished",
+                  task_id: lastTaskId,
+                  workflow_run_id: lastWorkflowRunId,
+                  data: {
+                    workflow_id: workflowId,
+                    progress: "100",
+                    files, // 使用解析的文件数组
+                    elapsed_time: eventData.data?.elapsed_time?.toString() || "0",
+                    status: files.length > 0 ? "succeeded" : "failed"
+                  }
+                };
+                
+                console.log(`[${new Date().toISOString()}] 发送生成文章完成事件, 文件数: ${files.length}, 耗时: ${eventData.data?.elapsed_time || 'unknown'}`);
+                
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(finishEvent)}\n\n`));
+              } catch (error) {
+                console.error(`[${new Date().toISOString()}] 处理文章生成完成事件时出错:`, error);
+                
+                // 发送一个基础的完成事件，避免客户端一直等待
+                const basicFinishEvent = {
+                  event: "workflow_finished",
+                  task_id: lastTaskId || `fallback-${Date.now()}`,
+                  workflow_run_id: lastWorkflowRunId || `fallback-${Date.now()}`,
+                  data: {
+                    workflow_id: workflowId || config.workflowId,
+                    progress: "100",
+                    files: [],
+                    elapsed_time: "0",
+                    status: "failed",
+                    error: "处理完成事件时出错"
+                  }
+                };
+                
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(basicFinishEvent)}\n\n`));
+              }
+            }
+          } catch (e) {
+            console.error(`[${new Date().toISOString()}] 解析生成文章Dify事件数据时出错:`, e);
+          }
+        }
+        
+        // 从JSON字符串中提取键值（简易方法，用于损坏的JSON）
+        function extractValue(jsonStr: string, key: string, endChar: string): string {
+          try {
+            const keyIndex = jsonStr.indexOf(key);
+            if (keyIndex === -1) return "";
+            
+            const valueStart = jsonStr.indexOf(':', keyIndex) + 1;
+            let valueEnd = jsonStr.indexOf(endChar, valueStart);
+            if (valueEnd === -1) valueEnd = jsonStr.length;
+            
+            const value = jsonStr.substring(valueStart, valueEnd).trim();
+            // 去除引号
+            return value.replace(/^"/, '').replace(/"$/, '');
+          } catch (e) {
+            console.error(`[${new Date().toISOString()}] 提取值时出错:`, e);
+            return "";
+          }
+        }
+      } catch (error: unknown) {
         console.error(`[${new Date().toISOString()}] 调用生成文章Dify API时出错:`, error);
+        
+        // 错误消息
+        const errorMessage = error instanceof Error ? error.message : "未知错误";
+        console.error(`[${new Date().toISOString()}] 错误详情: ${errorMessage}`);
         
         // 发送错误事件
         const errorEvent = {
-          event: "error",
+          event: "workflow_finished", // 使用workflow_finished事件类型，让客户端知道流程已结束
+          task_id: `error-${Date.now()}`,
+          workflow_run_id: `error-${Date.now()}`,
           data: {
-            message: error.message || "未知错误",
+            workflow_id: config.workflowId,
+            progress: "100",
+            files: [], // 空文件数组
+            error: errorMessage,
+            elapsed_time: "0",
             status: "failed"
           }
         };

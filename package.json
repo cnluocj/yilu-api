@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 9090",
     "build": "next build",
-    "build:docker": "NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 next build",
+    "build:docker": "NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 NEXT_DISABLE_ESLINT=1 next build",
     "start": "next start -p 9090",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix"

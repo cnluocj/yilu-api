@@ -24,8 +24,8 @@ RUN npm run build:docker
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV PORT 9090
+ENV NODE_ENV=production
+ENV PORT=9090
 # 禁用Node.js日志缓冲，确保日志立即输出到Docker
 ENV NODE_OPTIONS="--no-warnings --max-http-header-size=16384"
 ENV NODE_NO_WARNINGS=1
