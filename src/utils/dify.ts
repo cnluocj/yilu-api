@@ -310,7 +310,12 @@ ${request.title || ''}`;
         // 准备请求Dify API的数据
         const difyRequestBody = {
           inputs: {
-            msg: msgContent
+            // msg: msgContent,
+            author: request.name,
+            unit: request.unit,
+            direction: request.direction,
+            subject: request.title,
+            word_count: request.word_count
           },
           response_mode: "streaming",
           user: request.openid // 使用openid作为用户标识
@@ -345,7 +350,7 @@ ${request.title || ''}`;
         }
         
         // 进度跟踪
-        const TOTAL_STEPS = 62; // 文章生成一共有62步
+        const TOTAL_STEPS = 13; // 文章生成一共有13步
         let finishedSteps = 0; // 已完成的步数
         let lastTaskId = '';
         let lastWorkflowRunId = '';
