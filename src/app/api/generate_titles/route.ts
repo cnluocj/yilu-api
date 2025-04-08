@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       try {
         // 检查用户是否有足够的配额
         console.log(`[${new Date().toISOString()}][${requestId}] 检查用户(${body.openid})的标题生成服务配额`);
-        const quota = await getUserQuota(body.openid, ServiceType.GENERATE_TITLE);
+        const quota = await getUserQuota(body.openid, ServiceType.KP);
         
         if (!quota || quota.remaining_quota <= 0) {
           console.error(`[${new Date().toISOString()}][${requestId}] 用户(${body.openid})的标题生成服务配额不足`);
@@ -154,21 +154,6 @@ export async function POST(request: NextRequest) {
           { error: 'Dify API密钥未配置，请在环境变量中设置DIFY_API_KEY' },
           { status: 500 }
         );
-      }
-      
-      // 先消耗用户的配额（如果配置了跳过配额检查，则不消耗）
-      if (!skipQuotaCheck) {
-        try {
-          console.log(`[${new Date().toISOString()}][${requestId}] 消耗用户(${body.openid})的一次标题生成服务配额`);
-          const remainingQuota = await useQuota(body.openid, ServiceType.GENERATE_TITLE);
-          console.log(`[${new Date().toISOString()}][${requestId}] 配额消耗成功，剩余: ${remainingQuota}`);
-        } catch (quotaError) {
-          console.error(`[${new Date().toISOString()}][${requestId}] 消耗配额时出错:`, quotaError);
-          return NextResponse.json(
-            { error: '消耗服务配额时出错' },
-            { status: 500 }
-          );
-        }
       }
       
       // 调用Dify API并获取流响应

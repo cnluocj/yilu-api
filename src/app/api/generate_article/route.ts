@@ -96,15 +96,19 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // 检查用户配额是否足够（跳过模拟数据模式）
+    // 获取是否使用模拟数据的环境变量（在开发环境中可用于调试）
     const useMockData = process.env.USE_MOCK_DATA === 'true';
     const skipQuotaCheck = process.env.SKIP_QUOTA_CHECK === 'true'; // 对于测试环境，可配置跳过配额检查
+
+    // 保存配额信息，用于后续处理
+    let quota = null;
     
+    // 检查用户配额是否足够（跳过模拟数据模式）
     if (!useMockData && !skipQuotaCheck) {
       try {
         // 检查用户是否有足够的配额
         console.log(`[${new Date().toISOString()}][${requestId}] 检查用户(${body.openid})的文章生成服务配额`);
-        const quota = await getUserQuota(body.openid, ServiceType.GENERATE_ARTICLE);
+        quota = await getUserQuota(body.openid, ServiceType.KP);
         
         if (!quota || quota.remaining_quota <= 0) {
           console.error(`[${new Date().toISOString()}][${requestId}] 用户(${body.openid})的文章生成服务配额不足`);
@@ -124,7 +128,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 获取是否使用模拟数据的环境变量（在开发环境中可用于调试）
     console.log(`[${new Date().toISOString()}][${requestId}] 使用模拟数据: ${useMockData}`);
     
     // 设置流响应
@@ -165,25 +168,92 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      // 先消耗用户的配额（如果配置了跳过配额检查，则不消耗）
-      if (!skipQuotaCheck) {
-        try {
-          console.log(`[${new Date().toISOString()}][${requestId}] 消耗用户(${body.openid})的一次文章生成服务配额`);
-          const remainingQuota = await useQuota(body.openid, ServiceType.GENERATE_ARTICLE);
-          console.log(`[${new Date().toISOString()}][${requestId}] 配额消耗成功，剩余: ${remainingQuota}`);
-        } catch (quotaError) {
-          console.error(`[${new Date().toISOString()}][${requestId}] 消耗配额时出错:`, quotaError);
-          return NextResponse.json(
-            { error: '消耗服务配额时出错' },
-            { status: 500 }
-          );
-        }
-      }
+      // 不再在这里先消耗配额，而是等待文件生成结果后再决定是否扣除配额
       
       // 调用Dify API并获取流响应
       console.log(`[${new Date().toISOString()}][${requestId}] 开始调用生成文章Dify API`);
-      stream = await callDifyGenerateArticleAPI(config, body);
-      console.log(`[${new Date().toISOString()}][${requestId}] 生成文章Dify API流对象已创建`);
+      
+      // 创建一个特殊的TransformStream来处理和解析Dify响应流
+      const { readable, writable } = new TransformStream();
+      const writer = writable.getWriter();
+      
+      // 调用Dify API并获取原始流
+      const difyStream = await callDifyGenerateArticleAPI(config, body);
+      
+      // 使用reader读取原始流
+      const reader = difyStream.getReader();
+      
+      // 创建一个解析器来跟踪和监控事件
+      let fileCount = 0;
+      let isWorkflowFinished = false;
+      let buffer = '';
+      
+      (async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            // 如果有数据，先写入输出流
+            writer.write(value);
+            
+            // 同时解析数据以检测文件数量
+            const chunk = new TextDecoder().decode(value);
+            buffer += chunk;
+            
+            // 检查是否包含workflow_finished事件
+            if (buffer.includes('"event":"workflow_finished"') || buffer.includes('"event": "workflow_finished"')) {
+              isWorkflowFinished = true;
+              
+              // 尝试提取文件数量
+              try {
+                // 分割成事件并找到workflow_finished
+                const events = buffer.split('\n\n');
+                for (const event of events) {
+                  if (event.startsWith('data: ') && (event.includes('"event":"workflow_finished"') || event.includes('"event": "workflow_finished"'))) {
+                    const eventData = JSON.parse(event.substring(6));
+                    if (eventData.data && eventData.data.files && Array.isArray(eventData.data.files)) {
+                      fileCount = eventData.data.files.length;
+                      console.log(`[${new Date().toISOString()}][${requestId}] 检测到工作流完成事件，文件数量: ${fileCount}`);
+                      
+                      // 当文件数量 > 1 且配额检查未被跳过时，扣除配额
+                      if (fileCount > 0 && !skipQuotaCheck && quota) {
+                        try {
+                          console.log(`[${new Date().toISOString()}][${requestId}] 生成成功，文件数量: ${fileCount}，消耗用户(${body.openid})的一次文章生成服务配额`);
+                          const remainingQuota = await useQuota(body.openid, ServiceType.KP);
+                          console.log(`[${new Date().toISOString()}][${requestId}] 配额消耗成功，剩余: ${remainingQuota}`);
+                        } catch (quotaError) {
+                          console.error(`[${new Date().toISOString()}][${requestId}] 消耗配额时出错:`, quotaError);
+                          // 继续处理，不中断流
+                        }
+                      } else {
+                        console.log(`[${new Date().toISOString()}][${requestId}] 不消耗配额，原因: ${skipQuotaCheck ? '跳过配额检查' : fileCount > 0 ? '' : '无文件生成'}`);
+                      }
+                      break; // 找到后退出循环
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error(`[${new Date().toISOString()}][${requestId}] 解析完成事件数据失败:`, e);
+              }
+            }
+          }
+          
+          // 最后再检查一次，以防漏检
+          if (!isWorkflowFinished) {
+            console.log(`[${new Date().toISOString()}][${requestId}] 流结束但未检测到工作流完成事件，不消耗配额`);
+          }
+          
+          // 关闭输出流
+          writer.close();
+        } catch (error) {
+          console.error(`[${new Date().toISOString()}][${requestId}] 处理响应流时出错:`, error);
+          writer.abort(error);
+        }
+      })();
+      
+      // 使用经过处理的流
+      stream = readable;
     }
 
     // 在响应返回前记录日志
