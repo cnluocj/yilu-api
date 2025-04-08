@@ -79,7 +79,7 @@
       font-weight: bold;
     }
     
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       padding: 10px;
       border: 1px solid #ddd;
@@ -191,6 +191,40 @@
       border-radius: 5px;
       margin-bottom: 15px;
     }
+    
+    .success {
+      color: #27ae60;
+      font-weight: bold;
+      padding: 10px;
+      background-color: #d4f6e3;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+    
+    /* 配额信息样式 */
+    .quota-info {
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .quota-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2980b9;
+    }
+    
+    .quota-service {
+      font-weight: bold;
+      color: #7f8c8d;
+    }
+    
+    .no-quota {
+      color: #e74c3c;
+    }
   </style>
 </head>
 <body>
@@ -200,6 +234,7 @@
   <div class="tabs">
     <button class="tab-button active" data-tab="titles">生成标题</button>
     <button class="tab-button" data-tab="article">生成文章</button>
+    <button class="tab-button" data-tab="quota">配额管理</button>
   </div>
   
   <!-- 标题生成选项卡内容 -->
@@ -303,22 +338,133 @@
     </div>
   </div>
   
+  <!-- 配额管理选项卡内容 -->
+  <div id="quota-tab" class="tab-content">
+    <!-- 登录表单 -->
+    <div class="form-container" id="login-section">
+      <h2>用户登录</h2>
+      <div class="form-group">
+        <label for="username">用户名:</label>
+        <input type="text" id="username" value="admin">
+      </div>
+      
+      <div class="form-group">
+        <label for="password">密码:</label>
+        <input type="password" id="password" value="admin123">
+      </div>
+      
+      <button id="login-button" class="submit-button">登录</button>
+      <div id="login-result" class="result-container"></div>
+    </div>
+    
+    <div id="quota-management" style="display:none;">
+      <!-- 用户信息显示 -->
+      <div class="form-container">
+        <h2>当前登录信息</h2>
+        <div id="user-info" class="result"></div>
+        <button id="logout-button" class="submit-button">退出登录</button>
+      </div>
+      
+      <!-- 查询用户配额 -->
+      <div class="form-container">
+        <h2>查询用户配额</h2>
+        <div class="form-group">
+          <label for="query-user-id">用户ID:</label>
+          <input type="text" id="query-user-id" placeholder="输入用户ID" value="wx_abcd1234efgh5678">
+        </div>
+        
+        <div class="form-group">
+          <label for="query-service-id">服务类型:</label>
+          <select id="query-service-id">
+            <option value="kp">kp</option>
+          </select>
+        </div>
+        
+        <button id="query-quota" class="submit-button">查询配额</button>
+      </div>
+      
+      <!-- 显示配额信息 -->
+      <div class="quota-info" id="quota-info">
+        <h3>配额信息</h3>
+        <div id="quota-result"></div>
+      </div>
+      
+      <!-- 添加用户配额 -->
+      <div class="form-container">
+        <h2>添加用户配额</h2>
+        <div class="form-group">
+          <label for="add-user-id">用户ID:</label>
+          <input type="text" id="add-user-id" placeholder="输入用户ID" value="wx_abcd1234efgh5678">
+        </div>
+        
+        <div class="form-group">
+          <label for="add-service-id">服务类型:</label>
+          <select id="add-service-id">
+            <option value="kp">kp</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="add-amount">添加数量:</label>
+          <input type="number" id="add-amount" placeholder="输入添加的次数" value="10" min="1">
+        </div>
+        
+        <button id="add-quota" class="submit-button">添加配额</button>
+      </div>
+      
+      <div class="result-container">
+        <h3>操作结果:</h3>
+        <div id="quota-operation-result" class="result"></div>
+      </div>
+    </div>
+  </div>
+  
   <script>
     // 选项卡切换功能
     document.addEventListener('DOMContentLoaded', function() {
       const tabButtons = document.querySelectorAll('.tab-button');
       
+      // 切换到指定选项卡的函数
+      function switchToTab(tabId) {
+        // 移除所有活动状态
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // 添加当前活动状态
+        const tabButton = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+        if (tabButton) {
+          tabButton.classList.add('active');
+          const contentId = tabId + '-tab';
+          document.getElementById(contentId).classList.add('active');
+        }
+      }
+      
+      // 为选项卡添加点击事件
       tabButtons.forEach(button => {
         button.addEventListener('click', function() {
-          // 移除所有活动状态
-          tabButtons.forEach(btn => btn.classList.remove('active'));
-          document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-          
-          // 添加当前活动状态
-          this.classList.add('active');
-          const tabId = this.getAttribute('data-tab') + '-tab';
-          document.getElementById(tabId).classList.add('active');
+          const tabId = this.getAttribute('data-tab');
+          // 更新URL（不刷新页面）
+          window.history.pushState(null, '', `#${tabId}`);
+          switchToTab(tabId);
         });
+      });
+      
+      // 检查URL片段并切换到相应选项卡
+      if (window.location.hash) {
+        const tabId = window.location.hash.substring(1); // 去掉#号
+        if (['titles', 'article', 'quota'].includes(tabId)) {
+          switchToTab(tabId);
+        }
+      }
+      
+      // 监听URL变化
+      window.addEventListener('hashchange', function() {
+        if (window.location.hash) {
+          const tabId = window.location.hash.substring(1);
+          if (['titles', 'article', 'quota'].includes(tabId)) {
+            switchToTab(tabId);
+          }
+        }
       });
     });
     
@@ -531,6 +677,258 @@
         // 重新启用生成按钮
         generateButton.disabled = false;
         generateButton.textContent = '生成文章';
+      }
+    });
+    
+    // 查询用户配额功能
+    document.getElementById('query-quota').addEventListener('click', async () => {
+      const queryButton = document.getElementById('query-quota');
+      const userId = document.getElementById('query-user-id').value;
+      const serviceId = document.getElementById('query-service-id').value;
+      const quotaInfo = document.getElementById('quota-info');
+      const quotaResult = document.getElementById('quota-result');
+      const operationResult = document.getElementById('quota-operation-result');
+      
+      // 获取JWT令牌
+      const token = sessionStorage.getItem('auth_token');
+      
+      if (!token) {
+        operationResult.innerHTML = `<div class="error">认证已过期，请重新登录</div>`;
+        return;
+      }
+      
+      // 验证输入
+      if (!userId) {
+        operationResult.innerHTML = `<div class="error">请输入用户ID</div>`;
+        return;
+      }
+      
+      // 禁用查询按钮
+      queryButton.disabled = true;
+      queryButton.textContent = '查询中...';
+      
+      try {
+        // 发送请求
+        const response = await fetch(`/api/quota?user_id=${encodeURIComponent(userId)}&service_id=${encodeURIComponent(serviceId)}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        
+        // 显示操作结果
+        operationResult.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        
+        // 显示配额信息
+        quotaInfo.style.display = 'block';
+        
+        if (data.success && data.data) {
+          quotaResult.innerHTML = `
+            <p>用户ID: <strong>${data.data.user_id}</strong></p>
+            <p>服务类型: <span class="quota-service">${data.data.service_id}</span></p>
+            <p>剩余配额: <span class="quota-value">${data.data.remaining_quota}</span> 次</p>
+            <p>最后更新: ${new Date(data.data.updated_at).toLocaleString()}</p>
+          `;
+        } else if (data.success && data.data === null) {
+          quotaResult.innerHTML = `<p class="no-quota">该用户尚未设置配额</p>`;
+        } else {
+          quotaResult.innerHTML = `<div class="error">${data.error || '查询配额失败'}</div>`;
+        }
+        
+      } catch (error) {
+        console.error('Error:', error);
+        operationResult.innerHTML = `<div class="error">错误: ${error.message}</div>`;
+        quotaInfo.style.display = 'none';
+      } finally {
+        // 重新启用查询按钮
+        queryButton.disabled = false;
+        queryButton.textContent = '查询配额';
+      }
+    });
+    
+    // 添加用户配额功能
+    document.getElementById('add-quota').addEventListener('click', async () => {
+      const addButton = document.getElementById('add-quota');
+      const userId = document.getElementById('add-user-id').value;
+      const serviceId = document.getElementById('add-service-id').value;
+      const amount = parseInt(document.getElementById('add-amount').value);
+      const operationResult = document.getElementById('quota-operation-result');
+      
+      // 获取JWT令牌
+      const token = sessionStorage.getItem('auth_token');
+      
+      if (!token) {
+        operationResult.innerHTML = `<div class="error">认证已过期，请重新登录</div>`;
+        return;
+      }
+      
+      // 验证输入
+      if (!userId) {
+        operationResult.innerHTML = `<div class="error">请输入用户ID</div>`;
+        return;
+      }
+      
+      if (!amount || amount <= 0) {
+        operationResult.innerHTML = `<div class="error">请输入有效的配额数量</div>`;
+        return;
+      }
+      
+      // 禁用添加按钮
+      addButton.disabled = true;
+      addButton.textContent = '添加中...';
+      
+      try {
+        // 发送请求
+        const response = await fetch('/api/quota', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            service_id: serviceId,
+            amount: amount
+          })
+        });
+        
+        const data = await response.json();
+        
+        // 显示操作结果
+        if (data.success) {
+          operationResult.innerHTML = `
+            <div class="success">配额添加成功!</div>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+          
+          // 自动触发查询更新显示
+          document.getElementById('query-user-id').value = userId;
+          document.getElementById('query-service-id').value = serviceId;
+          document.getElementById('query-quota').click();
+        } else {
+          operationResult.innerHTML = `
+            <div class="error">${data.error || '添加配额失败'}</div>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        operationResult.innerHTML = `<div class="error">错误: ${error.message}</div>`;
+      } finally {
+        // 重新启用添加按钮
+        addButton.disabled = false;
+        addButton.textContent = '添加配额';
+      }
+    });
+    
+    // 登录功能
+    document.getElementById('login-button').addEventListener('click', async () => {
+      const loginButton = document.getElementById('login-button');
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const loginResult = document.getElementById('login-result');
+      const quotaManagement = document.getElementById('quota-management');
+      const userInfo = document.getElementById('user-info');
+      
+      // 验证输入
+      if (!username || !password) {
+        loginResult.innerHTML = `<div class="error">请输入用户名和密码</div>`;
+        return;
+      }
+      
+      // 禁用登录按钮
+      loginButton.disabled = true;
+      loginButton.textContent = '登录中...';
+      
+      try {
+        // 发送登录请求
+        const response = await fetch('/api/auth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: username,
+            password: password
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // 保存令牌到会话存储
+          sessionStorage.setItem('auth_token', data.data.token);
+          sessionStorage.setItem('user_data', JSON.stringify(data.data.user));
+          
+          // 显示登录成功消息
+          loginResult.innerHTML = `<div class="success">登录成功!</div>`;
+          
+          // 显示用户信息
+          userInfo.innerHTML = `
+            <p>用户ID: <strong>${data.data.user.userId}</strong></p>
+            <p>用户名: <strong>${data.data.user.username}</strong></p>
+            <p>角色: <strong>${data.data.user.role}</strong></p>
+            <p>权限: <strong>${data.data.user.permissions.join(', ')}</strong></p>
+          `;
+          
+          // 显示配额操作区域
+          quotaManagement.style.display = 'block';
+        } else {
+          loginResult.innerHTML = `<div class="error">${data.error || '登录失败'}</div>`;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        loginResult.innerHTML = `<div class="error">错误: ${error.message}</div>`;
+      } finally {
+        // 重新启用登录按钮
+        loginButton.disabled = false;
+        loginButton.textContent = '登录';
+      }
+    });
+    
+    // 退出登录功能
+    document.addEventListener('DOMContentLoaded', function() {
+      const logoutButton = document.getElementById('logout-button');
+      if (logoutButton) {
+        logoutButton.addEventListener('click', () => {
+          // 清除存储的令牌和用户数据
+          sessionStorage.removeItem('auth_token');
+          sessionStorage.removeItem('user_data');
+          
+          // 隐藏配额管理区域并清空结果
+          document.getElementById('quota-management').style.display = 'none';
+          document.getElementById('login-result').innerHTML = '';
+          document.getElementById('quota-info').style.display = 'none';
+          document.getElementById('quota-operation-result').innerHTML = '';
+          
+          // 显示提示消息
+          document.getElementById('login-result').innerHTML = `<div class="success">已成功退出登录</div>`;
+        });
+      }
+    });
+    
+    // 检查页面加载时是否已有令牌
+    document.addEventListener('DOMContentLoaded', function() {
+      const token = sessionStorage.getItem('auth_token');
+      const userData = JSON.parse(sessionStorage.getItem('user_data') || '{}');
+      
+      if (token && userData && userData.userId) {
+        // 如果有令牌和用户数据，自动恢复登录状态
+        const quotaManagement = document.getElementById('quota-management');
+        const userInfo = document.getElementById('user-info');
+        
+        if (userInfo && quotaManagement) {
+          userInfo.innerHTML = `
+            <p>用户ID: <strong>${userData.userId}</strong></p>
+            <p>用户名: <strong>${userData.username}</strong></p>
+            <p>角色: <strong>${userData.role}</strong></p>
+            <p>权限: <strong>${userData.permissions ? userData.permissions.join(', ') : '无'}</strong></p>
+          `;
+          
+          // 显示配额管理区域
+          quotaManagement.style.display = 'block';
+        }
       }
     });
   </script>

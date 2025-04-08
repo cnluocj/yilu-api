@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GenerateArticleRequest, WorkflowEvent } from '@/types';
+import { GenerateArticleRequest, WorkflowEvent, ServiceType } from '@/types';
 import { callDifyGenerateArticleAPI, getArticleDifyConfig } from '@/utils/dify';
+import { getUserQuota, useQuota } from '@/utils/quota'; // 引入配额管理功能
 
 // 用于在开发环境中使用的模拟数据
 const mockResponseData: WorkflowEvent[] = [
@@ -87,16 +88,43 @@ export async function POST(request: NextRequest) {
     console.log(`[${new Date().toISOString()}][${requestId}] 请求参数: ${JSON.stringify(body)}`);
     
     // 验证请求数据（基本验证）
-    if (!body.direction) {
+    if (!body.direction || !body.openid) {
       console.log(`[${new Date().toISOString()}][${requestId}] 验证失败: 缺少必要字段`);
       return NextResponse.json(
         { error: '缺少必要字段' },
         { status: 400 }
       );
     }
+    
+    // 检查用户配额是否足够（跳过模拟数据模式）
+    const useMockData = process.env.USE_MOCK_DATA === 'true';
+    const skipQuotaCheck = process.env.SKIP_QUOTA_CHECK === 'true'; // 对于测试环境，可配置跳过配额检查
+    
+    if (!useMockData && !skipQuotaCheck) {
+      try {
+        // 检查用户是否有足够的配额
+        console.log(`[${new Date().toISOString()}][${requestId}] 检查用户(${body.openid})的文章生成服务配额`);
+        const quota = await getUserQuota(body.openid, ServiceType.GENERATE_ARTICLE);
+        
+        if (!quota || quota.remaining_quota <= 0) {
+          console.error(`[${new Date().toISOString()}][${requestId}] 用户(${body.openid})的文章生成服务配额不足`);
+          return NextResponse.json(
+            { error: '服务配额不足，请联系管理员添加配额' },
+            { status: 403 }
+          );
+        }
+        
+        console.log(`[${new Date().toISOString()}][${requestId}] 用户(${body.openid})的文章生成服务配额充足，剩余: ${quota.remaining_quota}`);
+      } catch (quotaError) {
+        console.error(`[${new Date().toISOString()}][${requestId}] 检查配额时出错:`, quotaError);
+        return NextResponse.json(
+          { error: '检查服务配额时出错' },
+          { status: 500 }
+        );
+      }
+    }
 
     // 获取是否使用模拟数据的环境变量（在开发环境中可用于调试）
-    const useMockData = process.env.USE_MOCK_DATA === 'true';
     console.log(`[${new Date().toISOString()}][${requestId}] 使用模拟数据: ${useMockData}`);
     
     // 设置流响应
@@ -135,6 +163,21 @@ export async function POST(request: NextRequest) {
           { error: '生成文章Dify API密钥未配置，请在环境变量中设置ARTICLE_DIFY_API_KEY' },
           { status: 500 }
         );
+      }
+      
+      // 先消耗用户的配额（如果配置了跳过配额检查，则不消耗）
+      if (!skipQuotaCheck) {
+        try {
+          console.log(`[${new Date().toISOString()}][${requestId}] 消耗用户(${body.openid})的一次文章生成服务配额`);
+          const remainingQuota = await useQuota(body.openid, ServiceType.GENERATE_ARTICLE);
+          console.log(`[${new Date().toISOString()}][${requestId}] 配额消耗成功，剩余: ${remainingQuota}`);
+        } catch (quotaError) {
+          console.error(`[${new Date().toISOString()}][${requestId}] 消耗配额时出错:`, quotaError);
+          return NextResponse.json(
+            { error: '消耗服务配额时出错' },
+            { status: 500 }
+          );
+        }
       }
       
       // 调用Dify API并获取流响应

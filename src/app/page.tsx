@@ -136,6 +136,15 @@ USE_MOCK_DATA=false
                 API测试页面（标题生成与文章生成）
               </a>
             </li>
+            <li>
+              <a 
+                href="/test-unified.html#quota" 
+                target="_blank"
+                className="text-blue-400 hover:text-blue-300"
+              >
+                用户配额管理（查询与添加配额）
+              </a>
+            </li>
           </ul>
         </div>
       </div>

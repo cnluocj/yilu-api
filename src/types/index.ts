@@ -38,4 +38,35 @@ export interface DifyAPIConfig {
   apiKey: string;
   baseUrl: string;
   workflowId: string;
+}
+
+// 用户服务配额相关类型
+export interface UserServiceQuota {
+  id?: number;
+  user_id: string;
+  service_id: ServiceType;
+  remaining_quota: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// 服务类型枚举
+export enum ServiceType {
+  KP = 'kp', // 科普
+  GENERATE_ARTICLE = 'generate_article',
+  GENERATE_TITLE = 'generate_title'
+}
+
+// 添加服务配额请求
+export interface AddQuotaRequest {
+  user_id: string;
+  service_id: ServiceType;
+  amount: number;
+}
+
+// API响应标准格式
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
 } 

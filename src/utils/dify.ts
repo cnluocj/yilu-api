@@ -302,15 +302,9 @@ export async function callDifyGenerateArticleAPI(
   return new ReadableStream({
     async start(controller) {
       try {
-        // 将请求参数拼接成字符串，用换行符分隔
-        const msgContent = `${request.name}  ${request.unit}
-方向：${request.direction}
-${request.title || ''}`;
-        
         // 准备请求Dify API的数据
         const difyRequestBody = {
           inputs: {
-            // msg: msgContent,
             author: request.name,
             unit: request.unit,
             direction: request.direction,
