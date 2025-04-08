@@ -20,7 +20,7 @@ sequenceDiagram
     微信服务器-->>小程序: 支付结果通知
 
     %% 使用服务流程
-    小程序->>AI服务器: 请求访问令牌
+    小程序->>AI服务器: GET /api/tokens/openid (请求访问令牌)
     AI服务器->>小程序: 返回JWT令牌
     小程序->>AI服务器: GET /api/quota (查询剩余配额)
     AI服务器-->>小程序: 返回配额信息
