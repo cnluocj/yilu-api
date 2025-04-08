@@ -2,6 +2,49 @@ import { supabase } from './supabase';
 import { UserServiceQuota, ServiceType } from '@/types';
 
 /**
+ * 记录配额操作日志
+ * @param userId 用户ID
+ * @param serviceId 服务类型
+ * @param operation 操作类型 ('add' 或 'use')
+ * @param amount 操作数量(正数)
+ * @param balance 操作后的余额
+ * @param operator 操作者(可选)
+ */
+async function logQuotaOperation(
+  userId: string, 
+  serviceId: string, 
+  operation: 'add' | 'use', 
+  amount: number,
+  balance: number,
+  operator?: string
+): Promise<void> {
+  try {
+    console.log(`[${new Date().toISOString()}] 记录配额操作: ${userId} ${serviceId} ${operation} ${amount} 余额:${balance}`);
+    
+    const { error } = await supabase
+      .from('quota_logs')
+      .insert({
+        user_id: userId,
+        service_id: serviceId,
+        operation: operation,
+        amount: amount,
+        balance: balance,
+        operator: operator || 'system'
+      });
+    
+    if (error) {
+      console.error(`[${new Date().toISOString()}] 记录配额操作日志失败:`, error);
+      // 不抛出错误，避免影响主流程
+    } else {
+      console.log(`[${new Date().toISOString()}] 配额操作日志记录成功`);
+    }
+  } catch (err) {
+    console.error(`[${new Date().toISOString()}] 记录配额日志时出错:`, err);
+    // 不抛出错误，避免影响主流程
+  }
+}
+
+/**
  * 获取用户的服务配额
  * @param userId 用户ID
  * @param serviceId 服务类型
@@ -41,9 +84,15 @@ export async function getUserQuota(userId: string, serviceId: ServiceType): Prom
  * @param userId 用户ID
  * @param serviceId 服务类型
  * @param amount 添加的配额数量
+ * @param operator 操作者(可选)
  * @returns 更新后的用户服务配额
  */
-export async function addUserQuota(userId: string, serviceId: ServiceType, amount: number): Promise<UserServiceQuota> {
+export async function addUserQuota(
+  userId: string, 
+  serviceId: ServiceType, 
+  amount: number,
+  operator?: string
+): Promise<UserServiceQuota> {
   try {
     console.log(`[${new Date().toISOString()}] 为用户(${userId})添加${amount}次${serviceId}服务配额`);
     
@@ -68,6 +117,17 @@ export async function addUserQuota(userId: string, serviceId: ServiceType, amoun
       }
       
       console.log(`[${new Date().toISOString()}] 成功更新用户(${userId})的${serviceId}服务配额，现有配额: ${data.remaining_quota}`);
+      
+      // 记录配额添加操作
+      await logQuotaOperation(
+        userId, 
+        serviceId, 
+        'add', 
+        amount, 
+        data.remaining_quota,
+        operator
+      );
+      
       return data as UserServiceQuota;
     } else {
       // 如果不存在，则创建新记录
@@ -89,6 +149,17 @@ export async function addUserQuota(userId: string, serviceId: ServiceType, amoun
       }
       
       console.log(`[${new Date().toISOString()}] 成功创建用户(${userId})的${serviceId}服务配额，初始配额: ${amount}`);
+      
+      // 记录配额添加操作
+      await logQuotaOperation(
+        userId, 
+        serviceId, 
+        'add', 
+        amount, 
+        data.remaining_quota,
+        operator
+      );
+      
       return data as UserServiceQuota;
     }
   } catch (err) {
@@ -101,9 +172,14 @@ export async function addUserQuota(userId: string, serviceId: ServiceType, amoun
  * 使用一次服务配额
  * @param userId 用户ID
  * @param serviceId 服务类型
+ * @param operator 操作者(可选)
  * @returns 更新后的剩余配额，如果配额不足则抛出错误
  */
-export async function useQuota(userId: string, serviceId: ServiceType): Promise<number> {
+export async function useQuota(
+  userId: string, 
+  serviceId: ServiceType,
+  operator?: string
+): Promise<number> {
   try {
     console.log(`[${new Date().toISOString()}] 用户(${userId})使用一次${serviceId}服务`);
     
@@ -134,6 +210,17 @@ export async function useQuota(userId: string, serviceId: ServiceType): Promise<
     }
     
     console.log(`[${new Date().toISOString()}] 用户(${userId})成功使用一次${serviceId}服务，剩余配额: ${data.remaining_quota}`);
+    
+    // 记录配额使用操作
+    await logQuotaOperation(
+      userId, 
+      serviceId, 
+      'use', 
+      1, // 使用一次配额
+      data.remaining_quota,
+      operator
+    );
+    
     return data.remaining_quota;
   } catch (err) {
     console.error(`[${new Date().toISOString()}] 使用配额时出错:`, err);

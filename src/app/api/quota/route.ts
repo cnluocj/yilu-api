@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 添加用户配额
-    const updatedQuota = await addUserQuota(body.user_id, body.service_id, body.amount);
+    const updatedQuota = await addUserQuota(body.user_id, body.service_id, body.amount, auth.userId);
     console.log(`[${new Date().toISOString()}][${requestId}] 配额添加成功, 当前剩余: ${updatedQuota.remaining_quota}`);
     
     // 记录请求操作者

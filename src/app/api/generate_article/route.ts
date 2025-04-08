@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
                       if (fileCount > 0 && !skipQuotaCheck && quota) {
                         try {
                           console.log(`[${new Date().toISOString()}][${requestId}] 生成成功，文件数量: ${fileCount}，消耗用户(${body.openid})的一次文章生成服务配额`);
-                          const remainingQuota = await useQuota(body.openid, ServiceType.KP);
+                          const remainingQuota = await useQuota(body.openid, ServiceType.KP, `system-article-${requestId}`);
                           console.log(`[${new Date().toISOString()}][${requestId}] 配额消耗成功，剩余: ${remainingQuota}`);
                         } catch (quotaError) {
                           console.error(`[${new Date().toISOString()}][${requestId}] 消耗配额时出错:`, quotaError);
