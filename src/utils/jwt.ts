@@ -23,6 +23,8 @@ export interface JwtPayload {
   permissions?: string[]; // 可选权限列表
   iat?: number;          // 令牌签发时间
   exp?: number;          // 令牌过期时间
+  name?: string;         // 可选名称字段，用于标识令牌用途
+  openId?: string;       // 可选OpenID字段，用于微信等用户识别
 }
 
 /**
@@ -39,6 +41,31 @@ export function generateToken(payload: Omit<JwtPayload, 'iat' | 'exp'>): string 
     return token;
   } catch (error) {
     console.error(`[${new Date().toISOString()}] 生成JWT令牌失败:`, error);
+    throw new Error('无法生成授权令牌');
+  }
+}
+
+/**
+ * 生成自定义过期时间的JWT令牌
+ * @param payload JWT载荷数据
+ * @param expiresIn 过期时间表达式，如'1h', '7d', '365d'等，传入null表示永不过期
+ * @returns JWT令牌字符串
+ */
+export function generateTokenWithCustomExpiry(
+  payload: Omit<JwtPayload, 'iat' | 'exp'>, 
+  expiresIn: string | null
+): string {
+  try {
+    // 配置选项，如果expiresIn为null则不设置过期时间
+    const options = expiresIn ? { expiresIn } : {};
+    
+    // 生成令牌
+    const token = jwt.sign(payload, JWT_SECRET, options);
+    
+    console.log(`[${new Date().toISOString()}] 生成自定义有效期JWT令牌成功，用户ID: ${payload.userId}, 角色: ${payload.role}, 有效期: ${expiresIn || '永久'}`);
+    return token;
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] 生成自定义有效期JWT令牌失败:`, error);
     throw new Error('无法生成授权令牌');
   }
 }
@@ -95,7 +122,24 @@ export function generateSystemToken(): string {
 }
 
 /**
- * 生成管理员令牌
+ * 生成永久有效的系统服务令牌
+ * 用于支付服务等需要长期访问权限的系统服务
+ * @param name 令牌名称或用途，用于识别
+ * @returns 永久有效的系统服务JWT令牌
+ */
+export function generatePermanentSystemToken(name: string): string {
+  const systemId = `system-${name}-${Date.now()}`;
+  
+  return generateTokenWithCustomExpiry({
+    userId: systemId,
+    name: name, // 添加名称字段便于识别
+    role: UserRole.SYSTEM,
+    permissions: ['quota:read', 'quota:write']
+  }, null); // 传null表示永不过期
+}
+
+/**
+ * 管理员令牌
  * @param adminId 管理员ID
  * @returns 管理员JWT令牌
  */
@@ -118,4 +162,22 @@ export function generateCustomerToken(customerId: string): string {
     role: UserRole.CUSTOMER,
     permissions: ['quota:read']
   });
+}
+
+/**
+ * 基于OpenID生成客户令牌
+ * 用于小程序等场景，只需传入OpenID即可生成令牌
+ * @param openId 用户的OpenID
+ * @param expiresIn 过期时间，默认为1小时
+ * @returns 客户JWT令牌
+ */
+export function generateOpenIdToken(openId: string, expiresIn: string = '1h'): string {
+  const customerId = `wx-${openId}`;
+  
+  return generateTokenWithCustomExpiry({
+    userId: customerId,
+    openId: openId, // 存储原始OpenID
+    role: UserRole.CUSTOMER,
+    permissions: ['quota:read']
+  }, expiresIn);
 } 

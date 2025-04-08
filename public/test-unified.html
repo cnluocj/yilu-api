@@ -3,239 +3,175 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yilu API 测试</title>
+  <title>Yilu API 测试平台</title>
   <style>
     body {
       font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
-      max-width: 800px;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
-      background-color: #f5f5f5;
-      color: #333;
-      line-height: 1.6;
+      background-color: #f8f9fa;
+    }
+    
+    h1, h2, h3 {
+      color: #1a73e8;
     }
     
     h1 {
       text-align: center;
       margin-bottom: 30px;
-      color: #2c3e50;
-      border-bottom: 1px solid #eee;
       padding-bottom: 10px;
+      border-bottom: 1px solid #e0e0e0;
     }
     
-    /* 选项卡样式 */
     .tabs {
       display: flex;
-      border-bottom: 2px solid #eee;
-      margin-bottom: 20px;
+      list-style: none;
+      padding: 0;
+      margin: 0 0 20px 0;
+      border-bottom: 1px solid #e0e0e0;
+      overflow-x: auto;
+      white-space: nowrap;
     }
     
-    .tab-button {
+    .tabs li {
       padding: 10px 20px;
-      background: transparent;
-      border: none;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
       cursor: pointer;
-      font-size: 16px;
+      margin-right: 5px;
+      border: 1px solid #e0e0e0;
+      border-bottom: none;
+      border-radius: 5px 5px 0 0;
+      background-color: #f0f0f0;
+    }
+    
+    .tabs li.active {
+      background-color: #fff;
+      border-bottom: 1px solid #fff;
+      position: relative;
+      bottom: -1px;
       font-weight: bold;
-      color: #7f8c8d;
-      transition: all 0.3s;
-    }
-    
-    .tab-button:hover {
-      color: #3498db;
-    }
-    
-    .tab-button.active {
-      color: #3498db;
-      border-bottom: 2px solid #3498db;
+      color: #1a73e8;
     }
     
     .tab-content {
       display: none;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
     
     .tab-content.active {
       display: block;
     }
     
-    /* 表单样式 */
-    .form-container {
-      background-color: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    form {
       margin-bottom: 20px;
-    }
-    
-    .form-group {
-      margin-bottom: 15px;
     }
     
     label {
       display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
+      margin-bottom: 8px;
+      font-weight: 500;
     }
     
-    input, textarea, select {
+    input, select, textarea {
       width: 100%;
       padding: 10px;
+      margin-bottom: 15px;
       border: 1px solid #ddd;
       border-radius: 4px;
-      font-size: 16px;
       box-sizing: border-box;
     }
     
-    button.submit-button {
-      background-color: #3498db;
+    button {
+      background-color: #1a73e8;
       color: white;
       border: none;
-      padding: 12px 20px;
+      padding: 10px 20px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 16px;
-      font-weight: bold;
-      display: block;
-      margin: 20px auto;
-      transition: background-color 0.2s;
+      font-weight: 500;
     }
     
-    button.submit-button:hover {
-      background-color: #2980b9;
+    button:hover {
+      background-color: #105bbc;
     }
     
-    button.submit-button:disabled {
-      background-color: #bdc3c7;
+    button:disabled {
+      background-color: #a0a0a0;
       cursor: not-allowed;
     }
     
-    /* 进度条样式 */
-    .progress-container {
-      display: none;
-      margin-top: 30px;
-      margin-bottom: 30px;
-    }
-    
-    progress {
-      width: 100%;
-      height: 20px;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    
-    /* 结果样式 */
-    .titles-container {
-      display: none;
-      background-color: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-    }
-    
-    .title-item {
-      background: #f8f9fa;
-      padding: 12px 15px;
-      margin-bottom: 10px;
-      border-radius: 4px;
-      border-left: 4px solid #3498db;
-    }
-    
-    .file-container {
-      display: none;
-      background-color: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-    }
-    
-    .file-link {
-      display: block;
-      padding: 15px;
-      background-color: #e8f5fe;
-      margin-bottom: 15px;
-      border-radius: 5px;
-      color: #2980b9;
-      text-decoration: none;
-      font-weight: bold;
-      transition: background-color 0.2s;
-    }
-    
-    .file-link:hover {
-      background-color: #d1edff;
-    }
-    
-    .result-container {
-      margin-top: 20px;
-    }
-    
     .result {
-      background-color: #f9f9f9;
+      margin-top: 20px;
       padding: 15px;
-      border-radius: 5px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
       white-space: pre-wrap;
-      font-family: monospace;
-      max-height: 300px;
-      overflow-y: auto;
-      border: 1px solid #ddd;
+      overflow-x: auto;
     }
     
     .error {
-      color: #e74c3c;
-      font-weight: bold;
+      color: #d32f2f;
+      background-color: #ffebee;
       padding: 10px;
-      background-color: #fadbd8;
-      border-radius: 5px;
+      border-radius: 4px;
       margin-bottom: 15px;
     }
     
     .success {
-      color: #27ae60;
-      font-weight: bold;
+      color: #388e3c;
+      background-color: #e8f5e9;
       padding: 10px;
-      background-color: #d4f6e3;
-      border-radius: 5px;
+      border-radius: 4px;
       margin-bottom: 15px;
     }
     
-    /* 配额信息样式 */
-    .quota-info {
-      background-color: #fff;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-      display: none;
-    }
-    
-    .quota-value {
-      font-size: 24px;
-      font-weight: bold;
-      color: #2980b9;
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
     }
     
     .quota-service {
       font-weight: bold;
-      color: #7f8c8d;
+      color: #1a73e8;
+    }
+    
+    .quota-value {
+      font-weight: bold;
+      font-size: 1.2em;
+      color: #0f9d58;
     }
     
     .no-quota {
-      color: #e74c3c;
+      color: #f9a825;
+      font-style: italic;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+      border-left: 4px solid #1a73e8;
     }
   </style>
 </head>
 <body>
   <h1>Yilu API 测试平台</h1>
   
-  <!-- 选项卡头部 -->
-  <div class="tabs">
-    <button class="tab-button active" data-tab="titles">生成标题</button>
-    <button class="tab-button" data-tab="article">生成文章</button>
-    <button class="tab-button" data-tab="quota">配额管理</button>
-  </div>
+  <ul class="tabs">
+    <li id="tab-article" class="active">生成文章</li>
+    <li id="tab-title">生成标题</li>
+    <li id="tab-quota">配额管理</li>
+    <li id="tab-jwt">JWT测试</li>
+  </ul>
   
   <!-- 标题生成选项卡内容 -->
   <div id="titles-tab" class="tab-content active">
@@ -419,49 +355,110 @@
     </div>
   </div>
   
+  <!-- JWT测试选项卡内容 -->
+  <div id="jwt-tab" class="tab-content">
+    <div class="form-container">
+      <h2>JWT令牌生成</h2>
+      <form id="generate-token-form">
+        <div class="form-group">
+          <label for="jwt-user-id">用户ID:</label>
+          <input type="text" id="jwt-user-id" value="test-user-123">
+        </div>
+        
+        <div class="form-group">
+          <label for="jwt-role">用户角色:</label>
+          <select id="jwt-role">
+            <option value="admin">管理员</option>
+            <option value="system">系统服务</option>
+            <option value="customer">普通用户</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="jwt-expires">过期时间(秒):</label>
+          <input type="number" id="jwt-expires" value="3600" min="60">
+        </div>
+        
+        <button id="generate-token-btn" class="submit-button">生成令牌</button>
+      </form>
+      
+      <div id="generate-token-result" class="result-container"></div>
+    </div>
+    
+    <div class="form-container">
+      <h2>JWT令牌验证</h2>
+      <form id="verify-token-form">
+        <div class="form-group">
+          <label for="jwt-token">JWT令牌:</label>
+          <textarea id="jwt-token" rows="5" placeholder="输入JWT令牌"></textarea>
+        </div>
+        
+        <button id="verify-token-btn" class="submit-button">验证令牌</button>
+      </form>
+      
+      <div id="verify-token-result" class="result-container"></div>
+    </div>
+  </div>
+  
   <script>
     // 选项卡切换功能
     document.addEventListener('DOMContentLoaded', function() {
-      const tabButtons = document.querySelectorAll('.tab-button');
+      const tabMapping = {
+        'tab-title': 'titles-tab',
+        'tab-article': 'article-tab',
+        'tab-quota': 'quota-tab',
+        'tab-jwt': 'jwt-tab'
+      };
       
       // 切换到指定选项卡的函数
       function switchToTab(tabId) {
-        // 移除所有活动状态
-        tabButtons.forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        // 如果不是有效的选项卡ID，直接返回
+        if (!tabMapping[tabId]) return;
         
-        // 添加当前活动状态
-        const tabButton = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
-        if (tabButton) {
-          tabButton.classList.add('active');
-          const contentId = tabId + '-tab';
-          document.getElementById(contentId).classList.add('active');
-        }
+        // 移除所有选项卡的active类
+        document.querySelectorAll('.tabs li').forEach(tab => {
+          tab.classList.remove('active');
+        });
+        
+        // 隐藏所有内容
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        
+        // 激活当前选项卡
+        document.getElementById(tabId).classList.add('active');
+        
+        // 激活对应内容
+        const contentId = tabMapping[tabId];
+        document.getElementById(contentId).classList.add('active');
       }
       
-      // 为选项卡添加点击事件
-      tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-          const tabId = this.getAttribute('data-tab');
+      // 为每个选项卡添加点击事件
+      document.querySelectorAll('.tabs li').forEach(tab => {
+        tab.addEventListener('click', function() {
+          const tabId = this.id;
           // 更新URL（不刷新页面）
           window.history.pushState(null, '', `#${tabId}`);
           switchToTab(tabId);
         });
       });
       
-      // 检查URL片段并切换到相应选项卡
+      // 检查URL片段，如果有则切换到对应选项卡
       if (window.location.hash) {
-        const tabId = window.location.hash.substring(1); // 去掉#号
-        if (['titles', 'article', 'quota'].includes(tabId)) {
+        const tabId = window.location.hash.substring(1);
+        if (tabMapping[tabId]) {
           switchToTab(tabId);
         }
+      } else {
+        // 默认激活文章选项卡
+        switchToTab('tab-article');
       }
       
-      // 监听URL变化
+      // 监听hashchange事件
       window.addEventListener('hashchange', function() {
         if (window.location.hash) {
           const tabId = window.location.hash.substring(1);
-          if (['titles', 'article', 'quota'].includes(tabId)) {
+          if (tabMapping[tabId]) {
             switchToTab(tabId);
           }
         }
@@ -929,6 +926,121 @@
           // 显示配额管理区域
           quotaManagement.style.display = 'block';
         }
+      }
+    });
+
+    // JWT测试功能
+    document.addEventListener('DOMContentLoaded', function() {
+      // 获取表单和结果区域
+      const generateTokenForm = document.getElementById('generate-token-form');
+      const verifyTokenForm = document.getElementById('verify-token-form');
+      const generateTokenResult = document.getElementById('generate-token-result');
+      const verifyTokenResult = document.getElementById('verify-token-result');
+      
+      if (generateTokenForm) {
+        // 为生成令牌表单添加提交事件
+        generateTokenForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const userId = document.getElementById('jwt-user-id').value;
+          const role = document.getElementById('jwt-role').value;
+          const expiresIn = document.getElementById('jwt-expires').value + 's'; // 将秒数转换为JWT格式
+          
+          // 禁用生成按钮
+          const generateButton = document.getElementById('generate-token-btn');
+          generateButton.disabled = true;
+          generateButton.textContent = '处理中...';
+          
+          generateTokenResult.style.display = 'none';
+          
+          try {
+            // 发送请求生成令牌
+            const response = await fetch('/api/jwt/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId, role, expiresIn })
+            });
+            
+            const data = await response.json();
+            
+            // 显示结果
+            generateTokenResult.style.display = 'block';
+            
+            if (data.error) {
+              generateTokenResult.innerHTML = `<div class="error">${data.error}</div>`;
+            } else {
+              const expiryDate = new Date(data.expiresAt * 1000).toLocaleString();
+              
+              generateTokenResult.innerHTML = `
+                <div class="success">令牌生成成功!</div>
+                <p><strong>令牌:</strong></p>
+                <pre>${data.token}</pre>
+                <p><strong>过期时间:</strong> ${expiryDate}</p>
+              `;
+              
+              // 自动填充到验证表单
+              if (document.getElementById('jwt-token')) {
+                document.getElementById('jwt-token').value = data.token;
+              }
+            }
+          } catch (error) {
+            generateTokenResult.style.display = 'block';
+            generateTokenResult.innerHTML = `<div class="error">请求失败: ${error.message}</div>`;
+          } finally {
+            // 重新启用生成按钮
+            generateButton.disabled = false;
+            generateButton.textContent = '生成令牌';
+          }
+        });
+      }
+      
+      if (verifyTokenForm) {
+        // 为验证令牌表单添加提交事件
+        verifyTokenForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const token = document.getElementById('jwt-token').value;
+          
+          // 禁用验证按钮
+          const verifyButton = document.getElementById('verify-token-btn');
+          verifyButton.disabled = true;
+          verifyButton.textContent = '处理中...';
+          
+          verifyTokenResult.style.display = 'none';
+          
+          try {
+            // 发送请求验证令牌
+            const response = await fetch('/api/jwt/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token })
+            });
+            
+            const data = await response.json();
+            
+            // 显示结果
+            verifyTokenResult.style.display = 'block';
+            
+            if (data.error) {
+              verifyTokenResult.innerHTML = `<div class="error">${data.error}</div>`;
+            } else if (!data.valid) {
+              verifyTokenResult.innerHTML = `<div class="error">令牌无效或已过期</div>`;
+            } else {
+              verifyTokenResult.innerHTML = `
+                <div class="success">令牌验证成功!</div>
+                <p><strong>令牌内容:</strong></p>
+                <pre>${JSON.stringify(data.payload, null, 2)}</pre>
+              `;
+            }
+          } catch (error) {
+            verifyTokenResult.style.display = 'block';
+            verifyTokenResult.innerHTML = `<div class="error">请求失败: ${error.message}</div>`;
+          } finally {
+            // 重新启用验证按钮
+            verifyButton.disabled = false;
+            verifyButton.textContent = '验证令牌';
+          }
+        });
       }
     });
   </script>

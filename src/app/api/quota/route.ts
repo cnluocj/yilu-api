@@ -12,7 +12,9 @@ import { verifyToken, UserRole } from '@/utils/jwt';
  */
 function validateAuth(request: NextRequest, requiredPermission: string): { 
   isAuthorized: boolean; 
-  userId?: string; 
+  userId?: string;
+  openId?: string;
+  role?: UserRole;
   error?: string 
 } {
   try {
@@ -35,7 +37,12 @@ function validateAuth(request: NextRequest, requiredPermission: string): {
     
     // 检查是否为管理员或系统角色（这些角色具有所有权限）
     if (payload.role === UserRole.ADMIN || payload.role === UserRole.SYSTEM) {
-      return { isAuthorized: true, userId: payload.userId };
+      return { 
+        isAuthorized: true, 
+        userId: payload.userId,
+        openId: payload.openId,
+        role: payload.role 
+      };
     }
     
     // 检查特定权限
@@ -45,7 +52,12 @@ function validateAuth(request: NextRequest, requiredPermission: string): {
       return { isAuthorized: false, error: '权限不足' };
     }
     
-    return { isAuthorized: true, userId: payload.userId };
+    return { 
+      isAuthorized: true, 
+      userId: payload.userId,
+      openId: payload.openId,
+      role: payload.role 
+    };
   } catch (error) {
     console.error(`[${new Date().toISOString()}] 验证授权时出错:`, error);
     return { isAuthorized: false, error: '授权验证失败' };
@@ -103,6 +115,27 @@ export async function GET(request: NextRequest) {
         { success: false, error: `无效的服务类型: ${serviceId}` },
         { status: 400 }
       );
+    }
+    
+    // 权限检查: 普通用户(CUSTOMER)只能查询自己的配额
+    if (auth.role === UserRole.CUSTOMER) {
+      // 如果是使用OpenID生成的令牌，验证用户只能查询自己的配额
+      if (auth.openId && userId !== `wx-${auth.openId}`) {
+        console.error(`[${new Date().toISOString()}][${requestId}] 权限错误: 用户只能查询自己的配额, tokenUserId: ${auth.userId}, requestedUserId: ${userId}`);
+        return NextResponse.json<ApiResponse<null>>(
+          { success: false, error: '权限不足: 只能查询自己的配额信息' },
+          { status: 403 }
+        );
+      }
+      
+      // 如果是常规用户令牌，同样验证
+      if (!auth.openId && userId !== auth.userId) {
+        console.error(`[${new Date().toISOString()}][${requestId}] 权限错误: 用户只能查询自己的配额, tokenUserId: ${auth.userId}, requestedUserId: ${userId}`);
+        return NextResponse.json<ApiResponse<null>>(
+          { success: false, error: '权限不足: 只能查询自己的配额信息' },
+          { status: 403 }
+        );
+      }
     }
     
     // 查询用户配额
@@ -164,6 +197,27 @@ export async function POST(request: NextRequest) {
         { success: false, error: '缺少必要字段或格式错误' },
         { status: 400 }
       );
+    }
+    
+    // 权限检查: 普通用户(CUSTOMER)只能为自己添加配额
+    if (auth.role === UserRole.CUSTOMER) {
+      // 如果是使用OpenID生成的令牌，验证用户只能为自己添加配额
+      if (auth.openId && body.user_id !== `wx-${auth.openId}`) {
+        console.error(`[${new Date().toISOString()}][${requestId}] 权限错误: 用户只能为自己添加配额, tokenUserId: ${auth.userId}, requestedUserId: ${body.user_id}`);
+        return NextResponse.json<ApiResponse<null>>(
+          { success: false, error: '权限不足: 只能为自己添加配额' },
+          { status: 403 }
+        );
+      }
+      
+      // 如果是常规用户令牌，同样验证
+      if (!auth.openId && body.user_id !== auth.userId) {
+        console.error(`[${new Date().toISOString()}][${requestId}] 权限错误: 用户只能为自己添加配额, tokenUserId: ${auth.userId}, requestedUserId: ${body.user_id}`);
+        return NextResponse.json<ApiResponse<null>>(
+          { success: false, error: '权限不足: 只能为自己添加配额' },
+          { status: 403 }
+        );
+      }
     }
     
     // 验证服务类型是否有效

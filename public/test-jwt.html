@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT 认证测试 - Yilu API</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .card {
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .result {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .token-info {
+            background: #f1f8e9;
+            border: 1px solid #c5e1a5;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        .error {
+            color: #e74c3c;
+            background: #fdecea;
+            border: 1px solid #f5b7b1;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .success {
+            color: #27ae60;
+            background: #e9f7ef;
+            border: 1px solid #a9dfbf;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .nav-link {
+            margin-left: 15px;
+            color: #3498db;
+            text-decoration: none;
+        }
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+        .username-display {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Yilu API - JWT 认证测试</h1>
+        <div>
+            <a href="test-unified.html" class="nav-link">返回测试首页</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>JWT 用户登录</h2>
+        <div class="form-group">
+            <label for="username">用户名</label>
+            <input type="text" id="username" placeholder="输入用户名" value="admin">
+        </div>
+        <div class="form-group">
+            <label for="password">密码</label>
+            <input type="password" id="password" placeholder="输入密码" value="admin123">
+        </div>
+        <button class="btn" id="login-btn">登录</button>
+        <div id="login-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="card" id="auth-info" style="display: none;">
+        <h2>认证信息</h2>
+        <p>当前用户: <span id="current-user" class="username-display"></span></p>
+        <p>角色: <span id="user-role"></span></p>
+        <p>权限: <span id="user-permissions"></span></p>
+        <div class="form-group">
+            <label for="jwt-token">JWT 令牌</label>
+            <textarea id="jwt-token" rows="3" readonly></textarea>
+        </div>
+        <h3>令牌解析</h3>
+        <div id="token-info" class="token-info"></div>
+        <button class="btn" id="logout-btn" style="margin-top: 15px;">注销</button>
+    </div>
+
+    <div class="card">
+        <h2>测试受保护资源</h2>
+        <p>使用JWT令牌访问用户配额信息。</p>
+        <button class="btn" id="fetch-quota-btn" disabled>获取配额信息</button>
+        <div id="quota-result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        // 基础URL路径
+        const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? ''  // 本地开发
+            : '';  // 生产环境路径
+
+        // DOM元素
+        const loginBtn = document.getElementById('login-btn');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const loginResult = document.getElementById('login-result');
+        const authInfo = document.getElementById('auth-info');
+        const currentUser = document.getElementById('current-user');
+        const userRole = document.getElementById('user-role');
+        const userPermissions = document.getElementById('user-permissions');
+        const jwtToken = document.getElementById('jwt-token');
+        const tokenInfo = document.getElementById('token-info');
+        const logoutBtn = document.getElementById('logout-btn');
+        const fetchQuotaBtn = document.getElementById('fetch-quota-btn');
+        const quotaResult = document.getElementById('quota-result');
+
+        // 检查是否已登录
+        checkAuthStatus();
+
+        // 登录按钮点击事件
+        loginBtn.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!username || !password) {
+                showError(loginResult, '请输入用户名和密码');
+                return;
+            }
+
+            try {
+                loginResult.style.display = 'block';
+                loginResult.innerHTML = '登录中...';
+                
+                const response = await fetch(`${BASE_URL}/api/auth`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok || !data.success) {
+                    showError(loginResult, data.error || '登录失败');
+                    return;
+                }
+
+                // 存储令牌和用户信息
+                localStorage.setItem('jwt_token', data.data.token);
+                localStorage.setItem('user_info', JSON.stringify(data.data.user));
+                
+                // 显示成功消息
+                showSuccess(loginResult, '登录成功!');
+                
+                // 更新UI显示认证信息
+                setTimeout(() => {
+                    checkAuthStatus();
+                }, 1000);
+
+            } catch (error) {
+                showError(loginResult, `请求错误: ${error.message}`);
+            }
+        });
+
+        // 注销按钮点击事件
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user_info');
+            checkAuthStatus();
+            showSuccess(loginResult, '已注销登录');
+            loginResult.style.display = 'block';
+        });
+
+        // 获取配额按钮点击事件
+        fetchQuotaBtn.addEventListener('click', async () => {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) {
+                showError(quotaResult, '未登录，请先登录');
+                return;
+            }
+
+            try {
+                quotaResult.style.display = 'block';
+                quotaResult.innerHTML = '加载中...';
+                
+                const response = await fetch(`${BASE_URL}/api/quota`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok || !data.success) {
+                    showError(quotaResult, data.error || '获取配额失败');
+                    return;
+                }
+
+                // 显示配额信息
+                quotaResult.innerHTML = JSON.stringify(data, null, 2);
+                quotaResult.classList.remove('error');
+                
+            } catch (error) {
+                showError(quotaResult, `请求错误: ${error.message}`);
+            }
+        });
+
+        // 检查认证状态
+        function checkAuthStatus() {
+            const token = localStorage.getItem('jwt_token');
+            const userInfoStr = localStorage.getItem('user_info');
+            
+            if (token && userInfoStr) {
+                try {
+                    // 显示认证信息区域
+                    authInfo.style.display = 'block';
+                    loginResult.style.display = 'none';
+                    
+                    // 解析用户信息
+                    const userInfo = JSON.parse(userInfoStr);
+                    
+                    // 更新页面显示
+                    currentUser.textContent = userInfo.username;
+                    userRole.textContent = userInfo.role;
+                    userPermissions.textContent = userInfo.permissions.join(', ');
+                    jwtToken.value = token;
+                    
+                    // 解析并显示令牌信息
+                    const tokenParts = token.split('.');
+                    if (tokenParts.length === 3) {
+                        try {
+                            const payload = JSON.parse(atob(tokenParts[1]));
+                            tokenInfo.innerHTML = `<strong>载荷内容:</strong><br>
+                                用户ID: ${payload.userId}<br>
+                                角色: ${payload.role}<br>
+                                权限: ${payload.permissions ? payload.permissions.join(', ') : '无'}<br>
+                                签发时间: ${payload.iat ? new Date(payload.iat * 1000).toLocaleString() : '未知'}<br>
+                                过期时间: ${payload.exp ? new Date(payload.exp * 1000).toLocaleString() : '未知'}`;
+                        } catch (e) {
+                            tokenInfo.innerHTML = `<div class="error">无法解析令牌载荷: ${e.message}</div>`;
+                        }
+                    } else {
+                        tokenInfo.innerHTML = `<div class="error">令牌格式不正确</div>`;
+                    }
+                    
+                    // 启用获取配额按钮
+                    fetchQuotaBtn.disabled = false;
+                    
+                } catch (e) {
+                    // 解析用户信息失败，清除存储
+                    console.error('解析用户信息失败:', e);
+                    localStorage.removeItem('jwt_token');
+                    localStorage.removeItem('user_info');
+                    authInfo.style.display = 'none';
+                    fetchQuotaBtn.disabled = true;
+                }
+            } else {
+                // 未登录状态
+                authInfo.style.display = 'none';
+                fetchQuotaBtn.disabled = true;
+            }
+        }
+
+        // 显示错误信息
+        function showError(element, message) {
+            element.innerHTML = `<div class="error">${message}</div>`;
+            element.style.display = 'block';
+        }
+
+        // 显示成功信息
+        function showSuccess(element, message) {
+            element.innerHTML = `<div class="success">${message}</div>`;
+            element.style.display = 'block';
+        }
+    </script>
+</body>
+</html> 
