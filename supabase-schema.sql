@@ -27,24 +27,6 @@ CREATE POLICY "Restrict insert" ON public.user_service_quota FOR INSERT WITH CHE
 -- 注意: 在实际部署时，你可能需要为特定的服务账户或后台管理系统添加更多权限
 -- 例如添加管理员角色和相应的策略
 
--- 创建用户服务配额表
-CREATE TABLE IF NOT EXISTS user_service_quota (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id TEXT NOT NULL,
-  service_id TEXT NOT NULL,
-  remaining_quota INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id, service_id)
-);
-
--- 添加安全策略
-ALTER TABLE user_service_quota ENABLE ROW LEVEL SECURITY;
-
--- 配额只能由服务器通过密钥访问，不允许匿名访问
-CREATE POLICY "Allow server-side access" ON user_service_quota
-FOR ALL USING (true);
-
 -- 创建配额操作记录表
 CREATE TABLE IF NOT EXISTS quota_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
