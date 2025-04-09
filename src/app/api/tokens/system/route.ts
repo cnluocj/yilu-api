@@ -8,22 +8,6 @@ const supabaseUrl = process.env.SUPABASE_URL || 'http://ai.jinzhibang.com.cn:800
 const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTl9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// IP白名单检查
-function isIPAllowed(ip: string | null): boolean {
-  if (!ip) return false;
-  console.log(`检查IP授权: ${ip}`);
-  
-  // 本地开发环境总是允许
-  if (ip === '127.0.0.1' || ip === 'localhost' || ip === '::1') {
-    return true;
-  }
-  
-  // 从环境变量获取允许的IP列表
-  const allowedIPs = process.env.ALLOWED_IPS?.split(',') || [];
-  return allowedIPs.includes(ip);
-}
-
-// 验证管理员权限
 function isAdmin(token: string | null): boolean {
   if (!token) return false;
   
@@ -37,14 +21,6 @@ function isAdmin(token: string | null): boolean {
 
 // 接口验证
 function validateAccess(request: NextRequest): { allowed: boolean; message: string } {
-  // 获取请求IP
-  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip');
-  
-  // 检查IP白名单
-  if (!isIPAllowed(ip)) {
-    return { allowed: false, message: '请求IP未授权' };
-  }
-  
   // 检查管理员令牌
   const authHeader = request.headers.get('Authorization');
   const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
