@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
 import { 
-  generateAdminToken, 
-  generateCustomerToken, 
-  generateSystemToken, 
+  createAdminToken, 
+  createCustomerToken, 
+  createSystemToken, 
   UserRole 
 } from '@/utils/jwt';
 
@@ -87,16 +87,16 @@ export async function POST(request: NextRequest) {
     
     switch (user.role) {
       case UserRole.ADMIN:
-        token = generateAdminToken(user.userId);
+        token = createAdminToken(user.userId);
         break;
       case UserRole.CUSTOMER:
-        token = generateCustomerToken(user.userId);
+        token = createCustomerToken(user.userId);
         break;
       case UserRole.SYSTEM:
-        token = generateSystemToken();
+        token = createSystemToken(user.userId);
         break;
       default:
-        token = generateCustomerToken(user.userId);
+        token = createCustomerToken(user.userId);
     }
     
     console.log(`[${new Date().toISOString()}][${requestId}] 用户 ${user.username} 登录成功`);

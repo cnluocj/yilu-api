@@ -19,20 +19,19 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
  */
 export async function checkSupabaseConnection(): Promise<boolean> {
   try {
-    // 尝试一个简单的查询来检查连接
-    console.log(`[${new Date().toISOString()}] 尝试连接Supabase...`);
-    const { data, error } = await supabase.from('user_service_quota').select('*');
+    console.log(`[${new Date().toISOString()}] 检查 Supabase 连接状态...`);
+    
+    const { error } = await supabase.from('user_service_quota').select('count').limit(1);
     
     if (error) {
-      console.error(`[${new Date().toISOString()}] Supabase连接错误:`, error);
-      console.error(`[${new Date().toISOString()}] 错误代码: ${error.code}, 消息: ${error.message}, 详情: ${error.details || '无'}`);
+      console.error(`[${new Date().toISOString()}] Supabase 连接检查失败:`, error);
       return false;
     }
     
-    console.log(`[${new Date().toISOString()}] Supabase连接成功`);
+    console.log(`[${new Date().toISOString()}] Supabase 连接正常`);
     return true;
   } catch (err) {
-    console.error(`[${new Date().toISOString()}] 检查Supabase连接时出错:`, err);
+    console.error(`[${new Date().toISOString()}] 检查 Supabase 连接时出错:`, err);
     return false;
   }
 } 

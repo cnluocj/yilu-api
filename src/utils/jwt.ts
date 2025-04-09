@@ -1,183 +1,152 @@
-// 导入jsonwebtoken库，使用require避开TypeScript类型问题
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports */
+// 使用require导入以避免TypeScript类型问题
 const jwt = require('jsonwebtoken');
 
-// JWT 密钥，实际应用中应从环境变量获取
-// 在生产环境中绝对不要硬编码这个值，应通过环境变量设置
+// JWT密钥 - 生产环境应从环境变量获取
 const JWT_SECRET = process.env.JWT_SECRET || 'your-very-secure-jwt-secret-key-for-yilu-api-quota-management';
 
-// 令牌有效期，默认1小时
-const TOKEN_EXPIRY = process.env.JWT_EXPIRY || '1h';
+// JWT过期时间 - 默认1小时
+const JWT_EXPIRY = process.env.JWT_EXPIRY || '1h';
 
-// 定义用户角色
+// 用户角色枚举
 export enum UserRole {
-  ADMIN = 'admin',      // 管理员角色
-  CUSTOMER = 'customer', // 客户角色
-  SYSTEM = 'system'     // 系统服务角色
+  ADMIN = 'admin',     // 管理员
+  SYSTEM = 'system',   // 系统服务
+  CUSTOMER = 'customer' // 普通用户
 }
 
-// JWT 载荷接口
+// JWT载荷接口
 export interface JwtPayload {
-  userId: string;        // 用户ID
-  role: UserRole;        // 用户角色
-  permissions?: string[]; // 可选权限列表
-  iat?: number;          // 令牌签发时间
-  exp?: number;          // 令牌过期时间
-  name?: string;         // 可选名称字段，用于标识令牌用途
-  openId?: string;       // 可选OpenID字段，用于微信等用户识别
+  userId: string;
+  openId?: string;     // 微信OpenID
+  role: UserRole;
+  permissions?: string[]; // 权限列表
 }
 
 /**
- * 生成 JWT 令牌
- * @param payload JWT载荷数据
- * @returns JWT令牌字符串
+ * 生成JWT令牌
+ * @param payload 令牌载荷
+ * @param expiresIn 过期时间
+ * @returns JWT令牌
  */
-export function generateToken(payload: Omit<JwtPayload, 'iat' | 'exp'>): string {
+export function generateToken(payload: JwtPayload, expiresIn: string = JWT_EXPIRY): string {
   try {
-    // 使用require导入的jwt没有TypeScript类型检查问题
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+    // 确保payload包含了必要的字段
+    if (!payload.userId || !payload.role) {
+      throw new Error('生成JWT令牌需要指定userId和role');
+    }
     
-    console.log(`[${new Date().toISOString()}] 生成JWT令牌成功，用户ID: ${payload.userId}, 角色: ${payload.role}`);
+    // 自动根据角色设置权限
+    if (!payload.permissions) {
+      payload.permissions = getDefaultPermissions(payload.role);
+    }
+    
+    // 生成JWT
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn });
+    console.log(`[${new Date().toISOString()}] 成功为用户 ${payload.userId} 生成JWT令牌，角色: ${payload.role}`);
+    
     return token;
-  } catch (error) {
-    console.error(`[${new Date().toISOString()}] 生成JWT令牌失败:`, error);
-    throw new Error('无法生成授权令牌');
+  } catch (error: unknown) {
+    console.error(`[${new Date().toISOString()}] 生成JWT令牌出错:`, error);
+    throw error;
   }
 }
 
 /**
- * 生成自定义过期时间的JWT令牌
- * @param payload JWT载荷数据
- * @param expiresIn 过期时间表达式，如'1h', '7d', '365d'等，传入null表示永不过期
- * @returns JWT令牌字符串
- */
-export function generateTokenWithCustomExpiry(
-  payload: Omit<JwtPayload, 'iat' | 'exp'>, 
-  expiresIn: string | null
-): string {
-  try {
-    // 配置选项，如果expiresIn为null则不设置过期时间
-    const options = expiresIn ? { expiresIn } : {};
-    
-    // 生成令牌
-    const token = jwt.sign(payload, JWT_SECRET, options);
-    
-    console.log(`[${new Date().toISOString()}] 生成自定义有效期JWT令牌成功，用户ID: ${payload.userId}, 角色: ${payload.role}, 有效期: ${expiresIn || '永久'}`);
-    return token;
-  } catch (error) {
-    console.error(`[${new Date().toISOString()}] 生成自定义有效期JWT令牌失败:`, error);
-    throw new Error('无法生成授权令牌');
-  }
-}
-
-/**
- * 验证 JWT 令牌
- * @param token JWT令牌字符串
- * @returns 解码后的载荷数据，如果验证失败则返回null
+ * 验证JWT令牌
+ * @param token JWT令牌
+ * @returns 如果验证成功返回解码后的载荷，否则返回null
  */
 export function verifyToken(token: string): JwtPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const decoded = jwt.verify(token, JWT_SECRET);
+    console.log(`[${new Date().toISOString()}] JWT令牌验证成功，用户ID: ${decoded.userId}`);
+    return decoded as JwtPayload;
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'TokenExpiredError') {
+      console.error(`[${new Date().toISOString()}] JWT令牌已过期`);
+    } else {
+      console.error(`[${new Date().toISOString()}] JWT令牌验证失败:`, error);
+    }
+    return null;
+  }
+}
+
+/**
+ * 刷新JWT令牌
+ * @param token 旧的JWT令牌
+ * @param expiresIn 新令牌的过期时间
+ * @returns 新的JWT令牌，如果旧令牌无效则返回null
+ */
+export function refreshToken(token: string, expiresIn: string = JWT_EXPIRY): string | null {
+  try {
+    // 验证旧令牌
+    const decoded = jwt.verify(token, JWT_SECRET, { ignoreExpiration: true });
     
-    console.log(`[${new Date().toISOString()}] JWT令牌验证成功，用户ID: ${decoded.userId}, 角色: ${decoded.role}`);
-    return decoded;
-  } catch (error) {
-    console.error(`[${new Date().toISOString()}] JWT令牌验证失败:`, error);
+    // 移除旧的时间戳
+    const { userId, role, permissions, openId } = decoded;
+    
+    // 生成新令牌
+    return generateToken({ userId, role, permissions, openId }, expiresIn);
+  } catch (error: unknown) {
+    console.error(`[${new Date().toISOString()}] 刷新JWT令牌失败:`, error);
     return null;
   }
 }
 
 /**
- * 刷新 JWT 令牌
- * @param token 现有的JWT令牌
- * @returns 新的JWT令牌，如果原令牌无效则返回null
+ * 获取角色的默认权限
+ * @param role 用户角色
+ * @returns 权限列表
  */
-export function refreshToken(token: string): string | null {
-  const payload = verifyToken(token);
-  
-  if (!payload) {
-    return null;
+function getDefaultPermissions(role: UserRole): string[] {
+  switch (role) {
+    case UserRole.ADMIN:
+      return ['quota:read', 'quota:write', 'quota:delete', 'user:manage'];
+    case UserRole.SYSTEM:
+      return ['quota:read', 'quota:write'];
+    case UserRole.CUSTOMER:
+      return ['quota:read'];
+    default:
+      return [];
   }
-  
-  // 创建新的载荷，去除原来的iat和exp字段
-  const { iat, exp, ...restPayload } = payload;
-  
-  // 生成新令牌
-  return generateToken(restPayload);
 }
 
 /**
- * 生成系统服务令牌
- * 用于系统内部服务间通信，通常具有更高权限
- * @returns 系统服务JWT令牌
+ * 创建系统服务令牌
+ * @param serviceId 服务ID
+ * @returns JWT令牌
  */
-export function generateSystemToken(): string {
-  const systemId = `system-${Date.now()}`;
-  
+export function createSystemToken(serviceId: string): string {
   return generateToken({
-    userId: systemId,
+    userId: `system-${serviceId}`,
     role: UserRole.SYSTEM,
     permissions: ['quota:read', 'quota:write']
-  });
+  }, '30d'); // 系统令牌有效期较长
 }
 
 /**
- * 生成永久有效的系统服务令牌
- * 用于支付服务等需要长期访问权限的系统服务
- * @param name 令牌名称或用途，用于识别
- * @returns 永久有效的系统服务JWT令牌
- */
-export function generatePermanentSystemToken(name: string): string {
-  const systemId = `system-${name}-${Date.now()}`;
-  
-  return generateTokenWithCustomExpiry({
-    userId: systemId,
-    name: name, // 添加名称字段便于识别
-    role: UserRole.SYSTEM,
-    permissions: ['quota:read', 'quota:write']
-  }, null); // 传null表示永不过期
-}
-
-/**
- * 管理员令牌
+ * 创建管理员令牌
  * @param adminId 管理员ID
- * @returns 管理员JWT令牌
+ * @returns JWT令牌
  */
-export function generateAdminToken(adminId: string): string {
+export function createAdminToken(adminId: string): string {
   return generateToken({
     userId: adminId,
-    role: UserRole.ADMIN,
-    permissions: ['quota:read', 'quota:write', 'quota:delete', 'user:manage']
-  });
+    role: UserRole.ADMIN
+  }, '12h'); // 管理员令牌有效期12小时
 }
 
 /**
- * 生成客户令牌
- * @param customerId 客户ID
- * @returns 客户JWT令牌
+ * 创建用户令牌
+ * @param userId 用户ID
+ * @param openId 微信OpenID (可选)
+ * @returns JWT令牌
  */
-export function generateCustomerToken(customerId: string): string {
+export function createCustomerToken(userId: string, openId?: string): string {
   return generateToken({
-    userId: customerId,
-    role: UserRole.CUSTOMER,
-    permissions: ['quota:read']
-  });
-}
-
-/**
- * 基于OpenID生成客户令牌
- * 用于小程序等场景，只需传入OpenID即可生成令牌
- * @param openId 用户的OpenID
- * @param expiresIn 过期时间，默认为1小时
- * @returns 客户JWT令牌
- */
-export function generateOpenIdToken(openId: string, expiresIn: string = '1h'): string {
-  const customerId = `wx-${openId}`;
-  
-  return generateTokenWithCustomExpiry({
-    userId: customerId,
-    openId: openId, // 存储原始OpenID
-    role: UserRole.CUSTOMER,
-    permissions: ['quota:read']
-  }, expiresIn);
+    userId,
+    openId,
+    role: UserRole.CUSTOMER
+  }, '24h'); // 用户令牌有效期24小时
 } 

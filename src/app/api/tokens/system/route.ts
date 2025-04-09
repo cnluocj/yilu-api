@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { ApiResponse } from '@/types';
-import { generatePermanentSystemToken, verifyToken, UserRole } from '@/utils/jwt';
+import { verifyToken, UserRole, createSystemToken } from '@/utils/jwt';
 
 // Supabase 客户端
 const supabaseUrl = process.env.SUPABASE_URL || 'http://ai.jinzhibang.com.cn:8000';
@@ -11,9 +11,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // IP白名单检查
 function isIPAllowed(ip: string | null): boolean {
   if (!ip) return false;
+  console.log(`检查IP授权: ${ip}`);
   
-  // 本地开发环境IP始终允许
-  if (ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+  // 本地开发环境总是允许
+  if (ip === '127.0.0.1' || ip === 'localhost' || ip === '::1') {
     return true;
   }
   
@@ -29,7 +30,7 @@ function isAdmin(token: string | null): boolean {
   try {
     const payload = verifyToken(token);
     return payload?.role === UserRole.ADMIN;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -77,18 +78,10 @@ export async function GET(request: NextRequest) {
     }
     
     // 从数据库获取系统令牌
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('system_tokens')
       .select('*')
       .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('获取系统令牌失败:', error);
-      return NextResponse.json<ApiResponse<null>>(
-        { success: false, error: `获取系统令牌失败: ${error.message}` },
-        { status: 500 }
-      );
-    }
     
     return NextResponse.json<ApiResponse<SystemToken[]>>(
       { success: true, data: data || [] },
@@ -128,8 +121,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // 生成永久系统令牌
-    const token = generatePermanentSystemToken(name);
+    // 生成系统令牌
+    const token = createSystemToken(name);
     
     // 保存令牌到数据库
     const { data, error } = await supabase

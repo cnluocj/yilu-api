@@ -1,51 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/utils/jwt';
-import { ApiResponse } from '@/types';
 
 /**
- * 验证JWT令牌
- * POST /api/jwt/verify
- * 请求体：{ token: string }
- * 响应：{ valid: boolean, payload?: object } 或 { error: string }
+ * JWT令牌验证接口
  */
 export async function POST(request: NextRequest) {
   try {
-    // 生成请求ID用于跟踪
-    const requestId = `jwt-verify-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    console.log(`[${new Date().toISOString()}][${requestId}] 收到验证JWT令牌请求`);
-    
-    // 解析请求体
+    // 解析请求体获取令牌
     const body = await request.json();
     const { token } = body;
     
+    // 验证必要参数
     if (!token) {
-      console.error(`[${new Date().toISOString()}][${requestId}] 缺少令牌参数`);
       return NextResponse.json(
-        { error: '缺少令牌参数' },
+        { error: '缺少token参数' },
         { status: 400 }
       );
     }
     
+    // 验证令牌
     const payload = verifyToken(token);
     
-    if (!payload) {
-      console.error(`[${new Date().toISOString()}][${requestId}] 令牌无效或已过期`);
-      return NextResponse.json({ 
-        valid: false, 
-        error: '令牌无效或已过期' 
-      });
+    // 返回验证结果
+    if (payload) {
+      return NextResponse.json(
+        { valid: true, payload },
+        { status: 200 }
+      );
+    } else {
+      return NextResponse.json(
+        { valid: false, error: '令牌无效或已过期' },
+        { status: 200 } // 返回200但指示令牌无效
+      );
     }
-    
-    console.log(`[${new Date().toISOString()}][${requestId}] JWT令牌验证成功，用户ID: ${payload.userId}, 角色: ${payload.role}`);
-    
-    return NextResponse.json({
-      valid: true,
-      payload
-    });
   } catch (error) {
-    console.error('验证JWT令牌时出错:', error);
+    console.error('验证JWT令牌失败:', error);
     return NextResponse.json(
-      { error: '验证令牌时发生错误' },
+      { valid: false, error: '验证令牌时发生错误' },
       { status: 500 }
     );
   }

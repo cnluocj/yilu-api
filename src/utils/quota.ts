@@ -175,7 +175,7 @@ export async function addUserQuota(
  * @param operator 操作者(可选)
  * @returns 更新后的剩余配额，如果配额不足则抛出错误
  */
-export async function useQuota(
+export async function consumeQuota(
   userId: string, 
   serviceId: ServiceType,
   operator?: string

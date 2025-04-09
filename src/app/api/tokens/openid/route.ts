@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
-import { generateOpenIdToken } from '@/utils/jwt';
+import { createCustomerToken } from '@/utils/jwt';
 
 /**
  * 获取OpenID令牌
@@ -41,8 +41,9 @@ export async function GET(request: NextRequest) {
     
     console.log(`[${new Date().toISOString()}][${requestId}] 请求IP: ${ip}, OpenID: ${openId}`);
     
-    // 生成基于OpenID的令牌，有效期1小时
-    const token = generateOpenIdToken(openId);
+    // 为微信用户创建令牌，使用wx-前缀的userId
+    const userId = `wx-${openId}`;
+    const token = createCustomerToken(userId, openId);
     
     // 返回令牌
     return NextResponse.json<ApiResponse<{ token: string }>>(

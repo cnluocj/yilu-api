@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerateTitlesRequest, WorkflowEvent, ServiceType } from '@/types';
+import { getUserQuota } from '@/utils/quota'; // 移除未使用的consumeQuota
 import { callDifyWorkflowAPI, getDifyConfig } from '@/utils/dify';
-import { getUserQuota, useQuota } from '@/utils/quota'; // 引入配额管理功能
 
 // 用于在开发环境中使用的模拟数据
 const mockResponseData: WorkflowEvent[] = [

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerateArticleRequest, WorkflowEvent, ServiceType } from '@/types';
 import { callDifyGenerateArticleAPI, getArticleDifyConfig } from '@/utils/dify';
-import { getUserQuota, useQuota } from '@/utils/quota'; // 引入配额管理功能
+import { getUserQuota, consumeQuota } from '@/utils/quota'; // 引入配额管理功能，更新函数名
 
 // 用于在开发环境中使用的模拟数据
 const mockResponseData: WorkflowEvent[] = [
@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
                       if (fileCount > 0 && !skipQuotaCheck && quota) {
                         try {
                           console.log(`[${new Date().toISOString()}][${requestId}] 生成成功，文件数量: ${fileCount}，消耗用户(${body.openid})的一次文章生成服务配额`);
-                          const remainingQuota = await useQuota(body.openid, ServiceType.KP, `system-article-${requestId}`);
+                          const remainingQuota = await consumeQuota(body.openid, ServiceType.KP, `system-article-${requestId}`);
                           console.log(`[${new Date().toISOString()}][${requestId}] 配额消耗成功，剩余: ${remainingQuota}`);
                         } catch (quotaError) {
                           console.error(`[${new Date().toISOString()}][${requestId}] 消耗配额时出错:`, quotaError);
