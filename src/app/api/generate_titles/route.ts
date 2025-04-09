@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       if (!config.apiKey) {
         console.log(`[${new Date().toISOString()}][${requestId}] 错误: Dify API密钥未配置`);
         return NextResponse.json(
-          { error: 'Dify API密钥未配置，请在环境变量中设置DIFY_API_KEY' },
+          { error: 'Dify API密钥未配置，请在环境变量中设置TITLES_DIFY_API_KEY' },
           { status: 500 }
         );
       }

@@ -13,11 +13,9 @@ services:
     environment:
       # Dify API配置
       - NODE_ENV=production
-      - DIFY_API_KEY=${DIFY_API_KEY:-app-HCeGiaG645S3iQprJr6AKgvv}
       - DIFY_BASE_URL=${DIFY_BASE_URL:-http://sandboxai.jinzhibang.com.cn/v1}
-      - DIFY_WORKFLOW_ID=${DIFY_WORKFLOW_ID:-3d3925fb-af9b-4873-ba01-391524d18bbc}
+      - TITLES_DIFY_API_KEY=${TITLES_DIFY_API_KEY:-app-HCeGiaG645S3iQprJr6AKgvv}
       - ARTICLE_DIFY_API_KEY=${ARTICLE_DIFY_API_KEY:-app-6OQh6LGcITK6CMB1V1q9BlYQ}
-      - ARTICLE_DIFY_WORKFLOW_ID=${ARTICLE_DIFY_WORKFLOW_ID:-68e14b11-c091-4499-ae78-fb77c062ad73}
       
       # 应用设置
       - USE_MOCK_DATA=${USE_MOCK_DATA:-false}

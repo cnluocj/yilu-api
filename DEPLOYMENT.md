@@ -14,9 +14,8 @@
 如果需要自定义配置，可以创建`.env`文件，设置以下环境变量:
 
 ```
-DIFY_API_KEY=your_dify_api_key
+TITLES_DIFY_API_KEY=your_dify_api_key
 DIFY_BASE_URL=http://your-dify-api-url/v1
-DIFY_WORKFLOW_ID=your_workflow_id
 USE_MOCK_DATA=false
 ```
 

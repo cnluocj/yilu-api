@@ -101,8 +101,8 @@ export async function callDifyWorkflowAPI(
                     workflowId = typeof inputWorkflowId === 'string' ? inputWorkflowId : String(inputWorkflowId);
                     console.log(`[${new Date().toISOString()}] 从inputs获取到workflowId: ${workflowId}`);
                   } else {
-                    // 如果都获取不到，使用配置的默认值
-                    workflowId = config.workflowId;
+                    // 如果都获取不到，为空
+                    workflowId = "";
                     console.log(`[${new Date().toISOString()}] 使用默认workflowId: ${workflowId}`);
                   }
                   
@@ -276,7 +276,7 @@ export async function callDifyWorkflowAPI(
           task_id: "error-" + Date.now(),
           workflow_run_id: "error-" + Date.now(),
           data: {
-            workflow_id: config.workflowId, // 错误情况下使用配置的workflowId
+            workflow_id: "", // 错误情况下为空
             progress: "100",
             result: [`调用Dify API时出错: ${errorMessage}`],
             status: "failed"
@@ -424,7 +424,7 @@ export async function callDifyGenerateArticleAPI(
                   task_id: lastTaskId || `recover-${Date.now()}`,
                   workflow_run_id: lastWorkflowRunId || `recover-${Date.now()}`,
                   data: {
-                    workflow_id: workflowId || config.workflowId,
+                    workflow_id: workflowId || "",
                     id: extractValue(jsonStr, '"id":', ','),
                     files: []
                   }
@@ -475,8 +475,8 @@ export async function callDifyGenerateArticleAPI(
                 workflowId = typeof inputWorkflowId === 'string' ? inputWorkflowId : String(inputWorkflowId);
                 console.log(`[${new Date().toISOString()}] 从inputs获取到生成文章workflowId: ${workflowId}`);
               } else {
-                // 如果都获取不到，使用配置的默认值
-                workflowId = config.workflowId;
+                // 如果都获取不到，为空
+                workflowId = "";
                 console.log(`[${new Date().toISOString()}] 使用默认生成文章workflowId: ${workflowId}`);
               }
               
@@ -679,7 +679,7 @@ export async function callDifyGenerateArticleAPI(
                   task_id: lastTaskId || `fallback-${Date.now()}`,
                   workflow_run_id: lastWorkflowRunId || `fallback-${Date.now()}`,
                   data: {
-                    workflow_id: workflowId || config.workflowId,
+                    workflow_id: workflowId || "",
                     progress: "100",
                     files: [],
                     elapsed_time: "0",
@@ -727,7 +727,7 @@ export async function callDifyGenerateArticleAPI(
           task_id: `error-${Date.now()}`,
           workflow_run_id: `error-${Date.now()}`,
           data: {
-            workflow_id: config.workflowId,
+            workflow_id: "",
             progress: "100",
             files: [], // 空文件数组
             error: errorMessage,
@@ -748,9 +748,8 @@ export async function callDifyGenerateArticleAPI(
  */
 export function getDifyConfig(): DifyAPIConfig {
   const config = {
-    apiKey: process.env.DIFY_API_KEY || '',
+    apiKey: process.env.TITLES_DIFY_API_KEY || '',
     baseUrl: process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn/v1',
-    workflowId: process.env.DIFY_WORKFLOW_ID || '3d3925fb-af9b-4873-ba01-391524d18bbc' // 作为默认值或备用值
   };
   
   console.log(`[${new Date().toISOString()}] Dify配置: baseUrl=${config.baseUrl}, workflowId=${config.workflowId}`);
@@ -764,18 +763,14 @@ export function getDifyConfig(): DifyAPIConfig {
  */
 export function getArticleDifyConfig(): DifyAPIConfig {
   // 文章生成专用API Key
-  const apiKey = process.env.ARTICLE_DIFY_API_KEY || 'app-6OQh6LGcITK6CMB1V1q9BlYQ';
+  const apiKey = process.env.ARTICLE_DIFY_API_KEY || '';
   
   // 使用与标题生成相同的baseUrl
   const baseUrl = process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn/v1';
   
-  // 文章生成工作流ID
-  const workflowId = process.env.ARTICLE_DIFY_WORKFLOW_ID || '68e14b11-c091-4499-ae78-fb77c062ad73';
-  
   return {
     apiKey,
     baseUrl,
-    workflowId
   };
 }
 
