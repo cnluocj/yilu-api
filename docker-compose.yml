@@ -11,13 +11,31 @@ services:
     ports:
       - "9090:9090"
     environment:
+      # Dify API配置
       - NODE_ENV=production
       - DIFY_API_KEY=${DIFY_API_KEY:-app-HCeGiaG645S3iQprJr6AKgvv}
       - DIFY_BASE_URL=${DIFY_BASE_URL:-http://sandboxai.jinzhibang.com.cn/v1}
       - DIFY_WORKFLOW_ID=${DIFY_WORKFLOW_ID:-3d3925fb-af9b-4873-ba01-391524d18bbc}
+      - ARTICLE_DIFY_API_KEY=${ARTICLE_DIFY_API_KEY:-app-6OQh6LGcITK6CMB1V1q9BlYQ}
+      - ARTICLE_DIFY_WORKFLOW_ID=${ARTICLE_DIFY_WORKFLOW_ID:-68e14b11-c091-4499-ae78-fb77c062ad73}
+      
+      # 应用设置
       - USE_MOCK_DATA=${USE_MOCK_DATA:-false}
       - NODE_LOG_IMMEDIATE_FLUSH=true
       - NO_COLOR=0
+      
+      # Supabase配置
+      - SUPABASE_URL=${SUPABASE_URL:-http://ai.jinzhibang.com.cn:8000}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzQzOTU1MjAwLAogICJleHAiOiAxOTAxNzIxNjAwCn0.YhQeYs2FynkP6sHuPsf8-i0Mi7EvCgpfNfEMByAC9W0}
+      
+      # JWT配置
+      - JWT_SECRET=${JWT_SECRET:-your-very-secure-jwt-secret-key-for-yilu-api-quota-management}
+      - JWT_EXPIRY=${JWT_EXPIRY:-1h}
+      
+      # 配额API
+      - QUOTA_API_KEY=${QUOTA_API_KEY:-your-secure-api-key}
+      - SKIP_QUOTA_CHECK=${SKIP_QUOTA_CHECK:-false}
+      
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090"]
       interval: 30s

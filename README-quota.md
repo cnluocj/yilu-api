@@ -20,13 +20,12 @@ sequenceDiagram
     微信服务器-->>小程序: 支付结果通知
 
     %% 使用服务流程
-    小程序->>AI服务器: GET /api/tokens/openid (请求访问令牌)
-    AI服务器->>小程序: 返回JWT令牌
+    小程序->>服务器: 请求访问令牌
+    服务器->>小程序: 返回JWT令牌
     小程序->>AI服务器: GET /api/quota (查询剩余配额)
     AI服务器-->>小程序: 返回配额信息
     
     alt 配额充足
-    		小程序->>AI服务器: POST /api/generate_titles (生成题目)
         小程序->>AI服务器: POST /api/generate_article (生成文章)
         AI服务器->>AI服务器: 检查并验证文件生成
         alt 文件生成成功
@@ -77,6 +76,41 @@ QUOTA_API_KEY=your-secure-api-key
 
 # 用于测试环境跳过配额检查
 # SKIP_QUOTA_CHECK=true
+```
+
+## Docker部署
+
+系统已配置好Docker容器化部署支持，相关的环境变量已添加到docker-compose.yml中。
+
+### 构建并启动容器
+
+```bash
+# 构建Docker镜像
+docker-compose build
+
+# 启动服务
+docker-compose up -d
+```
+
+### 环境变量覆盖
+
+可以通过以下方式设置环境变量：
+
+1. 修改.env文件（开发环境）
+2. 在docker-compose.yml文件中直接修改默认值
+3. 在运行docker-compose时通过环境变量覆盖
+
+例如：
+
+```bash
+SUPABASE_URL=http://your-supabase-url JWT_SECRET=your-custom-secret docker-compose up -d
+```
+
+### 查看日志
+
+```bash
+# 查看容器日志
+docker-compose logs -f yilu-api
 ```
 
 ## 认证系统（JWT）
