@@ -752,7 +752,7 @@ export function getDifyConfig(): DifyAPIConfig {
     baseUrl: process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn/v1',
   };
   
-  console.log(`[${new Date().toISOString()}] Dify配置: baseUrl=${config.baseUrl}, workflowId=${config.workflowId}`);
+  console.log(`[${new Date().toISOString()}] Dify配置: baseUrl=${config.baseUrl}`);
   // 不打印API密钥，以保护安全
   
   return config;
