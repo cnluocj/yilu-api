@@ -41,10 +41,37 @@
       min-height: 100vh;
     }
     
-    .container {
-      max-width: 800px;
+    .page-container {
+      display: flex;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
+    }
+    
+    .main-content {
+      flex: 1;
+      max-width: 800px;
+    }
+    
+    .history-panel {
+      width: 300px;
+      margin-left: 20px;
+    }
+    
+    @media (max-width: 1000px) {
+      .page-container {
+        flex-direction: column;
+      }
+      
+      .history-panel {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 20px;
+      }
+    }
+    
+    .container {
+      width: 100%;
     }
     
     header {
@@ -335,6 +362,123 @@
       margin-right: 10px;
     }
     
+    /* History Articles */
+    .history-title {
+      font-size: 18px;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .history-list {
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    
+    .history-item {
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+    }
+    
+    .history-item:hover {
+      border-color: var(--primary-color);
+      background-color: var(--progress-bg);
+    }
+    
+    .history-item-title {
+      font-weight: 500;
+      margin-bottom: 5px;
+      word-break: break-word;
+    }
+    
+    .history-item-info {
+      font-size: 13px;
+      color: var(--light-text);
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .history-item-date {
+      font-size: 13px;
+      color: var(--light-text);
+      margin-top: 5px;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background-color: white;
+      width: 90%;
+      max-width: 900px;
+      max-height: 90vh;
+      border-radius: 8px;
+      padding: 20px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .modal-title {
+      font-size: 18px;
+      font-weight: 500;
+    }
+    
+    .modal-close {
+      cursor: pointer;
+      font-size: 20px;
+      color: var(--light-text);
+    }
+    
+    .modal-body {
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .preview-frame {
+      width: 100%;
+      height: 500px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 15px;
+      margin-top: 15px;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .loading-indicator {
+      text-align: center;
+      padding: 20px;
+      color: var(--light-text);
+    }
+    
     .error {
       color: var(--error-color);
       background-color: #fff2f0;
@@ -404,122 +548,260 @@
         grid-template-columns: 1fr;
       }
     }
+    
+    /* Login Modal */
+    .login-modal {
+      background-color: rgba(0, 0, 0, 0.5);
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 200;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .login-content {
+      background-color: white;
+      padding: 30px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .login-title {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 22px;
+      font-weight: 500;
+    }
+    
+    .login-input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .login-button {
+      width: 100%;
+      padding: 12px 15px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    
+    .login-error {
+      color: var(--error-color);
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    
+    .login-info {
+      font-size: 14px;
+      color: var(--light-text);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .logged-in-user {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: var(--card-bg);
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .logout-btn {
+      background-color: var(--error-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>科普文章生成系统</h1>
-    </header>
-    
-    <!-- Progress Steps -->
-    <div class="steps">
-      <div class="step active" id="step1">
-        <div class="step-number">1</div>
-        <div class="step-title">输入基本信息</div>
-      </div>
-      <div class="step" id="step2">
-        <div class="step-number">2</div>
-        <div class="step-title">选择文章标题</div>
-      </div>
-      <div class="step" id="step3">
-        <div class="step-number">3</div>
-        <div class="step-title">生成文章</div>
-      </div>
+  <!-- Login Modal -->
+  <div id="loginModal" class="login-modal">
+    <div class="login-content">
+      <h2 class="login-title">操作员登录</h2>
+      <p class="login-info">请输入您的账号，仅限英文和数字</p>
+      <div id="loginError" class="login-error hidden"></div>
+      <input type="text" id="loginUsername" class="login-input" placeholder="请输入账号" maxlength="20">
+      <button id="loginButton" class="login-button">登录</button>
     </div>
-    
-    <!-- Page 1: Input Information -->
-    <div class="card" id="page1">
-      <h2>请输入您的基本信息</h2>
-      <div class="form-group">
-        <label for="name">姓名</label>
-        <input type="text" id="name" placeholder="请输入您的姓名">
-      </div>
-      <div class="form-group">
-        <label for="unit">科室</label>
-        <input type="text" id="unit" placeholder="请输入您的科室">
-      </div>
-      <div class="form-group">
-        <label for="direction">方向</label>
-        <input type="text" id="direction" placeholder="请输入文章方向或主题">
-      </div>
-      <div class="form-group">
-        <label for="word_count">字数</label>
-        <input type="number" id="word_count" value="1500" min="100" max="5000">
-      </div>
-      <div class="buttons">
-        <button class="btn btn-primary btn-block" id="nextToTitles">下一步</button>
-      </div>
-    </div>
-    
-    <!-- Page 2: Select Title -->
-    <div class="card hidden" id="page2">
-      <h2>请选择文章标题</h2>
-      <div class="progress-container" id="titleProgressContainer">
-        <div class="progress-info">
-          <div class="progress-status">正在生成标题...</div>
-          <div class="progress-percentage" id="titleProgressPercentage">0%</div>
+  </div>
+
+  <!-- Logged in user display -->
+  <div id="loggedInUser" class="logged-in-user hidden">
+    操作员: <span id="username"></span>
+    <button id="logoutBtn" class="logout-btn">切换</button>
+  </div>
+  
+  <div class="page-container">
+    <div class="main-content">
+      <header>
+        <h1>科普文章生成系统</h1>
+      </header>
+      
+      <!-- Progress Steps -->
+      <div class="steps">
+        <div class="step active" id="step1">
+          <div class="step-number">1</div>
+          <div class="step-title">输入基本信息</div>
         </div>
-        <div class="progress-bar">
-          <div class="progress-fill" id="titleProgressFill"></div>
+        <div class="step" id="step2">
+          <div class="step-number">2</div>
+          <div class="step-title">选择文章标题</div>
+        </div>
+        <div class="step" id="step3">
+          <div class="step-number">3</div>
+          <div class="step-title">生成文章</div>
         </div>
       </div>
       
-      <div id="titleSelectionContainer" class="hidden">
-        <div class="radio-tiles" id="titleOptions">
-          <!-- Title options will be inserted here -->
-        </div>
-        
-        <!-- Custom title input -->
-        <div class="radio-tile" id="customTitleTile">
-          <div class="radio-tile-title">自定义标题</div>
-          <div class="radio-icon"></div>
-          <input type="radio" name="title" value="custom">
-        </div>
-        
-        <div class="custom-radio-input" id="customTitleContainer">
+      <div class="container">
+        <!-- Page 1: Input Information -->
+        <div class="card" id="page1">
+          <h2>请输入您的基本信息</h2>
           <div class="form-group">
-            <input type="text" id="customTitle" placeholder="请输入您的标题">
+            <label for="name">姓名</label>
+            <input type="text" id="name" placeholder="请输入您的姓名">
+          </div>
+          <div class="form-group">
+            <label for="unit">科室</label>
+            <input type="text" id="unit" placeholder="请输入您的科室">
+          </div>
+          <div class="form-group">
+            <label for="direction">方向</label>
+            <input type="text" id="direction" placeholder="请输入文章方向或主题">
+          </div>
+          <div class="form-group">
+            <label for="word_count">字数</label>
+            <input type="number" id="word_count" value="1500" min="100" max="5000">
+          </div>
+          <div class="buttons">
+            <button class="btn btn-primary btn-block" id="nextToTitles">下一步</button>
           </div>
         </div>
         
-        <div class="buttons">
-          <button class="btn btn-secondary" id="backToInfo">上一步</button>
-          <button class="btn btn-secondary" id="regenerateTitles">重新生成标题</button>
-          <button class="btn btn-primary" id="nextToGenerate">开始生成文章</button>
+        <!-- Page 2: Select Title -->
+        <div class="card hidden" id="page2">
+          <h2>请选择文章标题</h2>
+          <div class="progress-container" id="titleProgressContainer">
+            <div class="progress-info">
+              <div class="progress-status">正在生成标题...</div>
+              <div class="progress-percentage" id="titleProgressPercentage">0%</div>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="titleProgressFill"></div>
+            </div>
+          </div>
+          
+          <div id="titleSelectionContainer" class="hidden">
+            <div class="radio-tiles" id="titleOptions">
+              <!-- Title options will be inserted here -->
+            </div>
+            
+            <!-- Custom title input -->
+            <div class="radio-tile" id="customTitleTile">
+              <div class="radio-tile-title">自定义标题</div>
+              <div class="radio-icon"></div>
+              <input type="radio" name="title" value="custom">
+            </div>
+            
+            <div class="custom-radio-input" id="customTitleContainer">
+              <div class="form-group">
+                <input type="text" id="customTitle" placeholder="请输入您的标题">
+              </div>
+            </div>
+            
+            <div class="buttons">
+              <button class="btn btn-secondary" id="backToInfo">上一步</button>
+              <button class="btn btn-secondary" id="regenerateTitles">重新生成标题</button>
+              <button class="btn btn-primary" id="nextToGenerate">开始生成文章</button>
+            </div>
+          </div>
         </div>
+        
+        <!-- Page 3: Generate Article -->
+        <div class="card hidden" id="page3">
+          <h2>文章生成</h2>
+          <div class="progress-container" id="articleProgressContainer">
+            <div class="progress-info">
+              <div class="progress-status">正在生成文章...</div>
+              <div class="progress-percentage" id="articleProgressPercentage">0%</div>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="articleProgressFill"></div>
+            </div>
+          </div>
+          
+          <div id="articleResultContainer" class="hidden result-card">
+            <div class="result-icon">✓</div>
+            <h3>文章生成成功！</h3>
+            <p>点击下方按钮下载文章</p>
+            <a href="#" class="file-link" id="downloadArticle" target="_blank">
+              <i>📄</i> 下载文章 (DOCX)
+            </a>
+            <div class="buttons">
+              <button class="btn btn-secondary" id="backToTitles">返回选择标题</button>
+              <button class="btn btn-primary" id="regenerateArticle">重新生成文章</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Error message container -->
+        <div class="error hidden" id="errorContainer"></div>
       </div>
     </div>
     
-    <!-- Page 3: Generate Article -->
-    <div class="card hidden" id="page3">
-      <h2>文章生成</h2>
-      <div class="progress-container" id="articleProgressContainer">
-        <div class="progress-info">
-          <div class="progress-status">正在生成文章...</div>
-          <div class="progress-percentage" id="articleProgressPercentage">0%</div>
+    <!-- History Panel -->
+    <div class="history-panel">
+      <div class="card">
+        <h2 class="history-title">历史文章</h2>
+        <div id="historyLoadingContainer" class="loading-indicator">
+          <p>加载历史文章...</p>
         </div>
-        <div class="progress-bar">
-          <div class="progress-fill" id="articleProgressFill"></div>
-        </div>
-      </div>
-      
-      <div id="articleResultContainer" class="hidden result-card">
-        <div class="result-icon">✓</div>
-        <h3>文章生成成功！</h3>
-        <p>点击下方按钮下载文章</p>
-        <a href="#" class="file-link" id="downloadArticle" target="_blank">
-          <i>📄</i> 下载文章 (DOCX)
-        </a>
-        <div class="buttons">
-          <button class="btn btn-secondary" id="backToTitles">返回选择标题</button>
-          <button class="btn btn-primary" id="regenerateArticle">重新生成文章</button>
+        <div id="historyList" class="history-list">
+          <!-- History items will be inserted here -->
         </div>
       </div>
     </div>
-    
-    <!-- Error message container -->
-    <div class="error hidden" id="errorContainer"></div>
+  </div>
+  
+  <!-- Preview Modal -->
+  <div id="previewModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="previewTitle">文章预览</h3>
+        <span class="modal-close" id="closeModal">&times;</span>
+      </div>
+      <div class="modal-body">
+        <iframe id="previewFrame" class="preview-frame" src=""></iframe>
+      </div>
+      <div class="modal-footer">
+        <a href="#" id="downloadPreview" class="btn btn-primary" target="_blank">下载文章</a>
+      </div>
+    </div>
   </div>
   
   <script>
@@ -562,17 +844,135 @@
     
     const errorContainer = document.getElementById('errorContainer');
     
+    // History Elements
+    const historyList = document.getElementById('historyList');
+    const historyLoadingContainer = document.getElementById('historyLoadingContainer');
+    
+    // Modal Elements
+    const previewModal = document.getElementById('previewModal');
+    const closeModal = document.getElementById('closeModal');
+    const previewFrame = document.getElementById('previewFrame');
+    const previewTitle = document.getElementById('previewTitle');
+    const downloadPreview = document.getElementById('downloadPreview');
+    
+    // Login Elements
+    const loginModal = document.getElementById('loginModal');
+    const loginUsername = document.getElementById('loginUsername');
+    const loginButton = document.getElementById('loginButton');
+    const loginError = document.getElementById('loginError');
+    const loggedInUser = document.getElementById('loggedInUser');
+    const usernameSpan = document.getElementById('username');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
     // State management
     let selectedTitle = '';
     let generatedTitles = [];
     let articleUrl = '';
     let userInfo = {
-      openid: 'internal_' + Date.now(),  // Using timestamp for internal users
+      openid: '',  // Will be set during login
       name: '',
       unit: '',
       direction: '',
       word_count: 1500
     };
+    let historyArticles = [];
+    
+    // Initialize app on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      checkLogin();
+    });
+    
+    // Login button click handler
+    loginButton.addEventListener('click', function() {
+      handleLogin();
+    });
+    
+    // Logout button click handler
+    logoutBtn.addEventListener('click', function() {
+      handleLogout();
+    });
+    
+    // Allow Enter key to submit login
+    loginUsername.addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        handleLogin();
+      }
+    });
+    
+    function checkLogin() {
+      // Check if we have a saved username in localStorage
+      const savedUsername = localStorage.getItem('articleGenerator_username');
+      
+      if (savedUsername) {
+        // User already logged in
+        completeLogin(savedUsername);
+      } else {
+        // Show the login modal
+        loginModal.style.display = 'flex';
+      }
+    }
+    
+    function handleLogin() {
+      // Clear any previous error
+      loginError.classList.add('hidden');
+      
+      // Get the username input
+      const username = loginUsername.value.trim();
+      
+      // Validate: only allow English letters and numbers
+      if (!username) {
+        showLoginError('请输入账号');
+        return;
+      }
+      
+      if (!/^[a-zA-Z0-9]+$/.test(username)) {
+        showLoginError('账号只能包含英文字母和数字');
+        return;
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('articleGenerator_username', username);
+      
+      // Complete login
+      completeLogin(username);
+    }
+    
+    function completeLogin(username) {
+      // Hide login modal
+      loginModal.style.display = 'none';
+      
+      // Set the user ID with internal_ prefix
+      userInfo.openid = 'internal_' + username;
+      
+      // Show the logged-in user info
+      usernameSpan.textContent = username;
+      loggedInUser.classList.remove('hidden');
+      
+      // Load article history for this user
+      loadArticleHistory();
+    }
+    
+    function showLoginError(message) {
+      loginError.textContent = message;
+      loginError.classList.remove('hidden');
+    }
+    
+    function handleLogout() {
+      // Clear the stored username
+      localStorage.removeItem('articleGenerator_username');
+      
+      // Reset user info
+      userInfo.openid = '';
+      
+      // Hide user info display
+      loggedInUser.classList.add('hidden');
+      
+      // Show login modal
+      loginModal.style.display = 'flex';
+      
+      // Clear the login input field
+      loginUsername.value = '';
+    }
     
     // Event Listeners
     nextToTitlesBtn.addEventListener('click', goToTitlesPage);
@@ -592,6 +992,18 @@
     customTitleTile.addEventListener('click', function() {
       selectTitle('custom');
       customTitleContainer.style.display = 'block';
+    });
+    
+    // Modal event listeners
+    closeModal.addEventListener('click', function() {
+      previewModal.style.display = 'none';
+    });
+    
+    // Close modal when clicking outside the content
+    window.addEventListener('click', function(event) {
+      if (event.target === previewModal) {
+        previewModal.style.display = 'none';
+      }
     });
     
     // Page navigation functions
@@ -865,6 +1277,12 @@
                   
                   articleUrl = eventData.data.files[0].url;
                   showArticleResult(articleUrl);
+                  
+                  // Reload history after generating new article
+                  setTimeout(() => {
+                    loadArticleHistory();
+                  }, 2000); // Wait 2 seconds for the article to be saved
+                  
                 } else if (eventData.data && eventData.data.error) {
                   throw new Error(eventData.data.error);
                 }
@@ -968,6 +1386,125 @@
     function hideError() {
       errorContainer.textContent = '';
       errorContainer.classList.add('hidden');
+    }
+    
+    // History functions
+    async function loadArticleHistory() {
+      try {
+        // Show loading
+        historyList.innerHTML = '';
+        historyLoadingContainer.style.display = 'block';
+        
+        // Get the user ID
+        const userId = userInfo.openid;
+        
+        // JWT token for system access
+        const jwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJzeXN0ZW0t5ZCO56uvIiwicm9sZSI6InN5c3RlbSIsInBlcm1pc3Npb25zIjpbInF1b3RhOnJlYWQiLCJxdW90YTp3cml0ZSIsImFydGljbGU6cmVhZCIsImFydGljbGU6d3JpdGUiLCJhcnRpY2xlOmRlbGV0ZSJdLCJpYXQiOjE3NDQyNDg3NDEsImV4cCI6MTc0Njg0MDc0MX0.aKnFmck6xwt4MMbegrLsssF7hZaZSrHbsgrjB24XJys';
+        
+        // Call API to get article history
+        const response = await fetch(`/api/articles?user_id=${userId}`, {
+          method: 'GET',
+          headers: {
+            'Accept': '*/*',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        historyArticles = data.records || [];
+        
+        // Hide loading
+        historyLoadingContainer.style.display = 'none';
+        
+        // Display the history
+        displayArticleHistory(historyArticles);
+        
+      } catch (error) {
+        console.error('Error loading article history:', error);
+        historyLoadingContainer.style.display = 'none';
+        historyList.innerHTML = `<div class="error">加载历史文章失败: ${error.message}</div>`;
+      }
+    }
+    
+    function displayArticleHistory(articles) {
+      // Clear current list
+      historyList.innerHTML = '';
+      
+      if (articles.length === 0) {
+        historyList.innerHTML = '<p>暂无历史文章</p>';
+        return;
+      }
+      
+      // Add each article to the list
+      articles.forEach(article => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.dataset.id = article.id;
+        item.dataset.url = article.public_url;
+        
+        const title = document.createElement('div');
+        title.className = 'history-item-title';
+        title.textContent = article.title || '无标题';
+        
+        const info = document.createElement('div');
+        info.className = 'history-item-info';
+        
+        const author = document.createElement('span');
+        author.textContent = article.author_name;
+        
+        const wordCount = document.createElement('span');
+        wordCount.textContent = `${article.word_count} 字`;
+        
+        info.appendChild(author);
+        info.appendChild(wordCount);
+        
+        const date = document.createElement('div');
+        date.className = 'history-item-date';
+        date.textContent = formatDate(article.created_at);
+        
+        item.appendChild(title);
+        item.appendChild(info);
+        item.appendChild(date);
+        
+        // Add click event to open preview
+        item.addEventListener('click', () => {
+          openPreview(article);
+        });
+        
+        historyList.appendChild(item);
+      });
+    }
+    
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
+    function openPreview(article) {
+      // Set the preview title
+      previewTitle.textContent = article.title || '无标题';
+      
+      // Set the preview iframe src to the file URL
+      // Note: Office files (.docx) typically can't be directly previewed in an iframe
+      // We're setting it anyway for demonstration purposes
+      previewFrame.src = article.public_url;
+      
+      // Set the download link
+      downloadPreview.href = article.public_url;
+      
+      // Show the modal
+      previewModal.style.display = 'flex';
     }
   </script>
 </body>
