@@ -650,13 +650,21 @@ export async function callDifyGenerateArticleAPI(
                   }
                 }
                 
-                // 保存文章到Supabase
+                // 保存文章到Supabase - 修改为同步执行
                 if (files.length > 0 && files[0].url) {
                   try {
-                    // 导入article_storage模块
-                    import('./article_storage').then(async (articleStorage) => {
+                    // 定义超时时间（毫秒）
+                    const SAVE_TIMEOUT = 30000; // 30秒
+                    let savedUrl: string | null = null;
+                    
+                    console.log(`[${new Date().toISOString()}] 准备同步保存文章到Supabase: ${files[0].url}`);
+                    
+                    const saveArticle = async (): Promise<string | null> => {
                       try {
-                        const fileUrl = files[0].url as string; // 断言为字符串类型
+                        // 导入article_storage模块
+                        const articleStorage = await import('./article_storage');
+                        const fileUrl = files[0].url as string;
+                        
                         console.log(`[${new Date().toISOString()}] 开始保存文章到Supabase: ${fileUrl}`);
                         
                         // 准备文章信息，确保所有属性都有默认值
@@ -677,17 +685,89 @@ export async function callDifyGenerateArticleAPI(
                         );
                         
                         console.log(`[${new Date().toISOString()}] 文章保存成功, 记录ID: ${saveResult.recordId}, URL: ${saveResult.publicUrl}`);
-                        
-                        // 添加保存结果到文件数据中
-                        files[0].url = saveResult.publicUrl;
+                        return saveResult.publicUrl;
                       } catch (saveError) {
                         console.error(`[${new Date().toISOString()}] 保存文章到Supabase时出错:`, saveError);
+                        return null;
                       }
-                    }).catch(importError => {
-                      console.error(`[${new Date().toISOString()}] 导入article_storage模块时出错:`, importError);
+                    };
+                    
+                    // 创建一个带超时的Promise
+                    const saveWithTimeout = async (): Promise<string | null> => {
+                      return new Promise((resolve) => {
+                        // 设置超时
+                        const timeout = setTimeout(() => {
+                          console.log(`[${new Date().toISOString()}] 保存文章操作超时`);
+                          resolve(null);
+                        }, SAVE_TIMEOUT);
+                        
+                        // 执行保存操作
+                        saveArticle().then((url) => {
+                          clearTimeout(timeout);
+                          resolve(url);
+                        }).catch(() => {
+                          clearTimeout(timeout);
+                          resolve(null);
+                        });
+                      });
+                    };
+                    
+                    // 使用立即执行异步函数执行等待操作
+                    (async () => {
+                      // 等待保存完成或超时
+                      savedUrl = await saveWithTimeout();
+                      
+                      // 如果保存成功，更新文件URL
+                      if (savedUrl) {
+                        console.log(`[${new Date().toISOString()}] 更新文件URL为Supabase URL: ${savedUrl}`);
+                        files[0].saved = true;
+                        files[0].url = savedUrl;
+                      } else {
+                        console.log(`[${new Date().toISOString()}] 保存文章失败或超时，使用原始URL`);
+                        files[0].saved = false;
+                      }
+                      
+                      // 发送完成事件
+                      sendFinishEvent();
+                    })().catch(asyncError => {
+                      console.error(`[${new Date().toISOString()}] 异步保存过程中出错:`, asyncError);
+                      files[0].saved = false;
+                      files[0].saveError = asyncError instanceof Error ? asyncError.message : String(asyncError);
+                      
+                      // 发送完成事件
+                      sendFinishEvent();
                     });
+                    
+                    // 将发送完成事件的逻辑封装到函数中
+                    function sendFinishEvent() {
+                      // 强制设置进度为100%
+                      lastProgress = 100;
+                      
+                      // 发送完成事件，进度设为100%
+                      const finishEvent = {
+                        event: "workflow_finished",
+                        task_id: lastTaskId,
+                        workflow_run_id: lastWorkflowRunId,
+                        data: {
+                          workflow_id: workflowId,
+                          progress: "100",
+                          files, // 使用解析的文件数组
+                          elapsed_time: eventData.data?.elapsed_time?.toString() || "0",
+                          status: files.length > 0 ? "succeeded" : "failed"
+                        }
+                      };
+                      
+                      console.log(`[${new Date().toISOString()}] 发送生成文章完成事件, 文件数: ${files.length}, 耗时: ${eventData.data?.elapsed_time || 'unknown'}`);
+                      
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify(finishEvent)}\n\n`));
+                    }
+                    
+                    // 注意：这里不再发送完成事件，因为会在异步保存过程完成后发送
+                    return;
                   } catch (outerError) {
                     console.error(`[${new Date().toISOString()}] 尝试保存文章时发生外部错误:`, outerError);
+                    files[0].saved = false;
+                    files[0].saveError = outerError instanceof Error ? outerError.message : String(outerError);
                   }
                 } else {
                   console.log(`[${new Date().toISOString()}] 没有找到文件URL，无法保存文章`);
