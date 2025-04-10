@@ -9,7 +9,7 @@ export async function ensureArticlesBucketExists(): Promise<void> {
     console.log(`[${new Date().toISOString()}] 检查文章存储桶是否存在`);
     
     // 检查存储桶是否存在
-    const { data, error } = await supabase.storage.getBucket('articles');
+    const { error } = await supabase.storage.getBucket('articles');
     
     if (error) {
       // 检查是否是因为存储桶不存在
@@ -94,7 +94,7 @@ async function findAvailableFileName(
     }
     
     // 检查是否有同名文件
-    let baseName = desiredName;
+    const baseName = desiredName;
     let fileName = `${baseName}.${extension}`;
     let counter = 1;
     
@@ -161,7 +161,7 @@ export async function saveArticleToSupabase(
       contentType = 'text/plain';
     }
     
-    const { data: uploadData, error: uploadError } = await supabase
+    const { error: uploadError } = await supabase
       .storage
       .from('articles')
       .upload(filePath, fileBlob, {
@@ -227,7 +227,7 @@ export async function getUserArticles(
   userId: string,
   limit: number = 10,
   offset: number = 0
-): Promise<{ records: any[], total: number }> {
+): Promise<{ records: Record<string, unknown>[], total: number }> {
   try {
     console.log(`[${new Date().toISOString()}] 获取用户(${userId})的文章列表, 限制: ${limit}, 偏移: ${offset}`);
     
