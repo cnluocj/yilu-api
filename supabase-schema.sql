@@ -13,19 +13,13 @@ CREATE INDEX IF NOT EXISTS idx_user_service_quota_user_id ON public.user_service
 CREATE INDEX IF NOT EXISTS idx_user_service_quota_service_id ON public.user_service_quota (service_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_service_quota_user_service ON public.user_service_quota (user_id, service_id);
 
--- 为匿名用户添加权限
-ALTER TABLE public.user_service_quota ENABLE ROW LEVEL SECURITY;
-
--- 添加权限策略
-CREATE POLICY "Allow anon select quota" ON public.user_service_quota FOR SELECT USING (true);
-
--- 只允许自己特定API修改
-CREATE POLICY "Restrict delete" ON public.user_service_quota FOR DELETE USING (false);
-CREATE POLICY "Restrict update" ON public.user_service_quota FOR UPDATE USING (false);
-CREATE POLICY "Restrict insert" ON public.user_service_quota FOR INSERT WITH CHECK (false);
-
--- 注意: 在实际部署时，你可能需要为特定的服务账户或后台管理系统添加更多权限
--- 例如添加管理员角色和相应的策略
+-- 禁用所有表的行级安全策略
+-- user_service_quota表
+ALTER TABLE public.user_service_quota DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow anon select quota" ON public.user_service_quota;
+DROP POLICY IF EXISTS "Restrict delete" ON public.user_service_quota;
+DROP POLICY IF EXISTS "Restrict update" ON public.user_service_quota;
+DROP POLICY IF EXISTS "Restrict insert" ON public.user_service_quota;
 
 -- 创建配额操作记录表
 CREATE TABLE IF NOT EXISTS quota_logs (
@@ -39,12 +33,9 @@ CREATE TABLE IF NOT EXISTS quota_logs (
   operator TEXT
 );
 
--- 添加安全策略
-ALTER TABLE quota_logs ENABLE ROW LEVEL SECURITY;
-
--- 日志只能由服务器通过密钥访问，不允许匿名访问
-CREATE POLICY "Allow server-side log access" ON quota_logs
-FOR ALL USING (true);
+-- 禁用行级安全策略
+ALTER TABLE quota_logs DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow server-side log access" ON quota_logs;
 
 -- 创建系统令牌表，用于存储永久有效的系统令牌
 CREATE TABLE IF NOT EXISTS system_tokens (
@@ -57,12 +48,9 @@ CREATE TABLE IF NOT EXISTS system_tokens (
   description TEXT
 );
 
--- 添加安全策略
-ALTER TABLE system_tokens ENABLE ROW LEVEL SECURITY;
-
--- 系统令牌表只能通过服务器密钥访问
-CREATE POLICY "Allow server-side token access" ON system_tokens
-FOR ALL USING (true);
+-- 禁用行级安全策略
+ALTER TABLE system_tokens DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow server-side token access" ON system_tokens;
 
 -- 创建插入索引
 CREATE INDEX IF NOT EXISTS idx_system_tokens_created_at ON system_tokens(created_at);
@@ -80,13 +68,60 @@ CREATE TABLE IF NOT EXISTS token_usage_logs (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 添加安全策略
-ALTER TABLE token_usage_logs ENABLE ROW LEVEL SECURITY;
-
--- 日志只能由服务器通过密钥访问，不允许匿名访问
-CREATE POLICY "Allow server-side token logs" ON token_usage_logs
-FOR ALL USING (true);
+-- 禁用行级安全策略
+ALTER TABLE token_usage_logs DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow server-side token logs" ON token_usage_logs;
 
 -- 创建索引
 CREATE INDEX IF NOT EXISTS idx_token_usage_logs_token_id ON token_usage_logs(token_id);
-CREATE INDEX IF NOT EXISTS idx_token_usage_logs_created_at ON token_usage_logs(created_at); 
+CREATE INDEX IF NOT EXISTS idx_token_usage_logs_created_at ON token_usage_logs(created_at);
+
+-- 创建文章记录表
+CREATE TABLE IF NOT EXISTS public.article_records (
+    id SERIAL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    direction TEXT NOT NULL,
+    word_count INTEGER NOT NULL DEFAULT 1000,
+    author_name TEXT NOT NULL,
+    unit TEXT NOT NULL,
+    title TEXT,
+    file_path TEXT NOT NULL,
+    public_url TEXT NOT NULL,
+    dify_task_id TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 创建索引以加速查询
+CREATE INDEX IF NOT EXISTS idx_article_records_user_id ON public.article_records (user_id);
+CREATE INDEX IF NOT EXISTS idx_article_records_created_at ON public.article_records (created_at);
+
+-- 禁用行级安全策略
+ALTER TABLE public.article_records DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own articles" ON public.article_records;
+DROP POLICY IF EXISTS "Users can delete own articles" ON public.article_records;
+DROP POLICY IF EXISTS "Users can insert own articles" ON public.article_records; 
+DROP POLICY IF EXISTS "Users can update own articles" ON public.article_records;
+DROP POLICY IF EXISTS "Service role can access all articles" ON public.article_records;
+DROP POLICY IF EXISTS "Allow anonymous insert articles" ON public.article_records;
+DROP POLICY IF EXISTS "Allow anonymous view own articles" ON public.article_records;
+DROP POLICY IF EXISTS "Allow any inserts to articles" ON public.article_records;
+
+-- 存储桶权限设置
+-- 注意：此SQL语句应在管理SQL编辑器中执行，并需要根据具体Supabase版本可能需要调整
+-- 允许服务角色和匿名用户创建存储桶
+BEGIN;
+-- 如果存储桶策略已存在，先删除
+DROP POLICY IF EXISTS "Allow anonymous storage bucket operations" ON storage.buckets;
+
+-- 创建新的存储桶策略
+CREATE POLICY "Allow anonymous storage bucket operations" ON storage.buckets
+    FOR ALL USING (true);
+
+-- 如果对象策略已存在，先删除
+DROP POLICY IF EXISTS "Allow anonymous storage object operations" ON storage.objects;
+
+-- 创建新的对象策略
+CREATE POLICY "Allow anonymous storage object operations" ON storage.objects
+    FOR ALL USING (true);
+COMMIT; 

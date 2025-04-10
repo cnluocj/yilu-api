@@ -102,11 +102,11 @@ export function refreshToken(token: string, expiresIn: string = JWT_EXPIRY): str
 function getDefaultPermissions(role: UserRole): string[] {
   switch (role) {
     case UserRole.ADMIN:
-      return ['quota:read', 'quota:write', 'quota:delete', 'user:manage'];
+      return ['quota:read', 'quota:write', 'quota:delete', 'user:manage', 'article:read', 'article:write', 'article:delete'];
     case UserRole.SYSTEM:
-      return ['quota:read', 'quota:write'];
+      return ['quota:read', 'quota:write', 'article:read', 'article:write', 'article:delete'];
     case UserRole.CUSTOMER:
-      return ['quota:read'];
+      return ['quota:read', 'article:read'];
     default:
       return [];
   }
@@ -121,7 +121,7 @@ export function createSystemToken(serviceId: string): string {
   return generateToken({
     userId: `system-${serviceId}`,
     role: UserRole.SYSTEM,
-    permissions: ['quota:read', 'quota:write']
+    permissions: ['quota:read', 'quota:write', 'article:read', 'article:write', 'article:delete']
   }, '30d'); // 系统令牌有效期较长
 }
 

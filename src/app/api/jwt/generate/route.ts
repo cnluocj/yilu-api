@@ -34,15 +34,15 @@ export async function POST(request: NextRequest) {
     switch (userRole) {
       case UserRole.ADMIN:
         // 管理员拥有所有权限
-        permissions = ['quota:read', 'quota:write', 'quota:delete', 'user:manage'];
+        permissions = ['quota:read', 'quota:write', 'quota:delete', 'user:manage', 'article:read', 'article:write', 'article:delete'];
         break;
       case UserRole.SYSTEM:
         // 系统服务拥有读写权限
-        permissions = ['quota:read', 'quota:write'];
+        permissions = ['quota:read', 'quota:write', 'article:read', 'article:write', 'article:delete'];
         break;
       case UserRole.CUSTOMER:
         // 普通用户只有读取权限
-        permissions = ['quota:read'];
+        permissions = ['quota:read', 'article:read'];
         break;
       default:
         // 其他角色没有权限

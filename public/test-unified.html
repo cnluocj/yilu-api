@@ -161,6 +161,66 @@
       border-radius: 5px;
       border-left: 4px solid #1a73e8;
     }
+    
+    .article-item {
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      border-left: 3px solid #1a73e8;
+    }
+    
+    .article-title {
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 5px;
+      color: #1a73e8;
+    }
+    
+    .article-meta {
+      font-size: 0.9em;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .article-actions {
+      margin-top: 10px;
+    }
+    
+    .article-list {
+      margin-top: 20px;
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    
+    .pagination button {
+      margin: 0 5px;
+    }
+    
+    .download-link {
+      display: inline-block;
+      margin-right: 10px;
+      text-decoration: none;
+      color: #1a73e8;
+    }
+    
+    .delete-article {
+      background-color: #f44336;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .delete-article:hover {
+      background-color: #d32f2f;
+    }
   </style>
 </head>
 <body>
@@ -169,6 +229,7 @@
   <ul class="tabs">
     <li id="tab-article" class="active">生成文章</li>
     <li id="tab-title">生成标题</li>
+    <li id="tab-articles">文章管理</li>
     <li id="tab-quota">配额管理</li>
     <li id="tab-jwt">JWT测试</li>
   </ul>
@@ -271,6 +332,40 @@
     <div class="result-container">
       <h3>原始响应:</h3>
       <div id="article-result" class="result"></div>
+    </div>
+  </div>
+  
+  <!-- 文章管理选项卡内容 -->
+  <div id="articles-tab" class="tab-content">
+    <div class="form-container">
+      <h2>文章列表查询</h2>
+      <div class="form-group">
+        <label for="articles-user-id">用户ID:</label>
+        <input type="text" id="articles-user-id" value="wx_abcd1234efgh5678">
+      </div>
+      
+      <div class="form-group">
+        <label for="articles-token">JWT令牌:</label>
+        <textarea id="articles-token" rows="3" placeholder="输入JWT令牌"></textarea>
+      </div>
+      
+      <button id="query-articles" class="submit-button">查询文章</button>
+    </div>
+    
+    <div id="articles-list" class="article-list" style="display: none;">
+      <h3>文章列表 (<span id="articles-total">0</span>篇)</h3>
+      <div id="articles-container"></div>
+      
+      <div class="pagination">
+        <button id="prev-page" disabled>上一页</button>
+        <span id="page-info">第 <span id="current-page">1</span> 页</span>
+        <button id="next-page" disabled>下一页</button>
+      </div>
+    </div>
+    
+    <div class="result-container">
+      <h3>原始响应:</h3>
+      <div id="articles-result" class="result"></div>
     </div>
   </div>
   
@@ -401,68 +496,275 @@
   </div>
   
   <script>
-    // 选项卡切换功能
-    document.addEventListener('DOMContentLoaded', function() {
-      const tabMapping = {
-        'tab-title': 'titles-tab',
-        'tab-article': 'article-tab',
-        'tab-quota': 'quota-tab',
-        'tab-jwt': 'jwt-tab'
-      };
+    // 标签切换功能
+    function switchToTab(tabId) {
+      // 获取所有标签和内容
+      const tabs = document.querySelectorAll('.tabs li');
+      const tabContents = document.querySelectorAll('.tab-content');
       
-      // 切换到指定选项卡的函数
-      function switchToTab(tabId) {
-        // 如果不是有效的选项卡ID，直接返回
-        if (!tabMapping[tabId]) return;
-        
-        // 移除所有选项卡的active类
-        document.querySelectorAll('.tabs li').forEach(tab => {
-          tab.classList.remove('active');
-        });
-        
-        // 隐藏所有内容
-        document.querySelectorAll('.tab-content').forEach(content => {
-          content.classList.remove('active');
-        });
-        
-        // 激活当前选项卡
-        document.getElementById(tabId).classList.add('active');
-        
-        // 激活对应内容
-        const contentId = tabMapping[tabId];
-        document.getElementById(contentId).classList.add('active');
+      // 移除所有active类
+      tabs.forEach(tab => tab.classList.remove('active'));
+      tabContents.forEach(content => content.classList.remove('active'));
+      
+      // 获取匹配的标签和内容
+      const tab = document.getElementById(tabId);
+      
+      // 特殊处理标题标签
+      let contentId;
+      if (tabId === 'tab-title') {
+        contentId = 'titles-tab';
+      } else {
+        contentId = tabId.replace('tab-', '') + '-tab';
       }
       
-      // 为每个选项卡添加点击事件
-      document.querySelectorAll('.tabs li').forEach(tab => {
-        tab.addEventListener('click', function() {
-          const tabId = this.id;
-          // 更新URL（不刷新页面）
-          window.history.pushState(null, '', `#${tabId}`);
-          switchToTab(tabId);
-        });
-      });
+      const content = document.getElementById(contentId);
       
-      // 检查URL片段，如果有则切换到对应选项卡
-      if (window.location.hash) {
-        const tabId = window.location.hash.substring(1);
-        if (tabMapping[tabId]) {
-          switchToTab(tabId);
-        }
+      // 添加active类
+      if (tab) tab.classList.add('active');
+      if (content) content.classList.add('active');
+      
+      // 更新URL hash
+      window.location.hash = tabId.replace('tab-', '');
+    }
+    
+    // 为所有标签添加点击事件
+    document.querySelectorAll('.tabs li').forEach(tab => {
+      tab.addEventListener('click', () => {
+        switchToTab(tab.id);
+      });
+    });
+    
+    // 页面加载时根据URL hash切换到对应标签
+    document.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash.substring(1);
+      const allowableTabs = ['article', 'title', 'articles', 'quota', 'jwt'];
+      
+      if (hash && allowableTabs.includes(hash)) {
+        switchToTab('tab-' + hash);
       } else {
-        // 默认激活文章选项卡
         switchToTab('tab-article');
       }
+    });
+    
+    // 监听URL hash变化
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.substring(1);
+      const allowableTabs = ['article', 'title', 'articles', 'quota', 'jwt'];
       
-      // 监听hashchange事件
-      window.addEventListener('hashchange', function() {
-        if (window.location.hash) {
-          const tabId = window.location.hash.substring(1);
-          if (tabMapping[tabId]) {
-            switchToTab(tabId);
+      if (hash && allowableTabs.includes(hash)) {
+        switchToTab('tab-' + hash);
+      }
+    });
+    
+    // 文章管理功能
+    document.addEventListener('DOMContentLoaded', function() {
+      // 变量定义
+      let currentPage = 1;
+      const pageSize = 5;
+      let totalArticles = 0;
+      let userId = "";
+      let jwtToken = "";
+      
+      // 元素获取
+      const queryButton = document.getElementById('query-articles');
+      const articlesUserIdInput = document.getElementById('articles-user-id');
+      const articlesTokenInput = document.getElementById('articles-token');
+      const articlesList = document.getElementById('articles-list');
+      const articlesContainer = document.getElementById('articles-container');
+      const articlesTotal = document.getElementById('articles-total');
+      const articlesResult = document.getElementById('articles-result');
+      const prevPageButton = document.getElementById('prev-page');
+      const nextPageButton = document.getElementById('next-page');
+      const currentPageSpan = document.getElementById('current-page');
+      
+      // 查询文章列表
+      if (queryButton) {
+        queryButton.addEventListener('click', async () => {
+          userId = articlesUserIdInput.value;
+          jwtToken = articlesTokenInput.value;
+          
+          // 验证输入
+          if (!userId) {
+            articlesResult.innerHTML = `<div class="error">请输入用户ID</div>`;
+            return;
           }
+          
+          if (!jwtToken) {
+            articlesResult.innerHTML = `<div class="error">请输入JWT令牌</div>`;
+            return;
+          }
+          
+          // 重置页码并加载第一页
+          currentPage = 1;
+          loadArticles();
+        });
+      }
+      
+      // 上一页
+      if (prevPageButton) {
+        prevPageButton.addEventListener('click', () => {
+          if (currentPage > 1) {
+            currentPage--;
+            loadArticles();
+          }
+        });
+      }
+      
+      // 下一页
+      if (nextPageButton) {
+        nextPageButton.addEventListener('click', () => {
+          if (currentPage * pageSize < totalArticles) {
+            currentPage++;
+            loadArticles();
+          }
+        });
+      }
+      
+      // 加载文章列表
+      async function loadArticles() {
+        // 禁用查询按钮
+        queryButton.disabled = true;
+        queryButton.textContent = '查询中...';
+        
+        // 清空结果
+        articlesContainer.innerHTML = '';
+        articlesResult.innerHTML = '';
+        
+        try {
+          // 构建请求URL
+          const offset = (currentPage - 1) * pageSize;
+          const url = new URL('/api/articles', window.location.origin);
+          url.searchParams.append('user_id', userId);
+          url.searchParams.append('limit', pageSize.toString());
+          url.searchParams.append('offset', offset.toString());
+          
+          // 发送请求
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${jwtToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          const data = await response.json();
+          
+          // 显示原始响应
+          articlesResult.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+          
+          // 处理结果
+          if (response.ok && data.records) {
+            // 显示文章列表
+            articlesList.style.display = 'block';
+            
+            // 更新总数和分页信息
+            totalArticles = data.total || 0;
+            articlesTotal.textContent = totalArticles;
+            currentPageSpan.textContent = currentPage;
+            
+            // 更新分页按钮状态
+            prevPageButton.disabled = currentPage <= 1;
+            nextPageButton.disabled = currentPage * pageSize >= totalArticles;
+            
+            // 渲染文章列表
+            if (data.records.length > 0) {
+              data.records.forEach(article => {
+                const articleElement = document.createElement('div');
+                articleElement.className = 'article-item';
+                
+                const title = article.title || '未命名文章';
+                const direction = article.direction || '';
+                const author = article.author_name || '';
+                const unit = article.unit || '';
+                const date = new Date(article.created_at).toLocaleString();
+                
+                articleElement.innerHTML = `
+                  <div class="article-title">${title}</div>
+                  <div class="article-meta">
+                    <span>方向: ${direction}</span> | 
+                    <span>作者: ${author}</span> | 
+                    <span>单位: ${unit}</span> | 
+                    <span>创建时间: ${date}</span>
+                  </div>
+                  <div class="article-actions">
+                    <a href="${article.public_url}" target="_blank" class="download-link">查看文章</a>
+                    <button class="delete-article" data-id="${article.id}">删除</button>
+                  </div>
+                `;
+                
+                articlesContainer.appendChild(articleElement);
+              });
+              
+              // 为删除按钮添加事件监听
+              document.querySelectorAll('.delete-article').forEach(button => {
+                button.addEventListener('click', function() {
+                  const articleId = this.getAttribute('data-id');
+                  if (confirm('确定要删除这篇文章吗？')) {
+                    deleteArticle(articleId);
+                  }
+                });
+              });
+            } else {
+              articlesContainer.innerHTML = '<p>没有找到文章</p>';
+            }
+          } else {
+            articlesList.style.display = 'none';
+            articlesResult.innerHTML = `<div class="error">${data.error || '获取文章列表失败'}</div>`;
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          articlesList.style.display = 'none';
+          articlesResult.innerHTML = `<div class="error">错误: ${error.message}</div>`;
+        } finally {
+          // 重新启用查询按钮
+          queryButton.disabled = false;
+          queryButton.textContent = '查询文章';
         }
-      });
+      }
+      
+      // 删除文章
+      async function deleteArticle(articleId) {
+        try {
+          // 构建请求URL
+          const url = new URL('/api/articles', window.location.origin);
+          url.searchParams.append('user_id', userId);
+          url.searchParams.append('article_id', articleId);
+          
+          // 发送请求
+          const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${jwtToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          const data = await response.json();
+          
+          // 显示原始响应
+          articlesResult.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+          
+          // 处理结果
+          if (response.ok && data.success) {
+            // 显示成功消息
+            articlesResult.innerHTML = `
+              <div class="success">文章删除成功!</div>
+              <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            
+            // 重新加载当前页面
+            loadArticles();
+          } else {
+            articlesResult.innerHTML = `
+              <div class="error">${data.error || '删除文章失败'}</div>
+              <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          articlesResult.innerHTML = `<div class="error">错误: ${error.message}</div>`;
+        }
+      }
     });
     
     // 标题生成功能

@@ -650,6 +650,49 @@ export async function callDifyGenerateArticleAPI(
                   }
                 }
                 
+                // 保存文章到Supabase
+                if (files.length > 0 && files[0].url) {
+                  try {
+                    // 导入article_storage模块
+                    import('./article_storage').then(async (articleStorage) => {
+                      try {
+                        const fileUrl = files[0].url as string; // 断言为字符串类型
+                        console.log(`[${new Date().toISOString()}] 开始保存文章到Supabase: ${fileUrl}`);
+                        
+                        // 准备文章信息，确保所有属性都有默认值
+                        const articleInfo = {
+                          name: request.name || '未命名文章',
+                          unit: request.unit || '',
+                          direction: request.direction || '',
+                          title: request.title || '未命名标题',
+                          word_count: request.word_count || 0,
+                          dify_task_id: lastTaskId || ''
+                        };
+                        
+                        // 保存文章
+                        const saveResult = await articleStorage.saveArticleToSupabase(
+                          fileUrl, 
+                          request.openid || 'anonymous', 
+                          articleInfo
+                        );
+                        
+                        console.log(`[${new Date().toISOString()}] 文章保存成功, 记录ID: ${saveResult.recordId}, URL: ${saveResult.publicUrl}`);
+                        
+                        // 添加保存结果到文件数据中
+                        files[0].url = saveResult.publicUrl;
+                      } catch (saveError) {
+                        console.error(`[${new Date().toISOString()}] 保存文章到Supabase时出错:`, saveError);
+                      }
+                    }).catch(importError => {
+                      console.error(`[${new Date().toISOString()}] 导入article_storage模块时出错:`, importError);
+                    });
+                  } catch (outerError) {
+                    console.error(`[${new Date().toISOString()}] 尝试保存文章时发生外部错误:`, outerError);
+                  }
+                } else {
+                  console.log(`[${new Date().toISOString()}] 没有找到文件URL，无法保存文章`);
+                }
+                
                 // 强制设置进度为100%
                 lastProgress = 100;
                 

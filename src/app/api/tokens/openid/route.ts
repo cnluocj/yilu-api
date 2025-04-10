@@ -25,15 +25,6 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // 验证OpenID格式（简单验证，可根据实际情况调整）
-    if (!/^[\w-]{5,}$/.test(openId)) {
-      console.error(`[${new Date().toISOString()}][${requestId}] OpenID格式无效: ${openId}`);
-      return NextResponse.json<ApiResponse<null>>(
-        { success: false, error: 'OpenID格式无效' },
-        { status: 400 }
-      );
-    }
-    
     // 获取IP地址作为额外安全措施
     const ip = request.headers.get('x-forwarded-for') || 
                request.headers.get('x-real-ip') || 
