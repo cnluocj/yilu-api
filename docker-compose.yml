@@ -13,7 +13,8 @@ services:
     environment:
       # Dify API配置
       - NODE_ENV=production
-      - DIFY_BASE_URL=${DIFY_BASE_URL:-http://sandboxai.jinzhibang.com.cn/v1}
+      - DIFY_BASE_URL=${DIFY_BASE_URL:-http://sandboxai.jinzhibang.com.cn}
+      - DIFY_API_URL=${DIFY_API_URL:-http://sandboxai.jinzhibang.com.cn/v1}
       - TITLES_DIFY_API_KEY=${TITLES_DIFY_API_KEY:-app-HCeGiaG645S3iQprJr6AKgvv}
       - ARTICLE_DIFY_API_KEY=${ARTICLE_DIFY_API_KEY:-app-6OQh6LGcITK6CMB1V1q9BlYQ}
       

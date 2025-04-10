@@ -53,7 +53,8 @@ npm install
 ```
 # Dify API配置
 DIFY_API_KEY=your_dify_api_key_here
-DIFY_BASE_URL=http://sandboxai.jinzhibang.com.cn/v1
+DIFY_BASE_URL=http://sandboxai.jinzhibang.com.cn
+DIFY_API_URL=http://sandboxai.jinzhibang.com.cn/v1
 DIFY_WORKFLOW_ID=your_workflow_id_here
 
 # 应用设置

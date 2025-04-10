@@ -113,7 +113,8 @@ export default function Home() {
           <pre className="bg-gray-800 p-4 rounded overflow-x-auto mb-4">
             {`# Dify API配置
 DIFY_API_KEY=your_api_key_here
-DIFY_BASE_URL=http://sandboxai.jinzhibang.com.cn/v1
+DIFY_BASE_URL=http://sandboxai.jinzhibang.com.cn
+DIFY_API_URL=http://sandboxai.jinzhibang.com.cn/v1
 DIFY_WORKFLOW_ID=your_workflow_id_here
 
 # 设置为true使用模拟数据，false使用实际Dify API

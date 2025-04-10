@@ -37,6 +37,7 @@ export interface WorkflowEvent {
 export interface DifyAPIConfig {
   apiKey: string;
   baseUrl: string;
+  apiUrl: string;
 }
 
 // 用户服务配额相关类型

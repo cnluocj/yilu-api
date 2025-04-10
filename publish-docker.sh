@@ -123,7 +123,8 @@ docker run -d \\
   --name yilu-api \\
   -p 9090:9090 \\
   -e DIFY_API_KEY="your_api_key_here" \\
-  -e DIFY_BASE_URL="http://sandboxai.jinzhibang.com.cn/v1" \\
+  -e DIFY_BASE_URL="http://sandboxai.jinzhibang.com.cn" \\
+  -e DIFY_API_URL="http://sandboxai.jinzhibang.com.cn/v1" \\
   -e DIFY_WORKFLOW_ID="your_workflow_id" \\
   ${IMAGE_NAME}:latest
 \`\`\`
@@ -144,7 +145,8 @@ services:
     environment:
       - NODE_ENV=production
       - DIFY_API_KEY=your_api_key_here
-      - DIFY_BASE_URL=http://sandboxai.jinzhibang.com.cn/v1
+      - DIFY_BASE_URL=http://sandboxai.jinzhibang.com.cn
+      - DIFY_API_URL=http://sandboxai.jinzhibang.com.cn/v1
       - DIFY_WORKFLOW_ID=your_workflow_id
 \`\`\`
 
@@ -153,7 +155,8 @@ services:
 | 变量名 | 描述 | 默认值 |
 |--------|------|-------|
 | DIFY_API_KEY | Dify API密钥 | - |
-| DIFY_BASE_URL | Dify API基础URL | http://sandboxai.jinzhibang.com.cn/v1 |
+| DIFY_BASE_URL | Dify API基础URL | http://sandboxai.jinzhibang.com.cn |
+| DIFY_API_URL | Dify API URL | http://sandboxai.jinzhibang.com.cn/v1 |
 | DIFY_WORKFLOW_ID | Dify工作流ID | - |
 | USE_MOCK_DATA | 是否使用模拟数据 | false |
 

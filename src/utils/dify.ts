@@ -23,11 +23,11 @@ export async function callDifyWorkflowAPI(
         
         // 记录请求信息
         console.log(`[${new Date().toISOString()}] 请求Dify API - 用户: ${request.openid}, 方向: ${request.direction}`);
-        console.log(`[${new Date().toISOString()}] 请求Dify API - URL: ${config.baseUrl}/workflows/run`);
+        console.log(`[${new Date().toISOString()}] 请求Dify API - URL: ${config.apiUrl}/workflows/run`);
         console.log(`[${new Date().toISOString()}] 请求Dify API - 请求体: ${JSON.stringify(difyRequestBody)}`);
         
         // 调用Dify API
-        const response = await fetch(`${config.baseUrl}/workflows/run`, {
+        const response = await fetch(`${config.apiUrl}/workflows/run`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${config.apiKey}`,
@@ -317,11 +317,11 @@ export async function callDifyGenerateArticleAPI(
         
         // 记录请求信息
         console.log(`[${new Date().toISOString()}] 请求生成文章Dify API - 方向: ${request.direction}`);
-        console.log(`[${new Date().toISOString()}] 请求生成文章Dify API - URL: ${config.baseUrl}/workflows/run`);
+        console.log(`[${new Date().toISOString()}] 请求生成文章Dify API - URL: ${config.apiUrl}/workflows/run`);
         console.log(`[${new Date().toISOString()}] 请求生成文章Dify API - 请求体: ${JSON.stringify(difyRequestBody)}`);
         
         // 调用Dify API
-        const response = await fetch(`${config.baseUrl}/workflows/run`, {
+        const response = await fetch(`${config.apiUrl}/workflows/run`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${config.apiKey}`,
@@ -437,7 +437,7 @@ export async function callDifyGenerateArticleAPI(
                   // 确保URL不会重复添加前缀
                   const fullUrl = urlPath.startsWith('http') 
                     ? urlPath 
-                    : `http://sandboxai.jinzhibang.com.cn${urlPath}`;
+                    : `${config.baseUrl}${urlPath}`;
                   
                   // 确保eventData.data存在并且可以赋值
                   if (eventData.data) {
@@ -547,7 +547,7 @@ export async function callDifyGenerateArticleAPI(
                       // 拼接完整URL
                       const fullUrl = file.url.startsWith('http') 
                         ? file.url 
-                        : `http://sandboxai.jinzhibang.com.cn${file.url}`;
+                        : `${config.baseUrl}${file.url}`;
                       files.push({ url: fullUrl });
                       console.log(`[${new Date().toISOString()}] 处理预提取文件URL: ${fullUrl}`);
                     }
@@ -566,7 +566,7 @@ export async function callDifyGenerateArticleAPI(
                           // 拼接完整URL
                           const fullUrl = file.url.startsWith('http') 
                             ? file.url 
-                            : `http://sandboxai.jinzhibang.com.cn${file.url}`;
+                            : `${config.baseUrl}${file.url}`;
                           files.push({ url: fullUrl });
                           console.log(`[${new Date().toISOString()}] 解析到生成文章文件URL(id格式): ${fullUrl}`);
                         }
@@ -587,13 +587,13 @@ export async function callDifyGenerateArticleAPI(
                             // 拼接完整URL
                             const fullUrl = file.url.startsWith('http') 
                               ? file.url 
-                              : `http://sandboxai.jinzhibang.com.cn${file.url}`;
+                              : `${config.baseUrl}${file.url}`;
                             files.push({ url: fullUrl });
                             console.log(`[${new Date().toISOString()}] 解析到生成文章文件URL: ${fullUrl}`);
                           } else if (file.remote_url) {
                             const fullUrl = file.remote_url.startsWith('http')
                               ? file.remote_url
-                              : `http://sandboxai.jinzhibang.com.cn${file.remote_url}`;
+                              : `${config.baseUrl}${file.remote_url}`;
                             files.push({ url: fullUrl });
                             console.log(`[${new Date().toISOString()}] 解析到生成文章远程URL: ${fullUrl}`);
                           }
@@ -611,7 +611,7 @@ export async function callDifyGenerateArticleAPI(
                         // 确保URL不会重复添加前缀
                         const fullUrl = urlPart.startsWith('http') 
                           ? urlPart 
-                          : `http://sandboxai.jinzhibang.com.cn${urlPart}`;
+                          : `${config.baseUrl}${urlPart}`;
                         files.push({ url: fullUrl });
                         console.log(`[${new Date().toISOString()}] 从字符串中提取到URL: ${fullUrl}`);
                       });
@@ -632,7 +632,7 @@ export async function callDifyGenerateArticleAPI(
                         // 确保URL不会重复添加前缀
                         const fullUrl = obj.url.startsWith('http') 
                           ? obj.url 
-                          : `http://sandboxai.jinzhibang.com.cn${obj.url}`;
+                          : `${config.baseUrl}${obj.url}`;
                         files.push({ url: fullUrl });
                         console.log(`[${new Date().toISOString()}] 在${prefix}找到URL: ${fullUrl}`);
                       }
@@ -792,10 +792,12 @@ export async function callDifyGenerateArticleAPI(
 export function getDifyConfig(): DifyAPIConfig {
   const config = {
     apiKey: process.env.TITLES_DIFY_API_KEY || '',
-    baseUrl: process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn/v1',
+    baseUrl: process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn',
+    apiUrl: process.env.DIFY_API_URL || 'http://sandboxai.jinzhibang.com.cn/v1',
   };
   
   console.log(`[${new Date().toISOString()}] Dify配置: baseUrl=${config.baseUrl}`);
+  console.log(`[${new Date().toISOString()}] Dify配置: apiUrl=${config.apiUrl}`);
   // 不打印API密钥，以保护安全
   
   return config;
@@ -809,11 +811,13 @@ export function getArticleDifyConfig(): DifyAPIConfig {
   const apiKey = process.env.ARTICLE_DIFY_API_KEY || '';
   
   // 使用与标题生成相同的baseUrl
-  const baseUrl = process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn/v1';
+  const baseUrl = process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn';
+  const apiUrl = process.env.DIFY_API_URL || 'http://sandboxai.jinzhibang.com.cn/v1';
   
   return {
     apiKey,
     baseUrl,
+    apiUrl,
   };
 }
 
