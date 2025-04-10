@@ -680,7 +680,7 @@ export async function callDifyGenerateArticleAPI(
                         // 保存文章
                         const saveResult = await articleStorage.saveArticleToSupabase(
                           fileUrl, 
-                          request.openid || 'anonymous', 
+                          request.openid ? request.openid : 'anonymous', 
                           articleInfo
                         );
                         
