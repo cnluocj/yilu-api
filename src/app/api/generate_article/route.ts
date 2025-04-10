@@ -98,7 +98,12 @@ export async function POST(request: NextRequest) {
     
     // 获取是否使用模拟数据的环境变量（在开发环境中可用于调试）
     const useMockData = process.env.USE_MOCK_DATA === 'true';
-    const skipQuotaCheck = process.env.SKIP_QUOTA_CHECK === 'true'; // 对于测试环境，可配置跳过配额检查
+    let skipQuotaCheck = process.env.SKIP_QUOTA_CHECK === 'true'; // 对于测试环境，可配置跳过配额检查
+
+    // internal开头的是内部接口，不进行配额检查
+    if (body.openid.startsWith('internal_')) {
+      skipQuotaCheck = true;
+    }
 
     // 保存配额信息，用于后续处理
     let quota = null;

@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>科普文章生成系统</title>
+  <style>
+    :root {
+      --primary-color: #1677ff;
+      --primary-hover: #0958d9;
+      --success-color: #52c41a;
+      --success-hover: #389e0d;
+      --error-color: #ff4d4f;
+      --error-hover: #cf1322;
+      --text-color: #333;
+      --light-text: #666;
+      --border-color: #eee;
+      --background: #f5f7fa;
+      --card-bg: #fff;
+      --disabled-bg: #f5f5f5;
+      --disabled-text: #bbb;
+      --progress-bg: #e6f4ff;
+      --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --transition-speed: 0.3s;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+        'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: var(--background);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+      color: var(--text-color);
+    }
+    
+    /* Progress steps */
+    .steps {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      position: relative;
+    }
+    
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: var(--border-color);
+      z-index: 1;
+    }
+    
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .step-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background-color: var(--border-color);
+      color: var(--light-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-bottom: 8px;
+      transition: background-color var(--transition-speed);
+    }
+    
+    .step-title {
+      font-size: 14px;
+      color: var(--light-text);
+      transition: color var(--transition-speed);
+    }
+    
+    .step.active .step-number {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .step.active .step-title {
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+    
+    .step.completed .step-number {
+      background-color: var(--success-color);
+      color: white;
+    }
+    
+    /* Cards */
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 20px;
+      transition: all var(--transition-speed);
+    }
+    
+    /* Forms */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+    
+    input, textarea, select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 16px;
+      transition: border var(--transition-speed);
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+    }
+    
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      text-align: center;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    .btn-success {
+      background-color: var(--success-color);
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background-color: var(--success-hover);
+    }
+    
+    .btn-secondary {
+      background-color: var(--disabled-bg);
+      color: var(--light-text);
+    }
+    
+    .btn-secondary:hover {
+      background-color: #e0e0e0;
+    }
+    
+    .btn:disabled {
+      background-color: var(--disabled-bg);
+      color: var(--disabled-text);
+      cursor: not-allowed;
+    }
+    
+    .btn-block {
+      display: block;
+      width: 100%;
+    }
+    
+    .btn-flex {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      margin-top: 25px;
+    }
+    
+    /* Progress */
+    .progress-container {
+      margin-top: 15px;
+      margin-bottom: 25px;
+    }
+    
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    .progress-status {
+      font-size: 14px;
+      color: var(--light-text);
+    }
+    
+    .progress-bar {
+      height: 10px;
+      background-color: var(--progress-bg);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background-color: var(--primary-color);
+      border-radius: 5px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+    
+    /* Radio Tiles */
+    .radio-tiles {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .radio-tile {
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      position: relative;
+    }
+    
+    .radio-tile:hover {
+      border-color: #bfbfbf;
+    }
+    
+    .radio-tile.selected {
+      border-color: var(--primary-color);
+      background-color: var(--progress-bg);
+    }
+    
+    .radio-tile input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .radio-tile-title {
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+    
+    .radio-tile-content {
+      color: var(--light-text);
+      font-size: 14px;
+    }
+    
+    /* Custom Radio Input */
+    .custom-radio-input {
+      margin-top: 15px;
+      display: none;
+    }
+    
+    /* Results */
+    .result-card {
+      text-align: center;
+      padding: 30px;
+    }
+    
+    .result-icon {
+      font-size: 48px;
+      color: var(--success-color);
+      margin-bottom: 20px;
+    }
+    
+    .file-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 15px 25px;
+      background-color: var(--progress-bg);
+      border-radius: 5px;
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      margin-bottom: 20px;
+      transition: background-color var(--transition-speed);
+    }
+    
+    .file-link:hover {
+      background-color: #d9e9ff;
+    }
+    
+    .file-link i {
+      margin-right: 10px;
+    }
+    
+    .error {
+      color: var(--error-color);
+      background-color: #fff2f0;
+      padding: 12px 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      border: 1px solid #ffccc7;
+    }
+    
+    /* Visibility control */
+    .hidden {
+      display: none;
+    }
+    
+    /* Custom radio icon */
+    .radio-icon {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #d9d9d9;
+      border-radius: 50%;
+      transition: all var(--transition-speed);
+    }
+    
+    .radio-tile.selected .radio-icon {
+      border-color: var(--primary-color);
+      background-color: var(--primary-color);
+    }
+    
+    .radio-tile.selected .radio-icon::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      background-color: white;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    /* Responsive */
+    @media (max-width: 600px) {
+      .container {
+        padding: 15px;
+      }
+      
+      .buttons {
+        flex-direction: column;
+      }
+      
+      .steps {
+        margin-bottom: 20px;
+      }
+      
+      .step-title {
+        font-size: 12px;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+      
+      .radio-tiles {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>科普文章生成系统</h1>
+    </header>
+    
+    <!-- Progress Steps -->
+    <div class="steps">
+      <div class="step active" id="step1">
+        <div class="step-number">1</div>
+        <div class="step-title">输入基本信息</div>
+      </div>
+      <div class="step" id="step2">
+        <div class="step-number">2</div>
+        <div class="step-title">选择文章标题</div>
+      </div>
+      <div class="step" id="step3">
+        <div class="step-number">3</div>
+        <div class="step-title">生成文章</div>
+      </div>
+    </div>
+    
+    <!-- Page 1: Input Information -->
+    <div class="card" id="page1">
+      <h2>请输入您的基本信息</h2>
+      <div class="form-group">
+        <label for="name">姓名</label>
+        <input type="text" id="name" placeholder="请输入您的姓名">
+      </div>
+      <div class="form-group">
+        <label for="unit">科室</label>
+        <input type="text" id="unit" placeholder="请输入您的科室">
+      </div>
+      <div class="form-group">
+        <label for="direction">方向</label>
+        <input type="text" id="direction" placeholder="请输入文章方向或主题">
+      </div>
+      <div class="form-group">
+        <label for="word_count">字数</label>
+        <input type="number" id="word_count" value="1500" min="100" max="5000">
+      </div>
+      <div class="buttons">
+        <button class="btn btn-primary btn-block" id="nextToTitles">下一步</button>
+      </div>
+    </div>
+    
+    <!-- Page 2: Select Title -->
+    <div class="card hidden" id="page2">
+      <h2>请选择文章标题</h2>
+      <div class="progress-container" id="titleProgressContainer">
+        <div class="progress-info">
+          <div class="progress-status">正在生成标题...</div>
+          <div class="progress-percentage" id="titleProgressPercentage">0%</div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="titleProgressFill"></div>
+        </div>
+      </div>
+      
+      <div id="titleSelectionContainer" class="hidden">
+        <div class="radio-tiles" id="titleOptions">
+          <!-- Title options will be inserted here -->
+        </div>
+        
+        <!-- Custom title input -->
+        <div class="radio-tile" id="customTitleTile">
+          <div class="radio-tile-title">自定义标题</div>
+          <div class="radio-icon"></div>
+          <input type="radio" name="title" value="custom">
+        </div>
+        
+        <div class="custom-radio-input" id="customTitleContainer">
+          <div class="form-group">
+            <input type="text" id="customTitle" placeholder="请输入您的标题">
+          </div>
+        </div>
+        
+        <div class="buttons">
+          <button class="btn btn-secondary" id="backToInfo">上一步</button>
+          <button class="btn btn-secondary" id="regenerateTitles">重新生成标题</button>
+          <button class="btn btn-primary" id="nextToGenerate">开始生成文章</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Page 3: Generate Article -->
+    <div class="card hidden" id="page3">
+      <h2>文章生成</h2>
+      <div class="progress-container" id="articleProgressContainer">
+        <div class="progress-info">
+          <div class="progress-status">正在生成文章...</div>
+          <div class="progress-percentage" id="articleProgressPercentage">0%</div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="articleProgressFill"></div>
+        </div>
+      </div>
+      
+      <div id="articleResultContainer" class="hidden result-card">
+        <div class="result-icon">✓</div>
+        <h3>文章生成成功！</h3>
+        <p>点击下方按钮下载文章</p>
+        <a href="#" class="file-link" id="downloadArticle" target="_blank">
+          <i>📄</i> 下载文章 (DOCX)
+        </a>
+        <div class="buttons">
+          <button class="btn btn-secondary" id="backToTitles">返回选择标题</button>
+          <button class="btn btn-primary" id="regenerateArticle">重新生成文章</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Error message container -->
+    <div class="error hidden" id="errorContainer"></div>
+  </div>
+  
+  <script>
+    // DOM Elements
+    const page1 = document.getElementById('page1');
+    const page2 = document.getElementById('page2');
+    const page3 = document.getElementById('page3');
+    
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const step3 = document.getElementById('step3');
+    
+    const nextToTitlesBtn = document.getElementById('nextToTitles');
+    const backToInfoBtn = document.getElementById('backToInfo');
+    const nextToGenerateBtn = document.getElementById('nextToGenerate');
+    const backToTitlesBtn = document.getElementById('backToTitles');
+    const regenerateArticleBtn = document.getElementById('regenerateArticle');
+    const regenerateTitlesBtn = document.getElementById('regenerateTitles');
+    
+    const nameInput = document.getElementById('name');
+    const unitInput = document.getElementById('unit');
+    const directionInput = document.getElementById('direction');
+    const wordCountInput = document.getElementById('word_count');
+    
+    const titleProgressContainer = document.getElementById('titleProgressContainer');
+    const titleProgressFill = document.getElementById('titleProgressFill');
+    const titleProgressPercentage = document.getElementById('titleProgressPercentage');
+    const titleSelectionContainer = document.getElementById('titleSelectionContainer');
+    const titleOptions = document.getElementById('titleOptions');
+    
+    const customTitleTile = document.getElementById('customTitleTile');
+    const customTitleContainer = document.getElementById('customTitleContainer');
+    const customTitleInput = document.getElementById('customTitle');
+    
+    const articleProgressContainer = document.getElementById('articleProgressContainer');
+    const articleProgressFill = document.getElementById('articleProgressFill');
+    const articleProgressPercentage = document.getElementById('articleProgressPercentage');
+    const articleResultContainer = document.getElementById('articleResultContainer');
+    const downloadArticleLink = document.getElementById('downloadArticle');
+    
+    const errorContainer = document.getElementById('errorContainer');
+    
+    // State management
+    let selectedTitle = '';
+    let generatedTitles = [];
+    let articleUrl = '';
+    let userInfo = {
+      openid: 'internal_' + Date.now(),  // Using timestamp for internal users
+      name: '',
+      unit: '',
+      direction: '',
+      word_count: 1500
+    };
+    
+    // Event Listeners
+    nextToTitlesBtn.addEventListener('click', goToTitlesPage);
+    backToInfoBtn.addEventListener('click', goToInfoPage);
+    nextToGenerateBtn.addEventListener('click', goToGeneratePage);
+    backToTitlesBtn.addEventListener('click', goToTitlesPage);
+    regenerateArticleBtn.addEventListener('click', generateArticle);
+    regenerateTitlesBtn.addEventListener('click', function() {
+      // Reset title selection
+      selectedTitle = '';
+      generatedTitles = [];
+      
+      // Generate new titles
+      generateTitles();
+    });
+    
+    customTitleTile.addEventListener('click', function() {
+      selectTitle('custom');
+      customTitleContainer.style.display = 'block';
+    });
+    
+    // Page navigation functions
+    function goToInfoPage() {
+      hideAllPages();
+      page1.classList.remove('hidden');
+      
+      updateSteps(1);
+    }
+    
+    function goToTitlesPage() {
+      // Validate info page
+      if (!validateInfoPage()) {
+        return;
+      }
+      
+      // Save user info
+      userInfo.name = nameInput.value;
+      userInfo.unit = unitInput.value;
+      userInfo.direction = directionInput.value;
+      userInfo.word_count = parseInt(wordCountInput.value);
+      
+      hideAllPages();
+      page2.classList.remove('hidden');
+      updateSteps(2);
+      
+      // Only generate titles if we haven't already
+      if (generatedTitles.length === 0) {
+        generateTitles();
+      }
+    }
+    
+    function goToGeneratePage() {
+      // Validate title selection
+      if (!validateTitleSelection()) {
+        return;
+      }
+      
+      hideAllPages();
+      page3.classList.remove('hidden');
+      updateSteps(3);
+      
+      // Generate the article
+      generateArticle();
+    }
+    
+    function hideAllPages() {
+      page1.classList.add('hidden');
+      page2.classList.add('hidden');
+      page3.classList.add('hidden');
+    }
+    
+    function updateSteps(currentStep) {
+      // Reset all steps
+      [step1, step2, step3].forEach(step => {
+        step.classList.remove('active');
+        step.classList.remove('completed');
+      });
+      
+      // Set current step as active
+      if (currentStep === 1) {
+        step1.classList.add('active');
+      } else if (currentStep === 2) {
+        step1.classList.add('completed');
+        step2.classList.add('active');
+      } else if (currentStep === 3) {
+        step1.classList.add('completed');
+        step2.classList.add('completed');
+        step3.classList.add('active');
+      }
+    }
+    
+    // Validation functions
+    function validateInfoPage() {
+      hideError();
+      
+      if (!nameInput.value.trim()) {
+        showError('请输入您的姓名');
+        nameInput.focus();
+        return false;
+      }
+      
+      if (!unitInput.value.trim()) {
+        showError('请输入您的科室');
+        unitInput.focus();
+        return false;
+      }
+      
+      if (!directionInput.value.trim()) {
+        showError('请输入文章方向或主题');
+        directionInput.focus();
+        return false;
+      }
+      
+      const wordCount = parseInt(wordCountInput.value);
+      if (isNaN(wordCount) || wordCount < 100 || wordCount > 5000) {
+        showError('请输入有效的字数（100-5000）');
+        wordCountInput.focus();
+        return false;
+      }
+      
+      return true;
+    }
+    
+    function validateTitleSelection() {
+      hideError();
+      
+      // Check if custom title is selected
+      if (selectedTitle === 'custom') {
+        if (!customTitleInput.value.trim()) {
+          showError('请输入自定义标题');
+          customTitleInput.focus();
+          return false;
+        }
+        return true;
+      }
+      
+      // Check if any title is selected
+      if (!selectedTitle) {
+        showError('请选择一个标题');
+        return false;
+      }
+      
+      return true;
+    }
+    
+    // API functions
+    async function generateTitles() {
+      try {
+        // Reset UI
+        titleOptions.innerHTML = '';
+        titleSelectionContainer.classList.add('hidden');
+        titleProgressContainer.classList.remove('hidden');
+        updateTitleProgress(0);
+        hideError();
+        
+        // Prepare payload
+        const payload = {
+          openid: userInfo.openid,
+          direction: userInfo.direction,
+          word_count: userInfo.word_count,
+          name: userInfo.name,
+          unit: userInfo.unit
+        };
+        
+        console.log('生成标题请求数据:', payload);
+        
+        // Call API
+        const response = await fetch('/api/generate_titles', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Process SSE response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          const text = decoder.decode(value, { stream: true });
+          
+          // Process events
+          const events = text.split('\n\n').filter(event => event.trim().startsWith('data:'));
+          
+          for (const event of events) {
+            try {
+              const eventData = JSON.parse(event.replace('data:', '').trim());
+              
+              // Update progress
+              if (eventData.data && eventData.data.progress) {
+                const progress = parseInt(eventData.data.progress);
+                updateTitleProgress(progress);
+              }
+              
+              // Handle finished event
+              if (eventData.event === 'workflow_finished') {
+                if (eventData.data && eventData.data.result && Array.isArray(eventData.data.result)) {
+                  generatedTitles = eventData.data.result;
+                  displayTitleOptions(generatedTitles);
+                }
+              }
+            } catch (e) {
+              console.error('Error parsing event data:', e);
+            }
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error generating titles:', error);
+        showError(`生成标题时出错: ${error.message}`);
+        // Show selection container anyway so user can try custom title
+        titleSelectionContainer.classList.remove('hidden');
+        titleProgressContainer.classList.add('hidden');
+      }
+    }
+    
+    async function generateArticle() {
+      try {
+        // Reset UI
+        articleResultContainer.classList.add('hidden');
+        articleProgressContainer.classList.remove('hidden');
+        updateArticleProgress(0);
+        hideError();
+        
+        // Get the final title
+        const finalTitle = selectedTitle === 'custom' ? customTitleInput.value : selectedTitle;
+        
+        // Prepare payload
+        const payload = {
+          openid: userInfo.openid,
+          direction: userInfo.direction,
+          title: finalTitle,
+          word_count: userInfo.word_count,
+          name: userInfo.name,
+          unit: userInfo.unit
+        };
+        
+        console.log('生成文章请求数据:', payload);
+        
+        // Call API
+        const response = await fetch('/api/generate_article', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Process SSE response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          const text = decoder.decode(value, { stream: true });
+          
+          // Process events
+          const events = text.split('\n\n').filter(event => event.trim().startsWith('data:'));
+          
+          for (const event of events) {
+            try {
+              const eventData = JSON.parse(event.replace('data:', '').trim());
+              
+              // Update progress
+              if (eventData.data && eventData.data.progress) {
+                const progress = parseInt(eventData.data.progress);
+                updateArticleProgress(progress);
+              }
+              
+              // Handle finished event
+              if (eventData.event === 'workflow_finished') {
+                if (eventData.data && 
+                    eventData.data.files && 
+                    eventData.data.files.length > 0 &&
+                    eventData.data.files[0].url) {
+                  
+                  articleUrl = eventData.data.files[0].url;
+                  showArticleResult(articleUrl);
+                } else if (eventData.data && eventData.data.error) {
+                  throw new Error(eventData.data.error);
+                }
+              }
+            } catch (e) {
+              console.error('Error parsing event data:', e);
+            }
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error generating article:', error);
+        showError(`生成文章时出错: ${error.message}`);
+        articleProgressContainer.classList.add('hidden');
+      }
+    }
+    
+    // UI update functions
+    function updateTitleProgress(progress) {
+      titleProgressFill.style.width = `${progress}%`;
+      titleProgressPercentage.textContent = `${progress}%`;
+    }
+    
+    function updateArticleProgress(progress) {
+      articleProgressFill.style.width = `${progress}%`;
+      articleProgressPercentage.textContent = `${progress}%`;
+    }
+    
+    function displayTitleOptions(titles) {
+      // Reset selection
+      selectedTitle = '';
+      
+      // Clear existing options
+      titleOptions.innerHTML = '';
+      
+      // Add title options
+      titles.forEach((title, index) => {
+        const tile = document.createElement('div');
+        tile.className = 'radio-tile';
+        tile.dataset.value = title;
+        
+        const titleElement = document.createElement('div');
+        titleElement.className = 'radio-tile-title';
+        titleElement.textContent = title;
+        
+        const radioIcon = document.createElement('div');
+        radioIcon.className = 'radio-icon';
+        
+        const radioInput = document.createElement('input');
+        radioInput.type = 'radio';
+        radioInput.name = 'title';
+        radioInput.value = title;
+        
+        tile.appendChild(titleElement);
+        tile.appendChild(radioIcon);
+        tile.appendChild(radioInput);
+        
+        tile.addEventListener('click', function() {
+          selectTitle(title);
+          customTitleContainer.style.display = 'none';
+        });
+        
+        titleOptions.appendChild(tile);
+      });
+      
+      // Show selection container and hide progress
+      titleSelectionContainer.classList.remove('hidden');
+      titleProgressContainer.classList.add('hidden');
+    }
+    
+    function selectTitle(title) {
+      selectedTitle = title;
+      
+      // Remove selected class from all tiles
+      document.querySelectorAll('.radio-tile').forEach(tile => {
+        tile.classList.remove('selected');
+      });
+      
+      // Add selected class to chosen tile
+      if (title === 'custom') {
+        customTitleTile.classList.add('selected');
+      } else {
+        const selectedTile = document.querySelector(`.radio-tile[data-value="${title}"]`);
+        if (selectedTile) {
+          selectedTile.classList.add('selected');
+        }
+      }
+    }
+    
+    function showArticleResult(url) {
+      downloadArticleLink.href = url;
+      articleResultContainer.classList.remove('hidden');
+      articleProgressContainer.classList.add('hidden');
+    }
+    
+    function showError(message) {
+      errorContainer.textContent = message;
+      errorContainer.classList.remove('hidden');
+    }
+    
+    function hideError() {
+      errorContainer.textContent = '';
+      errorContainer.classList.add('hidden');
+    }
+  </script>
+</body>
+</html> 

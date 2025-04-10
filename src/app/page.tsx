@@ -130,6 +130,15 @@ USE_MOCK_DATA=false
           <ul className="list-disc pl-6">
             <li>
               <a 
+                href="/article-generator.html" 
+                target="_blank"
+                className="text-blue-400 hover:text-blue-300"
+              >
+                科普文章生成系统（内部工具）
+              </a>
+            </li>
+            <li>
+              <a 
                 href="/test-unified.html" 
                 target="_blank"
                 className="text-blue-400 hover:text-blue-300"
