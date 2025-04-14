@@ -8,8 +8,8 @@ services:
     image: cnluocj/yilu-api:latest
     container_name: yilu-api
     restart: unless-stopped
-    expose:
-      - "9090"
+    ports:
+      - "9090:9090"
     environment:
       # Dify API配置
       - NODE_ENV=production
@@ -57,27 +57,7 @@ services:
       - yilu-network
     tty: true
     stdin_open: true
-  
-  caddy:
-    image: caddy:2-alpine
-    container_name: caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    networks:
-      - yilu-network
-    depends_on:
-      - yilu-api
 
 networks:
   yilu-network:
-    driver: bridge
-
-volumes:
-  caddy_data:
-  caddy_config: 
+    driver: bridge 
