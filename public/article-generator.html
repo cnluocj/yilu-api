@@ -636,6 +636,20 @@
       font-size: 12px;
       cursor: pointer;
     }
+    
+    .custom-style-container {
+      margin-top: 10px;
+    }
+    
+    .style-select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 16px;
+      transition: border var(--transition-speed);
+      background-color: white;
+    }
   </style>
 </head>
 <body>
@@ -697,6 +711,23 @@
           <div class="form-group">
             <label for="word_count">字数</label>
             <input type="number" id="word_count" value="1500" min="100" max="5000">
+          </div>
+          <div class="form-group">
+            <label for="style">文章风格</label>
+            <select id="style" class="style-select">
+              <option value="生动有趣，角度新颖">生动有趣，角度新颖</option>
+              <option value="通俗易懂，深入浅出">通俗易懂，深入浅出</option>
+              <option value="幽默风趣，轻松活泼">幽默风趣，轻松活泼</option>
+              <option value="严谨专业，循证可靠">严谨专业，循证可靠</option>
+              <option value="亲切温暖，富有同理心">亲切温暖，富有同理心</option>
+              <option value="故事化叙述，情景再现">故事化叙述，情景再现</option>
+              <option value="生活化演绎，实用性强">生活化演绎，实用性强</option>
+              <option value="custom">自定义风格</option>
+            </select>
+          </div>
+          <div class="form-group custom-style-container hidden" id="customStyleContainer">
+            <label for="customStyle">自定义风格</label>
+            <input type="text" id="customStyle" placeholder="请输入自定义风格描述">
           </div>
           <div class="buttons">
             <button class="btn btn-primary btn-block" id="nextToTitles">下一步</button>
@@ -826,6 +857,10 @@
     const directionInput = document.getElementById('direction');
     const wordCountInput = document.getElementById('word_count');
     
+    const styleSelect = document.getElementById('style');
+    const customStyleContainer = document.getElementById('customStyleContainer');
+    const customStyleInput = document.getElementById('customStyle');
+    
     const titleProgressContainer = document.getElementById('titleProgressContainer');
     const titleProgressFill = document.getElementById('titleProgressFill');
     const titleProgressPercentage = document.getElementById('titleProgressPercentage');
@@ -873,7 +908,8 @@
       name: '',
       unit: '',
       direction: '',
-      word_count: 1500
+      word_count: 1500,
+      style: '生动有趣，角度新颖'  // Default style
     };
     let historyArticles = [];
     
@@ -994,6 +1030,15 @@
       customTitleContainer.style.display = 'block';
     });
     
+    // Style selection event listener
+    styleSelect.addEventListener('change', function() {
+      if (this.value === 'custom') {
+        customStyleContainer.classList.remove('hidden');
+      } else {
+        customStyleContainer.classList.add('hidden');
+      }
+    });
+    
     // Modal event listeners
     closeModal.addEventListener('click', function() {
       previewModal.style.display = 'none';
@@ -1025,6 +1070,17 @@
       userInfo.unit = unitInput.value;
       userInfo.direction = directionInput.value;
       userInfo.word_count = parseInt(wordCountInput.value);
+      
+      // Save style info
+      if (styleSelect.value === 'custom') {
+        if (customStyleInput.value.trim()) {
+          userInfo.style = customStyleInput.value.trim();
+        } else {
+          userInfo.style = '生动有趣，角度新颖'; // Default if custom is empty
+        }
+      } else {
+        userInfo.style = styleSelect.value;
+      }
       
       hideAllPages();
       page2.classList.remove('hidden');
@@ -1102,6 +1158,13 @@
       if (isNaN(wordCount) || wordCount < 100 || wordCount > 5000) {
         showError('请输入有效的字数（100-5000）');
         wordCountInput.focus();
+        return false;
+      }
+      
+      // Validate custom style if selected
+      if (styleSelect.value === 'custom' && !customStyleInput.value.trim()) {
+        showError('请输入自定义风格描述');
+        customStyleInput.focus();
         return false;
       }
       
@@ -1227,7 +1290,8 @@
           title: finalTitle,
           word_count: userInfo.word_count,
           name: userInfo.name,
-          unit: userInfo.unit
+          unit: userInfo.unit,
+          style: userInfo.style
         };
         
         console.log('生成文章请求数据:', payload);
