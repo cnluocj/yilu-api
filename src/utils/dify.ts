@@ -309,7 +309,8 @@ export async function callDifyGenerateArticleAPI(
             unit: request.unit,
             direction: request.direction,
             subject: request.title,
-            word_count: request.word_count
+            word_count: request.word_count,
+            style: request.style || '生动有趣，角度新颖' // 默认风格
           },
           response_mode: "streaming",
           user: request.openid // 使用openid作为用户标识
@@ -674,7 +675,8 @@ export async function callDifyGenerateArticleAPI(
                           direction: request.direction || '',
                           title: request.title || '未命名标题',
                           word_count: request.word_count || 0,
-                          dify_task_id: lastTaskId || ''
+                          dify_task_id: lastTaskId || '',
+                          style: request.style || '生动有趣，角度新颖'
                         };
                         
                         // 保存文章

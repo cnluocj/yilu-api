@@ -408,6 +408,13 @@
       margin-top: 5px;
     }
     
+    .history-item-style {
+      font-size: 13px;
+      color: var(--primary-color);
+      margin-top: 5px;
+      font-style: italic;
+    }
+    
     .modal {
       display: none;
       position: fixed;
@@ -1527,12 +1534,19 @@
         info.appendChild(author);
         info.appendChild(wordCount);
         
+        const style = document.createElement('div');
+        style.className = 'history-item-style';
+        style.textContent = article.style ? `风格: ${article.style}` : '';
+        
         const date = document.createElement('div');
         date.className = 'history-item-date';
         date.textContent = formatDate(article.created_at);
         
         item.appendChild(title);
         item.appendChild(info);
+        if (article.style) {
+          item.appendChild(style);
+        }
         item.appendChild(date);
         
         // Add click event to open preview
@@ -1558,6 +1572,9 @@
     function openPreview(article) {
       // Set the preview title
       previewTitle.textContent = article.title || '无标题';
+      if (article.style) {
+        previewTitle.textContent += ` (${article.style})`;
+      }
       
       // Set the preview iframe src to the file URL
       // Note: Office files (.docx) typically can't be directly previewed in an iframe

@@ -14,6 +14,7 @@ export interface GenerateArticleRequest {
   name: string;
   unit: string;
   title?: string;
+  style?: string; // 文章风格
 }
 
 // Response Types

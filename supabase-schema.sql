@@ -81,15 +81,16 @@ CREATE TABLE IF NOT EXISTS public.article_records (
     id SERIAL PRIMARY KEY,
     user_id TEXT NOT NULL,
     direction TEXT NOT NULL,
-    word_count INTEGER NOT NULL DEFAULT 1000,
+    word_count INTEGER NOT NULL,
     author_name TEXT NOT NULL,
     unit TEXT NOT NULL,
     title TEXT,
     file_path TEXT NOT NULL,
     public_url TEXT NOT NULL,
     dify_task_id TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    style TEXT, -- 文章风格
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- 创建索引以加速查询
