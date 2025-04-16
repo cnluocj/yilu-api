@@ -3,161 +3,281 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>科普文章生成系统 - Tailwind版</title>
+  <title>科普文章生成系统</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Mammoth.js 用于DOCX文件预览 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <!-- Configure Tailwind Theme to match original CSS variables -->
+  <!-- Inter字体 - Vercel使用的主要字体 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <!-- Configure Tailwind Theme to match Vercel-style -->
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
           colors: {
-            primary: '#1677ff',
-            'primary-hover': '#0958d9',
-            success: '#52c41a',
-            'success-hover': '#389e0d',
-            error: '#ff4d4f',
-            'error-hover': '#cf1322',
-            'text': '#333', // Use default text-gray-800 or customize further
-            'light-text': '#666', // Use text-gray-500
-            'border': '#eee', // Use border-gray-200
-            'background': '#f5f7fa', // Use bg-gray-100
-            'card-bg': '#fff', // Use bg-white
-            'disabled-bg': '#f5f5f5', // Use bg-gray-100 or bg-gray-200
-            'disabled-text': '#bbb', // Use text-gray-400
-            'progress-bg': '#e6f4ff', // Use bg-blue-100
+            // Vercel风格颜色
+            primary: {
+              50: '#f0f7ff',
+              100: '#e0eefe',
+              200: '#bae0fd',
+              300: '#7cc6fb',
+              400: '#36a6f2',
+              500: '#0090ff',
+              600: '#007bea',
+              700: '#006adc',
+              800: '#0053ad',
+              900: '#0a4a90',
+            },
+            background: {
+              light: '#FFFFFF',
+              dark: '#000000',
+            },
+            content: {
+              primary: '#000000',
+              secondary: '#666666',
+              light: '#FFFFFF',
+              'light-secondary': '#A1A1A1',
+            },
+            border: {
+              light: '#EAEAEA',
+              dark: '#333333',
+            },
+            accent: {
+              1: '#FAFAFA',
+              2: '#EAEAEA',
+              3: '#999999',
+              4: '#888888',
+              5: '#666666',
+              6: '#444444',
+              7: '#333333',
+              8: '#111111',
+            },
+            success: {
+              light: '#0070F3',
+              dark: '#0761D1',
+            },
+            error: {
+              light: '#FF0000',
+              dark: '#E00000',
+            },
+            warning: {
+              light: '#F5A623',
+              dark: '#F49D1A',
+            },
           },
           boxShadow: {
-            'card': '0 4px 12px rgba(0, 0, 0, 0.08)', // Use shadow-md or shadow-lg
+            'card': '0 4px 8px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.1)',
+            'card-hover': '0 8px 30px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.1)',
+            'btn': '0 1px 2px rgba(0, 0, 0, 0.05)',
+            'btn-hover': '0 5px 10px rgba(0, 0, 0, 0.1)',
           },
           transitionProperty: {
             'default': 'all',
           },
           transitionDuration: {
-            'default': '300ms',
-          }
+            'default': '200ms',
+          },
+          transitionTimingFunction: {
+            'default': 'cubic-bezier(0.4, 0, 0.2, 1)',
+          },
         }
       }
     }
   </script>
   <style>
-    /* Add a specific style for the radio tile selected state if needed */
-    .radio-tile.selected {
-      border-color: #1677ff; /* Tailwind: border-primary */
-      background-color: #e6f4ff; /* Tailwind: bg-progress-bg */
+    body {
+      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-    /* Custom radio button visual style */
-     .radio-tile.selected .radio-icon::after {
+    
+    /* 平滑滚动 */
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    /* 微妙的动效 */
+    .transition-all {
+      transition-property: all;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      transition-duration: 200ms;
+    }
+    
+    /* Vercel风格按钮 */
+    .btn-vercel {
+      height: 40px;
+      padding: 0 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 200ms ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .btn-vercel:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0, 142, 255, 0.2);
+    }
+    
+    /* Vercel风格卡片 */
+    .card-vercel {
+      border-radius: 8px;
+      overflow: hidden;
+      background-color: white;
+      border: 1px solid #EAEAEA;
+      transition: all 200ms ease;
+    }
+    
+    .card-vercel:hover {
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      transform: translateY(-1px);
+    }
+    
+    /* 自定义复选框/单选框样式 */
+    .radio-tile.selected {
+      border-color: #0090ff;
+      background-color: rgba(0, 144, 255, 0.05);
+    }
+    
+    .radio-tile.selected .radio-icon {
+      border-color: #0090ff;
+      background-color: #0090ff;
+    }
+    
+    .radio-tile.selected .radio-icon::after {
       content: '';
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 10px; /* Tailwind: w-2.5 */
-      height: 10px; /* Tailwind: h-2.5 */
-      background-color: white; /* Tailwind: bg-white */
-      border-radius: 50%; /* Tailwind: rounded-full */
+      width: 8px;
+      height: 8px;
+      background-color: white;
+      border-radius: 50%;
       transform: translate(-50%, -50%);
     }
-    /* Base input styling (Tailwind applies focus styles automatically) */
+    
+    /* 现代化输入框 */
     input, select, textarea {
       width: 100%;
-      padding: 0.75rem 1rem;
-      border: 1px solid #eee;
-      border-radius: 0.375rem;
-      font-size: 1rem;
-      transition: all 0.3s;
+      padding: 0 12px;
+      height: 40px;
+      border: 1px solid #EAEAEA;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 200ms ease;
       background-color: white;
+      color: #000;
     }
     
     input:focus, select:focus, textarea:focus {
       outline: none;
-      border-color: #1677ff;
-      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+      border-color: #0090ff;
+      box-shadow: 0 0 0 2px rgba(0, 144, 255, 0.2);
+    }
+    
+    /* 进度条样式 */
+    .progress-bar {
+      overflow: hidden;
+      border-radius: 99px;
+      background-color: rgba(0, 144, 255, 0.1);
+      height: 4px;
+    }
+    
+    .progress-bar-fill {
+      height: 100%;
+      background-color: #0090ff;
+      transition: width 500ms ease;
     }
     
     /* 确保下拉菜单可用 */
     select {
       appearance: auto;
-      padding-right: 2rem;
+      padding-right: 32px;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
-      background-position: right 0.5rem center;
+      background-position: right 12px center;
       background-repeat: no-repeat;
-      background-size: 1.5em 1.5em;
+      background-size: 16px 16px;
     }
   </style>
 </head>
-<body class="bg-background text-text font-sans antialiased min-h-screen">
+<body class="bg-accent-1 text-content-primary font-sans min-h-screen">
 
   <!-- Login Modal -->
-  <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-card-bg rounded-lg shadow-card p-8 w-11/12 max-w-md">
-      <h2 class="text-center text-2xl font-medium mb-5">操作员登录</h2>
-      <p class="text-sm text-light-text text-center mb-5">请输入您的账号，仅限英文和数字</p>
-      <div id="loginError" class="bg-red-100 border border-red-200 text-error text-sm rounded p-3 mb-4 hidden"></div>
+  <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+    <div class="bg-background-light rounded-lg shadow-card p-8 w-11/12 max-w-md">
+      <h2 class="text-xl font-semibold mb-2 text-center">登录系统</h2>
+      <p class="text-sm text-content-secondary text-center mb-6">请输入您的账号</p>
+      <div id="loginError" class="bg-red-50 border border-red-200 text-error-light text-sm rounded-md p-3 mb-4 hidden"></div>
       <input type="text" id="loginUsername" placeholder="请输入账号" maxlength="20" class="mb-5">
-      <button id="loginButton" class="w-full bg-primary hover:bg-primary-hover text-white font-medium py-3 rounded-md transition duration-default">登录</button>
+      <button id="loginButton" class="w-full btn-vercel bg-primary-600 hover:bg-primary-700 text-white">登录</button>
     </div>
   </div>
 
   <!-- Logged in user display -->
-  <div id="loggedInUser" class="absolute top-5 right-5 bg-card-bg rounded-full shadow-card px-4 py-2 text-sm flex items-center gap-3 hidden">
-    操作员: <span id="username" class="font-medium"></span>
-    <button id="logoutBtn" class="bg-error hover:bg-error-hover text-white text-xs font-medium px-2 py-1 rounded transition duration-default">切换</button>
+  <div id="loggedInUser" class="absolute top-5 right-5 bg-background-light rounded-full shadow-card px-4 py-2 text-sm flex items-center gap-3 hidden">
+    <span class="text-content-secondary">操作员:</span> 
+    <span id="username" class="font-medium"></span>
+    <button id="logoutBtn" class="text-xs font-medium px-2 py-1 rounded transition-all hover:bg-accent-2 text-content-secondary">切换</button>
   </div>
 
-  <div class="max-w-7xl mx-auto px-4 py-5 lg:flex lg:gap-5">
+  <div class="max-w-5xl mx-auto px-4 py-8 lg:flex lg:gap-8">
     <!-- Main Content -->
     <div class="flex-1 lg:max-w-3xl">
-      <header class="text-center mb-8">
-        <h1 class="text-3xl font-bold mb-2">科普文章生成系统</h1>
+      <header class="text-center mb-12">
+        <h1 class="text-3xl font-bold mb-3">科普文章生成系统</h1>
       </header>
 
       <!-- Progress Steps -->
-      <div class="relative flex justify-between mb-8">
+      <div class="relative flex justify-between mb-10">
         <!-- Connecting line -->
-        <div class="absolute top-4 left-0 right-0 h-0.5 bg-border z-0"></div>
+        <div class="absolute top-4 left-0 right-0 h-[2px] bg-accent-2 z-0"></div>
         <!-- Step 1 -->
         <div class="relative flex flex-col items-center z-10 step" id="step1">
-          <div class="step-number w-8 h-8 rounded-full bg-border text-light-text flex items-center justify-center font-bold mb-2 transition duration-default">1</div>
-          <div class="step-title text-sm text-light-text transition duration-default">输入基本信息</div>
+          <div class="step-number w-8 h-8 rounded-full bg-accent-2 text-content-secondary flex items-center justify-center font-medium mb-2 transition-all">1</div>
+          <div class="step-title text-sm text-content-secondary transition-all">基本信息</div>
         </div>
         <!-- Step 2 -->
         <div class="relative flex flex-col items-center z-10 step" id="step2">
-          <div class="step-number w-8 h-8 rounded-full bg-border text-light-text flex items-center justify-center font-bold mb-2 transition duration-default">2</div>
-          <div class="step-title text-sm text-light-text transition duration-default">选择文章标题</div>
+          <div class="step-number w-8 h-8 rounded-full bg-accent-2 text-content-secondary flex items-center justify-center font-medium mb-2 transition-all">2</div>
+          <div class="step-title text-sm text-content-secondary transition-all">选择标题</div>
         </div>
         <!-- Step 3 -->
         <div class="relative flex flex-col items-center z-10 step" id="step3">
-          <div class="step-number w-8 h-8 rounded-full bg-border text-light-text flex items-center justify-center font-bold mb-2 transition duration-default">3</div>
-          <div class="step-title text-sm text-light-text transition duration-default">生成文章</div>
+          <div class="step-number w-8 h-8 rounded-full bg-accent-2 text-content-secondary flex items-center justify-center font-medium mb-2 transition-all">3</div>
+          <div class="step-title text-sm text-content-secondary transition-all">生成文章</div>
         </div>
       </div>
 
       <!-- Container for Pages -->
       <div class="w-full">
         <!-- Page 1: Input Information -->
-        <div class="bg-card-bg rounded-lg shadow-card p-6 mb-5 transition duration-default" id="page1">
-          <h2 class="text-xl font-semibold mb-6">请输入您的基本信息</h2>
+        <div class="card-vercel p-6" id="page1">
+          <h2 class="text-xl font-semibold mb-6">请输入基本信息</h2>
           <div class="mb-5">
-            <label for="name" class="block font-medium mb-2">姓名</label>
+            <label for="name" class="block text-sm font-medium mb-2 text-content-primary">姓名</label>
             <input type="text" id="name" placeholder="请输入您的姓名" class="form-input">
           </div>
           <div class="mb-5">
-            <label for="unit" class="block font-medium mb-2">科室</label>
+            <label for="unit" class="block text-sm font-medium mb-2 text-content-primary">科室</label>
             <input type="text" id="unit" placeholder="请输入您的科室" class="form-input">
           </div>
           <div class="mb-5">
-            <label for="direction" class="block font-medium mb-2">方向</label>
+            <label for="direction" class="block text-sm font-medium mb-2 text-content-primary">方向</label>
             <input type="text" id="direction" placeholder="请输入文章方向或主题" class="form-input">
           </div>
           <div class="mb-5">
-            <label for="word_count" class="block font-medium mb-2">字数</label>
+            <label for="word_count" class="block text-sm font-medium mb-2 text-content-primary">字数</label>
             <input type="number" id="word_count" value="1500" min="100" max="5000" class="form-input">
           </div>
           <div class="mb-5">
-            <label for="style" class="block font-medium mb-2">文章风格</label>
+            <label for="style" class="block text-sm font-medium mb-2 text-content-primary">文章风格</label>
             <select id="style" class="form-select">
               <option value="生动有趣，角度新颖">生动有趣，角度新颖</option>
               <option value="通俗易懂，深入浅出">通俗易懂，深入浅出</option>
@@ -170,38 +290,38 @@
             </select>
           </div>
           <div class="mb-5 mt-3 hidden" id="customStyleContainer">
-            <label for="customStyle" class="block font-medium mb-2">自定义风格</label>
+            <label for="customStyle" class="block text-sm font-medium mb-2 text-content-primary">自定义风格</label>
             <input type="text" id="customStyle" placeholder="请输入自定义风格描述">
           </div>
           <div class="mt-6">
-            <button id="nextToTitles" class="w-full bg-primary hover:bg-primary-hover text-white font-medium py-3 px-6 rounded-md transition duration-default disabled:bg-disabled-bg disabled:text-disabled-text disabled:cursor-not-allowed">下一步</button>
+            <button id="nextToTitles" class="w-full btn-vercel bg-primary-600 hover:bg-primary-700 text-white disabled:bg-accent-3 disabled:text-accent-4 disabled:cursor-not-allowed">下一步</button>
           </div>
         </div>
 
         <!-- Page 2: Select Title -->
-        <div class="bg-card-bg rounded-lg shadow-card p-6 mb-5 transition duration-default hidden" id="page2">
+        <div class="card-vercel p-6 hidden" id="page2">
           <h2 class="text-xl font-semibold mb-6">请选择文章标题</h2>
           <!-- Title Generation Progress -->
           <div class="mt-4 mb-6" id="titleProgressContainer">
             <div class="flex justify-between mb-2">
-              <div class="text-sm text-light-text">正在生成标题...</div>
-              <div class="text-sm text-light-text" id="titleProgressPercentage">0%</div>
+              <div class="text-sm text-content-secondary">正在生成标题...</div>
+              <div class="text-sm text-content-secondary" id="titleProgressPercentage">0%</div>
             </div>
-            <div class="w-full h-2.5 bg-progress-bg rounded-full overflow-hidden">
-              <div id="titleProgressFill" class="h-full bg-primary rounded-full transition-width duration-500 ease-linear" style="width: 0%;"></div>
+            <div class="progress-bar">
+              <div id="titleProgressFill" class="progress-bar-fill" style="width: 0%;"></div>
             </div>
           </div>
           
           <!-- Title Selection Area -->
           <div id="titleSelectionContainer" class="hidden">
-            <div class="flex flex-col gap-4 mb-5" id="titleOptions">
+            <div class="flex flex-col gap-3 mb-5" id="titleOptions">
               <!-- Title options will be inserted here -->
             </div>
             
             <!-- Custom Title Option -->
-            <div class="border-2 border-border rounded-md p-4 cursor-pointer transition duration-default relative radio-tile" id="customTitleTile">
-              <div class="font-medium mb-1">自定义标题</div>
-              <div class="absolute top-4 right-4 w-5 h-5 border-2 border-gray-300 rounded-full transition duration-default radio-icon"></div>
+            <div class="border-[1px] border-border-light rounded-md p-4 cursor-pointer transition-all relative radio-tile hover:bg-accent-1" id="customTitleTile">
+              <div class="font-medium mb-1 text-sm">自定义标题</div>
+              <div class="absolute top-4 right-4 w-4 h-4 border-2 border-accent-3 rounded-full transition-all radio-icon"></div>
               <input type="radio" name="title" value="custom" class="absolute opacity-0 w-0 h-0">
             </div>
             
@@ -214,53 +334,60 @@
             
             <!-- Buttons -->
             <div class="flex flex-col sm:flex-row justify-between gap-4 mt-6">
-              <button id="backToInfo" class="flex-1 bg-gray-200 hover:bg-gray-300 text-light-text font-medium py-3 px-6 rounded-md transition duration-default">上一步</button>
-              <button id="regenerateTitles" class="flex-1 bg-gray-200 hover:bg-gray-300 text-light-text font-medium py-3 px-6 rounded-md transition duration-default">重新生成标题</button>
-              <button id="nextToGenerate" class="flex-1 bg-primary hover:bg-primary-hover text-white font-medium py-3 px-6 rounded-md transition duration-default disabled:bg-disabled-bg disabled:text-disabled-text disabled:cursor-not-allowed">开始生成文章</button>
+              <button id="backToInfo" class="flex-1 btn-vercel bg-accent-2 hover:bg-accent-3 text-content-primary">上一步</button>
+              <button id="regenerateTitles" class="flex-1 btn-vercel bg-accent-2 hover:bg-accent-3 text-content-primary">重新生成</button>
+              <button id="nextToGenerate" class="flex-1 btn-vercel bg-primary-600 hover:bg-primary-700 text-white disabled:bg-accent-3 disabled:text-accent-4 disabled:cursor-not-allowed">生成文章</button>
             </div>
           </div>
         </div>
 
         <!-- Page 3: Generate Article -->
-        <div class="bg-card-bg rounded-lg shadow-card p-6 mb-5 transition duration-default hidden" id="page3">
+        <div class="card-vercel p-6 hidden" id="page3">
           <h2 class="text-xl font-semibold mb-6">文章生成</h2>
           <!-- Article Generation Progress -->
           <div class="mt-4 mb-6" id="articleProgressContainer">
             <div class="flex justify-between mb-2">
-              <div class="text-sm text-light-text">正在生成文章...</div>
-              <div class="text-sm text-light-text" id="articleProgressPercentage">0%</div>
+              <div class="text-sm text-content-secondary">正在生成文章...</div>
+              <div class="text-sm text-content-secondary" id="articleProgressPercentage">0%</div>
             </div>
-            <div class="w-full h-2.5 bg-progress-bg rounded-full overflow-hidden">
-              <div id="articleProgressFill" class="h-full bg-primary rounded-full transition-width duration-500 ease-linear" style="width: 0%;"></div>
+            <div class="progress-bar">
+              <div id="articleProgressFill" class="progress-bar-fill" style="width: 0%;"></div>
             </div>
           </div>
           
           <!-- Article Result -->
           <div id="articleResultContainer" class="hidden text-center p-8">
-            <div class="text-5xl text-success mb-5">✓</div>
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full text-green-500 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
             <h3 class="text-xl font-semibold mb-3">文章生成成功！</h3>
-            <p class="text-light-text mb-5">点击下方按钮下载文章</p>
-            <a href="#" id="downloadArticle" target="_blank" class="inline-flex items-center gap-2 bg-progress-bg hover:bg-blue-200 text-primary font-medium py-3 px-6 rounded-md transition duration-default mb-6">
-              <i>📄</i> 下载文章 (DOCX)
+            <p class="text-content-secondary mb-6">您的文章已生成完毕，可立即下载</p>
+            <a href="#" id="downloadArticle" target="_blank" class="inline-flex items-center gap-2 bg-primary-50 hover:bg-primary-100 text-primary-600 font-medium py-2 px-4 rounded-md transition-all mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              下载文章 (DOCX)
             </a>
             <div class="flex flex-col sm:flex-row justify-between gap-4 mt-6">
-               <button id="backToTitles" class="flex-1 bg-gray-200 hover:bg-gray-300 text-light-text font-medium py-3 px-6 rounded-md transition duration-default">返回选择标题</button>
-              <button id="regenerateArticle" class="flex-1 bg-primary hover:bg-primary-hover text-white font-medium py-3 px-6 rounded-md transition duration-default">重新生成文章</button>
+              <button id="backToTitles" class="flex-1 btn-vercel bg-accent-2 hover:bg-accent-3 text-content-primary">选择其他标题</button>
+              <button id="regenerateArticle" class="flex-1 btn-vercel bg-primary-600 hover:bg-primary-700 text-white">重新生成文章</button>
             </div>
           </div>
         </div>
 
         <!-- Error message container -->
-        <div id="errorContainer" class="bg-red-100 border border-error text-error text-sm rounded p-4 mb-5 hidden"></div>
+        <div id="errorContainer" class="mt-4 bg-red-50 border border-red-200 text-error-light text-sm rounded-md p-4 mb-5 hidden"></div>
       </div>
     </div>
 
     <!-- History Panel -->
-    <div class="lg:w-80 lg:ml-5 mt-5 lg:mt-0">
-      <div class="bg-card-bg rounded-lg shadow-card p-6">
-        <h2 class="text-lg font-semibold pb-3 mb-4 border-b border-border">历史文章</h2>
-        <div id="historyLoadingContainer" class="text-center py-5 text-light-text">
-          <p>加载历史文章...</p>
+    <div class="lg:w-80 lg:ml-8 mt-8 lg:mt-0">
+      <div class="card-vercel p-6">
+        <h2 class="text-lg font-semibold pb-3 mb-4 border-b border-border-light">历史文章</h2>
+        <div id="historyLoadingContainer" class="text-center py-5 text-content-secondary">
+          <svg class="animate-spin h-5 w-5 text-primary-500 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-sm">加载历史文章...</p>
         </div>
         <div id="historyList" class="space-y-3 max-h-[600px] overflow-y-auto">
           <!-- History items will be inserted here -->
@@ -270,29 +397,42 @@
   </div>
 
   <!-- Preview Modal -->
-  <div id="previewModal" class="fixed inset-0 z-40 items-center justify-center bg-black bg-opacity-50 hidden">
-    <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-4xl max-h-[90vh] p-5 flex flex-col">
-      <div class="flex justify-between items-center pb-3 mb-4 border-b border-border">
+  <div id="previewModal" class="fixed inset-0 z-40 items-center justify-center bg-black bg-opacity-70 hidden">
+    <div class="bg-background-light rounded-lg shadow-card m-4 max-w-4xl max-h-[90vh] w-full flex flex-col overflow-hidden">
+      <div class="flex justify-between items-center p-4 border-b border-border-light">
         <h3 id="previewTitle" class="text-lg font-medium">文章预览</h3>
-        <button id="closeModal" class="text-light-text hover:text-text text-2xl">&times;</button>
+        <button id="closeModal" class="text-content-secondary hover:text-content-primary p-1 rounded-md transition-all hover:bg-accent-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
       <div class="flex-1 overflow-hidden">
-        <div id="previewFallback" class="hidden w-full h-[500px] border border-border rounded flex flex-col items-center justify-center p-8 text-center">
-          <div class="text-4xl mb-4">📄</div>
-          <h4 class="text-xl font-medium mb-2">正在加载文档...</h4>
-          <p class="text-light-text mb-6 docx-loading">正在将Word文档转换为网页格式，请稍候...</p>
+        <div id="previewFallback" class="hidden w-full h-[500px] border border-border-light rounded-md flex flex-col items-center justify-center p-8 text-center">
+          <div class="w-16 h-16 mb-4 text-content-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+          </div>
+          <h4 class="text-xl font-medium mb-2 docx-title">正在加载文档...</h4>
+          <p class="text-content-secondary mb-6 docx-loading">正在将Word文档转换为网页格式，请稍候...</p>
+          <div class="docx-loading-spinner mb-6">
+            <svg class="animate-spin h-6 w-6 text-primary-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
           <div class="docx-error hidden">
-            <p class="text-error mb-6">文档加载失败，此格式可能不支持在线预览</p>
-            <p class="text-sm text-light-text mb-6">请点击下方按钮下载查看</p>
+            <p class="text-error-light mb-6">文档加载失败，此格式可能不支持在线预览</p>
+            <p class="text-sm text-content-secondary mb-6">请点击下方按钮下载查看</p>
           </div>
         </div>
-        <div id="docxPreview" class="hidden w-full h-[500px] border border-border rounded p-4 overflow-auto">
+        <div id="docxPreview" class="hidden w-full h-[500px] border border-border-light rounded-md p-6 overflow-auto">
           <!-- 这里将显示转换后的DOCX内容 -->
         </div>
-        <iframe id="previewFrame" class="w-full h-[500px] border border-border rounded" src=""></iframe>
+        <iframe id="previewFrame" class="w-full h-[500px] border border-border-light rounded-md" src=""></iframe>
       </div>
-      <div class="flex justify-end pt-4 mt-4 border-t border-border">
-        <a href="#" id="downloadPreview" target="_blank" class="bg-primary hover:bg-primary-hover text-white font-medium py-2 px-5 rounded-md transition duration-default">下载文章</a>
+      <div class="flex justify-end p-4 border-t border-border-light">
+        <a href="#" id="downloadPreview" target="_blank" class="btn-vercel bg-primary-600 hover:bg-primary-700 text-white inline-flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          下载文章
+        </a>
       </div>
     </div>
   </div>
@@ -499,21 +639,21 @@
             const titleEl = step.querySelector('.step-title');
             
             // Reset styles
-            numberEl.classList.remove('bg-primary', 'text-white', 'bg-success');
-            numberEl.classList.add('bg-border', 'text-light-text');
-            titleEl.classList.remove('text-primary', 'font-medium', 'text-success');
-            titleEl.classList.add('text-light-text');
+            numberEl.classList.remove('bg-primary-500', 'text-white', 'bg-green-500');
+            numberEl.classList.add('bg-accent-2', 'text-content-secondary');
+            titleEl.classList.remove('text-primary-600', 'font-medium', 'text-green-500');
+            titleEl.classList.add('text-content-secondary');
             
             if (index + 1 < currentStep) { // Completed step
-                numberEl.classList.remove('bg-border', 'text-light-text');
-                numberEl.classList.add('bg-success', 'text-white');
-                titleEl.classList.remove('text-light-text');
-                // titleEl.classList.add('text-success'); // Optional: make completed title green
+                numberEl.classList.remove('bg-accent-2', 'text-content-secondary');
+                numberEl.classList.add('bg-green-500', 'text-white');
+                titleEl.classList.remove('text-content-secondary');
+                // titleEl.classList.add('text-green-500'); // Optional: make completed title green
             } else if (index + 1 === currentStep) { // Active step
-                numberEl.classList.remove('bg-border', 'text-light-text');
-                numberEl.classList.add('bg-primary', 'text-white');
-                titleEl.classList.remove('text-light-text');
-                titleEl.classList.add('text-primary', 'font-medium');
+                numberEl.classList.remove('bg-accent-2', 'text-content-secondary');
+                numberEl.classList.add('bg-primary-500', 'text-white');
+                titleEl.classList.remove('text-content-secondary');
+                titleEl.classList.add('text-primary-600', 'font-medium');
             }
         });
     }
@@ -847,17 +987,17 @@
 
         titles.forEach((title) => {
             const tile = document.createElement('div');
-            // Base classes for the tile
-            tile.className = 'border-2 border-border rounded-md p-4 cursor-pointer transition duration-default relative radio-tile hover:border-gray-400'; 
+            // Vercel风格的选项卡
+            tile.className = 'border-[1px] border-border-light rounded-md p-4 cursor-pointer transition-all relative radio-tile hover:bg-accent-1'; 
             tile.dataset.value = title;
 
             const titleElement = document.createElement('div');
-            titleElement.className = 'font-medium mb-1'; // Style for the title text
+            titleElement.className = 'font-medium mb-1 text-sm'; // Style for the title text
             titleElement.textContent = title;
 
             const radioIcon = document.createElement('div');
             // Style for the custom radio icon
-            radioIcon.className = 'absolute top-4 right-4 w-5 h-5 border-2 border-gray-300 rounded-full transition duration-default radio-icon';
+            radioIcon.className = 'absolute top-4 right-4 w-4 h-4 border-2 border-accent-3 rounded-full transition-all radio-icon';
 
             const radioInput = document.createElement('input');
             radioInput.type = 'radio';
@@ -880,8 +1020,8 @@
         });
         
         // Reset custom title tile state
-        customTitleTile.classList.remove('selected', 'border-primary', 'bg-progress-bg');
-        customTitleTile.classList.add('border-border');
+        customTitleTile.classList.remove('selected', 'border-primary-500', 'bg-primary-50');
+        customTitleTile.classList.add('border-border-light');
         const customRadio = customTitleTile.querySelector('input[type="radio"]');
         if(customRadio) customRadio.checked = false;
         customTitleContainer.classList.add('hidden');
@@ -896,21 +1036,21 @@
         document.querySelectorAll('.radio-tile').forEach(tile => {
             const radio = tile.querySelector('input[type="radio"]');
             if (radio && radio.value === titleValue) {
-                 tile.classList.add('selected', 'border-primary', 'bg-progress-bg'); // Use style rule for selected
-                 tile.classList.remove('border-border');
+                 tile.classList.add('selected', 'border-primary-500', 'bg-primary-50'); // Use style rule for selected
+                 tile.classList.remove('border-border-light');
             } else {
-                 tile.classList.remove('selected', 'border-primary', 'bg-progress-bg');
-                 tile.classList.add('border-border');
+                 tile.classList.remove('selected', 'border-primary-500', 'bg-primary-50');
+                 tile.classList.add('border-border-light');
             }
         });
         
         // Ensure custom title tile has correct styling if selected
         if (titleValue === 'custom') {
-            customTitleTile.classList.add('selected', 'border-primary', 'bg-progress-bg');
-             customTitleTile.classList.remove('border-border');
+            customTitleTile.classList.add('selected', 'border-primary-500', 'bg-primary-50');
+            customTitleTile.classList.remove('border-border-light');
         } else {
-            customTitleTile.classList.remove('selected', 'border-primary', 'bg-progress-bg');
-             customTitleTile.classList.add('border-border');
+            customTitleTile.classList.remove('selected', 'border-primary-500', 'bg-primary-50');
+            customTitleTile.classList.add('border-border-light');
         }
 
         nextToGenerateBtn.disabled = false; // Enable the next button now that a selection is made
@@ -950,7 +1090,7 @@
         if (!userId) {
             console.log("User not logged in, skipping history load.");
             historyLoadingContainer.style.display = 'none';
-            historyList.innerHTML = '<p class="text-sm text-light-text text-center">请先登录查看历史记录</p>';
+            historyList.innerHTML = '<p class="text-sm text-content-secondary text-center">请先登录查看历史记录</p>';
             return;
         }
 
@@ -1000,7 +1140,7 @@
       historyList.innerHTML = ''; // Clear current list
       
       if (!articles || articles.length === 0) {
-        historyList.innerHTML = '<p class="text-sm text-light-text text-center">暂无历史文章</p>';
+        historyList.innerHTML = '<p class="text-sm text-content-secondary text-center py-4">暂无历史文章</p>';
         return;
       }
 
@@ -1008,8 +1148,8 @@
         if (!article) return; // 跳过无效条目
         
         const item = document.createElement('div');
-        // Tailwind classes for history item
-        item.className = 'p-3 border border-border hover:border-primary rounded-md cursor-pointer transition duration-default hover:bg-progress-bg';
+        // Vercel风格的历史条目
+        item.className = 'p-3 border border-border-light rounded-md cursor-pointer transition-all hover:border-primary-500 hover:shadow-sm';
         item.dataset.id = article.id || '';
         item.dataset.url = article.public_url || '';
 
@@ -1018,7 +1158,7 @@
         title.textContent = article.title || '无标题';
 
         const info = document.createElement('div');
-        info.className = 'flex justify-between text-xs text-light-text'; // Tailwind classes for info line
+        info.className = 'flex justify-between text-xs text-content-secondary'; // Tailwind classes for info line
 
         const author = document.createElement('span');
         author.textContent = article.author_name || '未知作者';
@@ -1030,7 +1170,7 @@
         info.appendChild(wordCount);
 
         const date = document.createElement('div');
-        date.className = 'text-xs text-light-text mt-1'; // Tailwind classes for date
+        date.className = 'text-xs text-content-secondary mt-1'; // Tailwind classes for date
         date.textContent = formatDate(article.created_at);
         
         item.appendChild(title);
@@ -1039,7 +1179,7 @@
         // Add style info if present
         if (article.style) {
             const styleDiv = document.createElement('div');
-            styleDiv.className = 'text-xs text-primary italic mt-1'; // Style for the article style text
+            styleDiv.className = 'text-xs text-primary-500 italic mt-1'; // Style for the article style text
             styleDiv.textContent = `风格: ${article.style}`;
             item.appendChild(styleDiv);
         }
@@ -1124,11 +1264,12 @@
         // 显示正确的提示信息
         const loadingEl = previewFallback.querySelector('.docx-loading');
         const errorEl = previewFallback.querySelector('.docx-error');
+        const spinnerEl = previewFallback.querySelector('.docx-loading-spinner');
+        const titleEl = previewFallback.querySelector('.docx-title');
+        
         if (loadingEl) loadingEl.classList.remove('hidden');
         if (errorEl) errorEl.classList.add('hidden');
-        
-        // 更新标题
-        const titleEl = previewFallback.querySelector('h4');
+        if (spinnerEl) spinnerEl.classList.remove('hidden');
         if (titleEl) titleEl.textContent = '正在加载文档...';
         
         // 加载DOCX文件
@@ -1140,8 +1281,24 @@
         // 使用mammoth.js转换DOCX为HTML
         const result = await mammoth.convertToHtml({ arrayBuffer });
         
-        // 将结果显示在预览区域
-        docxPreview.innerHTML = result.value;
+        // 将结果显示在预览区域，添加一些基本样式
+        docxPreview.innerHTML = `
+          <style>
+            /* 基本文档样式 */
+            h1, h2, h3, h4, h5, h6 { margin-top: 1.5rem; margin-bottom: 1rem; font-weight: 600; line-height: 1.25; }
+            h1 { font-size: 1.75rem; }
+            h2 { font-size: 1.5rem; }
+            h3 { font-size: 1.25rem; }
+            p { margin-bottom: 1rem; line-height: 1.5; }
+            strong { font-weight: 600; }
+            ul, ol { margin-bottom: 1rem; padding-left: 2rem; }
+            li { margin-bottom: 0.5rem; }
+            table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
+            th, td { border: 1px solid #eaeaea; padding: 0.75rem; text-align: left; }
+            th { background-color: #f7f7f7; font-weight: 600; }
+          </style>
+          ${result.value}
+        `;
         
         // 隐藏加载状态，显示DOCX预览
         previewFallback.classList.add('hidden');
@@ -1153,11 +1310,12 @@
         // 显示错误提示
         const loadingEl = previewFallback.querySelector('.docx-loading');
         const errorEl = previewFallback.querySelector('.docx-error');
+        const spinnerEl = previewFallback.querySelector('.docx-loading-spinner');
+        const titleEl = previewFallback.querySelector('.docx-title');
+        
         if (loadingEl) loadingEl.classList.add('hidden');
         if (errorEl) errorEl.classList.remove('hidden');
-        
-        // 更新标题
-        const titleEl = previewFallback.querySelector('h4');
+        if (spinnerEl) spinnerEl.classList.add('hidden');
         if (titleEl) titleEl.textContent = '文档加载失败';
       }
     }
@@ -1180,8 +1338,13 @@
         // 重置错误和加载状态
         const loadingEl = previewFallback.querySelector('.docx-loading');
         const errorEl = previewFallback.querySelector('.docx-error');
+        const spinnerEl = previewFallback.querySelector('.docx-loading-spinner');
+        const titleEl = previewFallback.querySelector('.docx-title');
+        
         if (loadingEl) loadingEl.classList.remove('hidden');
         if (errorEl) errorEl.classList.add('hidden');
+        if (spinnerEl) spinnerEl.classList.remove('hidden');
+        if (titleEl) titleEl.textContent = '正在加载文档...';
         
         previewFallback.classList.add('hidden');
         previewFrame.classList.remove('hidden');
