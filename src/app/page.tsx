@@ -1,163 +1,94 @@
+"use client"; // Keep this if client-side interactions might be added later
+
+import React from 'react';
 import Link from 'next/link'
 
-export default function Home() {
+export default function HomePage() {
+  // Placeholder data for cards (expand this later)
+  const features = [
+    {
+      title: '科普文章生成系统',
+      description: 'AI 赋能医疗科普创作，一键生成专业内容。',
+      href: '/article-generator',
+      icon: ( // Simple placeholder icon
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-blue-500">
+          <path d="M12 20h9"></path>
+          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+        </svg>
+      )
+    },
+    {
+      title: '功能模块 2 (占位)',
+      description: '此功能的简要描述，说明其用途或价值。',
+      href: '#', // Placeholder link
+      icon: (
+         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-green-500">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+            <line x1="3" x2="21" y1="9" y2="9"></line>
+            <line x1="9" x2="9" y1="21" y2="9"></line>
+         </svg>
+      )
+    },
+     {
+      title: '功能模块 3 (占位)',
+      description: '此功能的简要描述，说明其用途或价值。',
+      href: '#', // Placeholder link
+      icon: (
+         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-purple-500">
+           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" x2="12" y1="22.08" y2="12"></line>
+         </svg>
+      )
+    },
+    // Add more feature cards here as needed
+  ];
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 sm:p-24">
-      <div className="max-w-3xl w-full">
-        <h1 className="text-4xl font-bold mb-8 text-center">Yilu API</h1>
-        
-        <div className="bg-white/5 p-6 rounded-lg shadow-lg mb-8">
-          <h2 className="text-2xl font-semibold mb-4">API 文档</h2>
-          
-          <div className="mb-6">
-            <h3 className="text-xl font-medium mb-2">POST /api/generate_titles</h3>
-            <p className="mb-4">根据输入参数生成内容标题。</p>
-            
-            <div className="mb-4">
-              <h4 className="font-medium mb-2">请求格式:</h4>
-              <pre className="bg-gray-800 p-4 rounded overflow-x-auto">
-                {`{
-  "openid": "wx_abcd1234efgh5678",
-  "direction": "心血管疾病预防与保健",
-  "word_count": 15,
-  "name": "张医生",
-  "unit": "北京协和医院心内科"
-}`}
-              </pre>
+    <div className="min-h-screen bg-gray-100">
+      {/* Simplified Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <span className="text-xl font-bold text-gray-800">医路达应用平台</span>
             </div>
-            
-            <div>
-              <h4 className="font-medium mb-2">响应:</h4>
-              <p>服务器发送事件(SSE)流，包含进度更新和最终结果。</p>
-            </div>
+            {/* Add other header elements like Search, Buttons here if needed */}
           </div>
-          
-          <div className="mb-6">
-            <h3 className="text-xl font-medium mb-2">POST /api/generate_article</h3>
-            <p className="mb-4">根据输入参数生成文章内容，输出Word文档。</p>
-            
-            <div className="mb-4">
-              <h4 className="font-medium mb-2">请求格式:</h4>
-              <pre className="bg-gray-800 p-4 rounded overflow-x-auto">
-                {`{
-  "openid": "wx_abcd1234efgh5678",
-  "direction": "心血管疾病预防与保健",
-  "title": "高血压防治：日常生活中的饮食调理与血压监测",
-  "word_count": 15,
-  "name": "张医生",
-  "unit": "北京协和医院心内科"
-}`}
-              </pre>
-            </div>
-            
-            <div className="mb-4">
-              <h4 className="font-medium mb-2">响应:</h4>
-              <p>服务器发送事件(SSE)流，包含进度更新和最终结果。结果中包含文档下载链接。</p>
-            </div>
-            
-            <div>
-              <h4 className="font-medium mb-2">完成事件示例:</h4>
-              <pre className="bg-gray-800 p-4 rounded overflow-x-auto">
-                {`{
-  "event": "workflow_finished",
-  "task_id": "620ee1c3-3679-4852-b4cc-339b0a1bc419",
-  "workflow_run_id": "620ee1c3-3679-4852-b4cc-339b0a1bc419",
-  "data": {
-    "workflow_id": "68e14b11-c091-4499-ae78-fb77c062ad73",
-    "progress": "100",
-    "files": [
-      {
-        "url": "http://sandboxai.jinzhibang.com.cn/files/tools/e4d272f1-3003-4c0a-a5e5-449c6d2ca48d.docx?timestamp=1743492930&nonce=e468bd528f2acc6c28b06728cc7ce8cd&sign=-oYdGyEXtIGREOguq35m_LsDfnSZYFxwzToPoSxxgfc="
-      }
-    ],
-    "elapsed_time": "12.5",
-    "status": "succeeded"
-  }
-}`}
-              </pre>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white/5 p-6 rounded-lg shadow-lg mb-8">
-          <h2 className="text-2xl font-semibold mb-4">当前实现</h2>
-          <p className="mb-4">
-            API 已支持将请求转发到 Dify 服务。您可以通过修改环境变量在模拟数据和实际 API 间切换。
-          </p>
-          
-          <div className="flex gap-4">
-            <Link 
-              href="/test.html" 
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
-              在浏览器中测试
+        </nav>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {/* Section Title (Optional) */}
+        <h1 className="text-2xl font-semibold text-gray-700 mb-6">功能模块</h1>
+
+        {/* Grid Layout for Cards */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {features.map((feature) => (
+            <Link key={feature.title} href={feature.href} legacyBehavior>
+              <a className="group block bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 overflow-hidden">
+                <div className="p-5">
+                  <div className="flex items-center mb-4">
+                    <div className="flex-shrink-0 bg-gray-100 rounded-md p-2 mr-4">
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800 group-hover:text-blue-600 transition-colors duration-200">
+                      {feature.title}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-gray-600 line-clamp-2"> {/* Limits description to 2 lines */}
+                    {feature.description}
+                  </p>
+                  {/* Add placeholder for tags/stats later if needed */}
+                   {/* <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+                     <span>tag</span>
+                     <span>stats</span>
+                   </div> */}
+                </div>
+              </a>
             </Link>
-            
-            <a 
-              href="https://github.com/yourusername/yilu-api" 
-              target="_blank"
-              rel="noopener noreferrer" 
-              className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-            >
-              查看源代码
-            </a>
-          </div>
+          ))}
         </div>
-        
-        <div className="bg-white/5 p-6 rounded-lg shadow-lg">
-          <h2 className="text-2xl font-semibold mb-4">配置</h2>
-          <p className="mb-4">
-            使用 <code className="bg-gray-800 px-2 py-1 rounded">.env.local</code> 文件配置 Dify API 参数。查看 README 获取更多信息。
-          </p>
-          
-          <pre className="bg-gray-800 p-4 rounded overflow-x-auto mb-4">
-            {`# Dify API配置
-DIFY_API_KEY=your_api_key_here
-DIFY_BASE_URL=http://sandboxai.jinzhibang.com.cn
-DIFY_API_URL=http://sandboxai.jinzhibang.com.cn/v1
-DIFY_WORKFLOW_ID=your_workflow_id_here
-
-# 设置为true使用模拟数据，false使用实际Dify API
-USE_MOCK_DATA=false
-
-# 服务运行在端口9090
-# 启动命令: npm run dev`}
-          </pre>
-        </div>
-        
-        <div className="bg-white/5 p-6 rounded-lg shadow-lg">
-          <h2 className="text-2xl font-semibold mb-4">相关链接</h2>
-          <ul className="list-disc pl-6">
-            <li>
-              <a 
-                href="/article-generator.html" 
-                target="_blank"
-                className="text-blue-400 hover:text-blue-300"
-              >
-                科普文章生成系统（内部工具）
-              </a>
-            </li>
-            <li>
-              <a 
-                href="/test-unified.html" 
-                target="_blank"
-                className="text-blue-400 hover:text-blue-300"
-              >
-                API测试页面（标题生成与文章生成）
-              </a>
-            </li>
-            <li>
-              <a 
-                href="/test-unified.html#quota" 
-                target="_blank"
-                className="text-blue-400 hover:text-blue-300"
-              >
-                用户配额管理（查询与添加配额）
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </main>
-  )
+      </main>
+    </div>
+  );
 }
