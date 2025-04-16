@@ -692,30 +692,38 @@ export default function ArticleGeneratorPage() {
   };
 
   return (
-    <div className="bg-gray-50 text-gray-900 font-sans min-h-screen relative">
-      {/* Logged in user display */}
-      {isLoggedIn && (
-        <div className="absolute top-5 right-5 bg-white rounded-full shadow-md px-4 py-2 text-sm flex items-center gap-3 z-10">
-          <span className="text-gray-600">操作员:</span>
-          <span className="font-medium text-gray-800">{username}</span>
-          <button 
-            onClick={handleLogout} 
-            className="text-xs font-medium px-2 py-1 rounded transition-all hover:bg-gray-100 text-gray-600"
-          >
-            切换
-          </button>
-        </div>
-      )}
+    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans relative">
+      {/* 2. Add Consistent Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-30"> {/* Lower z-index than modal */} 
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            {/* Left side: Page Title */}
+            <div className="flex items-center">
+              <span className="text-lg font-semibold text-gray-800">科普文章生成系统</span>
+            </div>
+            {/* Right side: Logged in user display */}
+            <div className="flex items-center">
+              {isLoggedIn && (
+                <div className="flex items-center gap-3">
+                   <span className="text-sm text-gray-600">操作员:</span>
+                   <span className="text-sm font-medium text-gray-800">{username}</span>
+                   <button 
+                     onClick={handleLogout} 
+                     className="text-xs font-medium px-2 py-1 rounded transition-all hover:bg-gray-100 text-gray-600 border border-gray-300 ml-2"
+                   >
+                     切换
+                   </button>
+                 </div>
+              )}
+            </div>
+          </div>
+        </nav>
+      </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-8 lg:flex lg:gap-8">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 lg:flex lg:gap-8">
         {/* Main Content - Left Side */}
-        <div className="flex-1 lg:max-w-3xl">
-          <header className="text-center mb-12">
-            <h1 className="text-3xl font-bold mb-3">科普文章生成系统</h1>
-            {/* <p className="text-content-secondary">AI赋能医疗科普创作，一键生成专业内容</p> */}
-          </header>
-
-          {/* Progress Steps - Use adjusted classes from getStepClasses */}
+        <div className="flex-1 lg:max-w-3xl mb-8 lg:mb-0"> {/* Add bottom margin for smaller screens */} 
+          {/* Progress Steps - Styles seem okay */} 
           <div className="relative flex justify-between mb-10">
             <div className="absolute top-4 left-0 right-0 h-[2px] bg-gray-200 z-0"></div>
             {[1, 2, 3].map((stepNum) => (
@@ -728,7 +736,7 @@ export default function ArticleGeneratorPage() {
             ))}
           </div>
 
-          {/* Container for Pages - Use adjusted classes from getStepClasses */}
+          {/* Container for Pages - Styles seem okay */} 
           <div className="w-full">
             {/* Page 1 */} 
             {currentStep === 1 && (
@@ -1038,7 +1046,7 @@ export default function ArticleGeneratorPage() {
 
           </div>
 
-          {/* Form Error message container */} 
+          {/* Form Error message container - Styles seem okay */} 
           {formError && (
             <div className="mt-4 bg-red-100 border border-red-300 text-red-700 text-sm rounded-md p-4 mb-5">
               {formError}
@@ -1046,9 +1054,9 @@ export default function ArticleGeneratorPage() {
           )}
         </div>
 
-        {/* History Panel - Right Side */}
-        <div className="lg:w-80 lg:ml-8 mt-8 lg:mt-0">
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+        {/* History Panel - Right Side - Styles seem okay */} 
+        <div className="lg:w-80 lg:shrink-0"> {/* Use shrink-0 to prevent shrinking */} 
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm sticky top-24"> {/* Add sticky positioning */} 
             <h2 className="text-lg font-semibold pb-3 mb-4 border-b border-gray-200 text-gray-800">历史文章</h2>
             {isLoadingHistory ? (
               <div id="historyLoadingContainer" className="text-center py-5 text-gray-500">
@@ -1101,7 +1109,7 @@ export default function ArticleGeneratorPage() {
         </div>
       </div>
 
-      {/* Login Modal - Use RGBA for overlay */} 
+      {/* Login Modal - Styles seem okay */} 
       {!isLoggedIn && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.7)]">
           <div className="bg-white rounded-lg shadow-xl p-8 w-11/12 max-w-md">
@@ -1132,7 +1140,7 @@ export default function ArticleGeneratorPage() {
         </div>
       )}
       
-      {/* Preview Modal - Use RGBA for overlay */} 
+      {/* Preview Modal - Styles seem okay */} 
       {showPreviewModal && previewArticle && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(0,0,0,0.7)]" onClick={handleClosePreview}>
           <div className="bg-white rounded-lg shadow-xl m-4 max-w-4xl max-h-[90vh] w-full flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
