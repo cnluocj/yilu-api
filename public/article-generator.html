@@ -6,6 +6,8 @@
   <title>科普文章生成系统 - Tailwind版</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Mammoth.js 用于DOCX文件预览 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
   <!-- Configure Tailwind Theme to match original CSS variables -->
   <script>
     tailwind.config = {
@@ -275,6 +277,18 @@
         <button id="closeModal" class="text-light-text hover:text-text text-2xl">&times;</button>
       </div>
       <div class="flex-1 overflow-hidden">
+        <div id="previewFallback" class="hidden w-full h-[500px] border border-border rounded flex flex-col items-center justify-center p-8 text-center">
+          <div class="text-4xl mb-4">📄</div>
+          <h4 class="text-xl font-medium mb-2">正在加载文档...</h4>
+          <p class="text-light-text mb-6 docx-loading">正在将Word文档转换为网页格式，请稍候...</p>
+          <div class="docx-error hidden">
+            <p class="text-error mb-6">文档加载失败，此格式可能不支持在线预览</p>
+            <p class="text-sm text-light-text mb-6">请点击下方按钮下载查看</p>
+          </div>
+        </div>
+        <div id="docxPreview" class="hidden w-full h-[500px] border border-border rounded p-4 overflow-auto">
+          <!-- 这里将显示转换后的DOCX内容 -->
+        </div>
         <iframe id="previewFrame" class="w-full h-[500px] border border-border rounded" src=""></iframe>
       </div>
       <div class="flex justify-end pt-4 mt-4 border-t border-border">
@@ -337,6 +351,8 @@
     const previewFrame = document.getElementById('previewFrame');
     const previewTitle = document.getElementById('previewTitle');
     const downloadPreview = document.getElementById('downloadPreview');
+    const previewFallback = document.getElementById('previewFallback');
+    const docxPreview = document.getElementById('docxPreview');
     
     // Login Elements
     const loginModal = document.getElementById('loginModal');
@@ -458,11 +474,13 @@
       closeModal.addEventListener('click', () => {
         previewModal.classList.add('hidden');
         previewModal.classList.remove('flex'); // Remove flex display
+        resetPreview(); // 重置预览状态
       });
       window.addEventListener('click', (event) => {
         if (event.target === previewModal) {
           previewModal.classList.add('hidden');
           previewModal.classList.remove('flex');
+          resetPreview(); // 重置预览状态
         }
       });
     }
@@ -1049,7 +1067,7 @@
         return;
       }
       
-      if (!previewTitle || !previewFrame || !downloadPreview || !previewModal) {
+      if (!previewTitle || !previewFrame || !downloadPreview || !previewModal || !previewFallback || !docxPreview) {
         console.error("预览窗口DOM元素未找到");
         return;
       }
@@ -1059,12 +1077,115 @@
         previewTitle.textContent += ` (${article.style})`;
       }
       
-      // Attempt to load in iframe, inform user if it might not work
-      previewFrame.src = article.public_url || ''; 
-      downloadPreview.href = article.public_url || '#';
+      const url = article.public_url || '';
+      downloadPreview.href = url;
       
+      // 显示预览模态框
       previewModal.classList.remove('hidden');
       previewModal.classList.add('flex'); // Use flex for centering
+      
+      // 检查文件类型，决定使用哪种预览方式
+      if (url.toLowerCase().endsWith('.docx')) {
+        // 使用 mammoth.js 处理 DOCX 文件
+        handleDocxPreview(url);
+      } else if (url.toLowerCase().endsWith('.doc') || 
+                url.toLowerCase().endsWith('.xlsx') || 
+                url.toLowerCase().endsWith('.pptx')) {
+        // 其他不支持直接预览的格式，显示提示信息
+        previewFrame.classList.add('hidden');
+        docxPreview.classList.add('hidden');
+        previewFallback.classList.remove('hidden');
+        
+        // 显示正确的提示信息
+        const loadingEl = previewFallback.querySelector('.docx-loading');
+        const errorEl = previewFallback.querySelector('.docx-error');
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (errorEl) errorEl.classList.remove('hidden');
+        
+        // 更新标题
+        const titleEl = previewFallback.querySelector('h4');
+        if (titleEl) titleEl.textContent = '此文件格式不支持直接预览';
+      } else {
+        // 尝试在iframe中加载其他格式（如PDF）
+        previewFrame.src = url;
+        previewFrame.classList.remove('hidden');
+        docxPreview.classList.add('hidden');
+        previewFallback.classList.add('hidden');
+      }
+    }
+    
+    async function handleDocxPreview(url) {
+      try {
+        // 隐藏iframe，显示加载状态
+        previewFrame.classList.add('hidden');
+        docxPreview.classList.add('hidden');
+        previewFallback.classList.remove('hidden');
+        
+        // 显示正确的提示信息
+        const loadingEl = previewFallback.querySelector('.docx-loading');
+        const errorEl = previewFallback.querySelector('.docx-error');
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        if (errorEl) errorEl.classList.add('hidden');
+        
+        // 更新标题
+        const titleEl = previewFallback.querySelector('h4');
+        if (titleEl) titleEl.textContent = '正在加载文档...';
+        
+        // 加载DOCX文件
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`无法加载文档: ${response.status}`);
+        
+        const arrayBuffer = await response.arrayBuffer();
+        
+        // 使用mammoth.js转换DOCX为HTML
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        
+        // 将结果显示在预览区域
+        docxPreview.innerHTML = result.value;
+        
+        // 隐藏加载状态，显示DOCX预览
+        previewFallback.classList.add('hidden');
+        docxPreview.classList.remove('hidden');
+        
+      } catch (error) {
+        console.error('DOCX预览失败:', error);
+        
+        // 显示错误提示
+        const loadingEl = previewFallback.querySelector('.docx-loading');
+        const errorEl = previewFallback.querySelector('.docx-error');
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (errorEl) errorEl.classList.remove('hidden');
+        
+        // 更新标题
+        const titleEl = previewFallback.querySelector('h4');
+        if (titleEl) titleEl.textContent = '文档加载失败';
+      }
+    }
+
+    function resetPreview() {
+      // 重置iframe和预览状态
+      if (previewFrame) {
+        previewFrame.src = '';
+      }
+      
+      if (previewTitle) {
+        previewTitle.textContent = '文章预览';
+      }
+      
+      if (docxPreview) {
+        docxPreview.innerHTML = '';
+      }
+      
+      if (previewFallback && previewFrame) {
+        // 重置错误和加载状态
+        const loadingEl = previewFallback.querySelector('.docx-loading');
+        const errorEl = previewFallback.querySelector('.docx-error');
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        if (errorEl) errorEl.classList.add('hidden');
+        
+        previewFallback.classList.add('hidden');
+        previewFrame.classList.remove('hidden');
+      }
     }
 
   </script>
