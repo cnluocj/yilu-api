@@ -22,5 +22,110 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+.btn-vercel {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 200ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-vercel:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 142, 255, 0.2);
+}
+
+.card-vercel {
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: white;
+  border: 1px solid #EAEAEA;
+  transition: all 200ms ease;
+}
+
+.card-vercel:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.radio-tile.selected {
+  border-color: #0090ff;
+  background-color: rgba(0, 144, 255, 0.05);
+}
+
+.radio-tile.selected .radio-icon {
+  border-color: #0090ff;
+  background-color: #0090ff;
+}
+
+.radio-tile.selected .radio-icon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background-color: white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid #EAEAEA;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 200ms ease;
+  background-color: white;
+  color: #000;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #0090ff;
+  box-shadow: 0 0 0 2px rgba(0, 144, 255, 0.2);
+}
+
+.progress-bar {
+  overflow: hidden;
+  border-radius: 99px;
+  background-color: rgba(0, 144, 255, 0.1);
+  height: 4px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: #0090ff;
+  transition: width 500ms ease;
+}
+
+select {
+  appearance: auto;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
 }
