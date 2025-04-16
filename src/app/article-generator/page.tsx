@@ -54,7 +54,7 @@ export default function ArticleGeneratorPage() {
   const [name, setName] = useState<string>('');
   const [unit, setUnit] = useState<string>('');
   const [direction, setDirection] = useState<string>('');
-  const [wordCount, setWordCount] = useState<number>(1500);
+  const [wordCount, setWordCount] = useState<number>(2500);
   const [selectedStyle, setSelectedStyle] = useState<string>('生动有趣，角度新颖');
   const [customStyle, setCustomStyle] = useState<string>('');
   const [isStyleDropdownOpen, setIsStyleDropdownOpen] = useState<boolean>(false); // State for custom dropdown
@@ -171,7 +171,7 @@ export default function ArticleGeneratorPage() {
     setName('');
     setUnit('');
     setDirection('');
-    setWordCount(1500);
+    setWordCount(2500);
     setSelectedStyle('生动有趣，角度新颖');
     setCustomStyle('');
     setGeneratedTitles([]);
