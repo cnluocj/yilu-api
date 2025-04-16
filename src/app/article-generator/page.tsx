@@ -843,18 +843,44 @@ export default function ArticleGeneratorPage() {
                     )}
                     <h3 className="text-xl font-semibold mb-3">{articleError ? '生成失败' : '文章生成成功！'}</h3>
                     <p className="text-gray-500 mb-6">
-                      {articleError ? '请返回上一步重试或联系管理员。' : '您的文章已生成完毕，可立即下载'}
+                      {articleError ? '请重试或联系管理员。' : '您的文章已生成完毕，可立即下载'}
                     </p>
                     {generatedArticleUrl && !articleError && (
-                      <a 
-                        href={generatedArticleUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-2 px-4 rounded-md transition-all mb-6 text-sm"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        下载文章 (DOCX)
-                      </a>
+                      <div className="flex justify-center items-center gap-4">
+                        <a 
+                          href={generatedArticleUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-2 px-4 rounded-md transition-all text-sm"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                          下载文章 (DOCX)
+                        </a>
+                        {/* Add Preview Button Here */}
+                        <button
+                          onClick={() => {
+                            // Construct a temporary object for preview
+                            // We need title and style from the generation context
+                            // For now, let's assume 'lastGeneratedArticleDetails' state exists (will add later)
+                            // if (lastGeneratedArticleDetails) {
+                            //   handleOpenPreview(lastGeneratedArticleDetails);
+                            // } 
+                            // Temporary placeholder:
+                            if (generatedArticleUrl) {
+                                handleOpenPreview({ 
+                                    public_url: generatedArticleUrl, 
+                                    // Need to get title and style from state
+                                    title: customTitleInput || selectedTitle || '生成文章', // Placeholder title
+                                    style: selectedStyle === 'custom' ? customStyle : selectedStyle || null // Placeholder style
+                                });
+                            }
+                          }}
+                          className="inline-flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 font-medium py-2 px-4 rounded-md transition-all text-sm"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                          预览
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
