@@ -37,7 +37,6 @@ export default function ArticleGeneratorPage() {
   const [userOpenid, setUserOpenid] = useState<string>('');
   const [loginInput, setLoginInput] = useState<string>('');
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<number>(1); // 当前步骤状态
   const [formError, setFormError] = useState<string | null>(null); // 通用表单错误
 
   // Page 1 Form State
@@ -62,9 +61,6 @@ export default function ArticleGeneratorPage() {
   const [generatedArticleUrl, setGeneratedArticleUrl] = useState<string | null>(null);
   const [articleError, setArticleError] = useState<string | null>(null);
 
-  // User Info State (保存验证后的表单数据)
-  const [userInfo, setUserInfo] = useState<Partial<UserInfo>>({});
-
   // --- 模拟状态，后续移除 ---
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(true); // 初始加载
   const [historyArticles, setHistoryArticles] = useState<ArticleRecord[]>([]); // 类型应更具体
@@ -79,46 +75,35 @@ export default function ArticleGeneratorPage() {
   const [previewFileType, setPreviewFileType] = useState<'docx' | 'iframe' | 'unsupported' | 'error' | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null); // Ref for the iframe
 
+  // --- Derived State for UI Control --- 
+  const isBasicInfoValid = useCallback(() => {
+      // Simple check, reuse logic from validateBasicInfo if needed for more complex rules
+      return name.trim() !== '' && unit.trim() !== '' && direction.trim() !== '' && wordCount >= 100 && wordCount <= 5000 && (selectedStyle !== 'custom' || customStyle.trim() !== '');
+  }, [name, unit, direction, wordCount, selectedStyle, customStyle]);
+
+  const isTitleSelected = useCallback(() => {
+      return selectedTitle && (selectedTitle !== 'custom' || customTitleInput.trim() !== '');
+  }, [selectedTitle, customTitleInput]);
+
   // --- 副作用 ---
-  // 组件加载时检查登录状态
   useEffect(() => {
     const savedUsername = localStorage.getItem('articleGenerator_username');
     if (savedUsername) {
       completeLogin(savedUsername);
-      setCurrentStep(1); // 登录后默认回到第一步
     } else {
-      setCurrentStep(1); // 未登录也显示第一步（但会被模态框遮挡）
       setIsLoadingHistory(false);
     }
   }, []);
 
-  // 登录成功后加载历史记录 (依赖 userOpenid)
   useEffect(() => {
     if (userOpenid) {
-      console.log("用户已登录，OpenID:", userOpenid, "可以加载历史记录了");
       loadArticleHistory();
     } else {
-      // Clear history if user logs out
       setHistoryArticles([]);
       setIsLoadingHistory(false);
     }
   }, [userOpenid]);
   
-  // 进入第二步时自动生成标题 (仅当没有生成过标题时)
-  useEffect(() => {
-    if (currentStep === 2 && !isGeneratingTitles && generatedTitles.length === 0 && !titleError) {
-      handleGenerateTitles();
-    }
-  }, [currentStep, isGeneratingTitles, generatedTitles.length, titleError]); // 添加依赖
-
-  // 进入第三步时自动生成文章 (仅当未生成过且没有错误时)
-  useEffect(() => {
-    if (currentStep === 3 && !isGeneratingArticle && !generatedArticleUrl && !articleError && userInfo.title) {
-      handleGenerateArticle();
-    }
-    // Depend on currentStep and essential userInfo fields needed for payload
-  }, [currentStep, isGeneratingArticle, generatedArticleUrl, articleError, userInfo.title, userInfo.openid, userInfo.direction, userInfo.word_count, userInfo.name, userInfo.unit, userInfo.style]);
-
   // --- 事件处理函数 ---
   const completeLogin = useCallback((uname: string) => {
     setIsLoggedIn(true);
@@ -127,7 +112,6 @@ export default function ArticleGeneratorPage() {
     setUserOpenid(openid);
     setLoginError(null); // 清除错误
     setLoginInput(''); // 清空输入框
-    setCurrentStep(1); // 登录后强制回到第一步
     // 实际应用中，这里会调用 loadArticleHistory()
   }, []);
 
@@ -158,31 +142,24 @@ export default function ArticleGeneratorPage() {
     setUsername('');
     setUserOpenid('');
     setHistoryArticles([]); // 清空历史
-    setCurrentStep(1); // 登出后回到第一步
-    // 重置表单状态
     setName('');
     setUnit('');
     setDirection('');
     setWordCount(1500);
     setSelectedStyle('生动有趣，角度新颖');
     setCustomStyle('');
-    // 重置第二步状态
     setGeneratedTitles([]);
     setSelectedTitle('');
     setCustomTitleInput('');
     setIsGeneratingTitles(false);
     setTitleProgress(0);
     setTitleError(null);
-    // Reset Page 3 state
     setIsGeneratingArticle(false);
     setArticleProgress(0);
     setGeneratedArticleUrl(null);
     setArticleError(null);
-    // 清空保存的用户信息
-    setUserInfo({});
     setFormError(null);
     setHistoryError(null);
-    // Reset Preview State on Logout
     setShowPreviewModal(false);
     setPreviewArticle(null);
     setIsPreviewLoading(false);
@@ -192,64 +169,58 @@ export default function ArticleGeneratorPage() {
     console.log("用户已登出");
   };
 
-  // --- 表单验证函数 ---
-  const validatePage1 = () => {
-    setFormError(null); // 清除旧错误
-    if (!name.trim()) {
-      setFormError("请输入您的姓名");
-      return false;
-    }
-    if (!unit.trim()) {
-      setFormError("请输入您的科室");
-      return false;
-    }
-    if (!direction.trim()) {
-      setFormError("请输入文章方向或主题");
-      return false;
-    }
-    if (wordCount < 100 || wordCount > 5000) {
-      setFormError("字数必须在100-5000之间");
-      return false;
-    }
-    if (selectedStyle === 'custom' && !customStyle.trim()) {
-      setFormError("请输入自定义风格描述");
-      return false;
-    }
-    console.log("Page 1 validation passed");
+  // --- Validation Functions (Simplified/Renamed) ---
+  const validateBasicInfo = () => {
+    setFormError(null); 
+    if (!name.trim()) { setFormError("请输入您的姓名"); return false; }
+    if (!unit.trim()) { setFormError("请输入您的科室"); return false; }
+    if (!direction.trim()) { setFormError("请输入文章方向或主题"); return false; }
+    if (wordCount < 100 || wordCount > 5000) { setFormError("字数必须在100-5000之间"); return false; }
+    const currentStyle = selectedStyle === 'custom' ? customStyle.trim() : selectedStyle;
+    if (!currentStyle) { setFormError("请选择或输入文章风格"); return false; }
+    console.log("Basic Info validation passed");
     return true;
   };
   
-  const validatePage2 = () => {
-    setFormError(null); // 清除旧错误
-    if (!selectedTitle) {
-        setFormError('请选择一个标题');
+  const validateTitleSelection = () => {
+    setFormError(null);
+    // A title is valid if EITHER a generated title is selected OR the custom input has text
+    const generatedTitleIsSelected = selectedTitle && selectedTitle !== 'custom';
+    const customTitleIsEntered = customTitleInput.trim() !== '';
+    
+    if (!generatedTitleIsSelected && !customTitleIsEntered) {
+      // No title selected or entered
+      return false;
+    }
+    // If custom title radio is selected, ensure the input isn't empty
+    if (selectedTitle === 'custom' && !customTitleIsEntered) {
         return false;
     }
-    if (selectedTitle === 'custom' && !customTitleInput.trim()) {
-        setFormError('请输入自定义标题');
-        return false;
-    }
-    console.log("Page 2 validation passed");
+    console.log("Title selection validation passed");
     return true;
   };
 
   // --- API Call Functions ---
   const handleGenerateTitles = async () => {
+    if (!validateBasicInfo()) { 
+        // Optionally set formError if button is clicked explicitly with invalid info
+        setFormError("请先完善并验证基本信息");
+        return; 
+    }
     setIsGeneratingTitles(true);
     setTitleProgress(0);
     setGeneratedTitles([]);
-    setSelectedTitle('');
-    setCustomTitleInput('');
+    // Don't reset selectedTitle or customTitleInput here
     setTitleError(null);
-    setFormError(null); // 清除通用表单错误
+    setFormError(null);
     
-    // 使用保存的 userInfo
+    // Read directly from state
     const payload = {
-      openid: userInfo.openid || 'anonymous',
-      direction: userInfo.direction || '健康科普',
-      word_count: userInfo.word_count || 1500,
-      name: userInfo.name || '未知用户',
-      unit: userInfo.unit || '未知科室'
+      openid: userOpenid || 'anonymous', // Use logged in user's openid
+      direction: direction.trim(),
+      word_count: wordCount, // Use word count from basic info
+      name: name.trim(),
+      unit: unit.trim()
     };
     
     console.log('生成标题请求数据:', JSON.stringify(payload));
@@ -328,26 +299,44 @@ export default function ArticleGeneratorPage() {
   };
 
   const handleGenerateArticle = async () => {
+    if (!validateBasicInfo()) {
+        setFormError("请先完善基本信息");
+        return; 
+    }
+    if (!validateTitleSelection()) {
+        setFormError("请选择或输入一个标题"); 
+        return; 
+    }
+
     setIsGeneratingArticle(true);
     setArticleProgress(0);
-    setGeneratedArticleUrl(null); // Reset previous URL
+    setGeneratedArticleUrl(null);
     setArticleError(null);
-    setFormError(null); // Clear general form error
+    setFormError(null);
 
-    if (!userInfo.title) {
-      setArticleError("无法生成文章：未选择标题。请返回上一步选择标题。");
+    // Determine the final title based on selection and custom input
+    let finalTitle = '';
+    if (selectedTitle && selectedTitle !== 'custom') {
+      finalTitle = selectedTitle; // Use explicitly selected generated title
+    } else if (customTitleInput.trim()) {
+      finalTitle = customTitleInput.trim(); // Use custom input if available (even if radio not clicked)
+    } else {
+      // This case should ideally be prevented by validateTitleSelection, but have a fallback
+      setArticleError("无法确定标题");
       setIsGeneratingArticle(false);
       return;
     }
 
-    const payload: UserInfo = {
-      openid: userInfo.openid || 'anonymous',
-      direction: userInfo.direction || '健康科普',
-      title: userInfo.title, // Use the title saved in userInfo
-      word_count: userInfo.word_count || 1500,
-      name: userInfo.name || '未知用户',
-      unit: userInfo.unit || '未知科室',
-      style: userInfo.style || '生动有趣，角度新颖'
+    const currentStyle = selectedStyle === 'custom' ? customStyle.trim() : selectedStyle;
+
+    const payload = {
+      openid: userOpenid || 'anonymous',
+      direction: direction.trim(),
+      title: finalTitle,
+      word_count: wordCount,
+      name: name.trim(),
+      unit: unit.trim(),
+      style: currentStyle
     };
 
     console.log('生成文章请求数据:', JSON.stringify(payload));
@@ -417,95 +406,6 @@ export default function ArticleGeneratorPage() {
       setArticleError(`生成文章时出错: ${error.message}`);
       setIsGeneratingArticle(false);
     }
-  };
-
-  // Rename this function
-  const triggerArticleRegeneration = () => {
-      handleGenerateArticle(); // Simply call the generation function again
-  };
-
-  // --- Step Navigation Functions ---
-  const goToStep = (step: number) => {
-    setFormError(null); // 切换步骤时清除错误
-    setTitleError(null); // 切换步骤时清除标题错误
-    setArticleError(null); // Clear article error on step change
-    setCurrentStep(step);
-    window.scrollTo(0, 0); // 切换步骤时滚动到页面顶部
-  };
-
-  const handleNextToTitles = () => {
-    if (!validatePage1()) {
-      return; // 验证失败则停止
-    }
-    // 保存用户信息到状态
-    const currentStyle = selectedStyle === 'custom' ? customStyle.trim() : selectedStyle;
-    const currentUserInfo: Partial<UserInfo> = {
-      openid: userOpenid,
-      name: name.trim(),
-      unit: unit.trim(),
-      direction: direction.trim(),
-      word_count: wordCount,
-      style: currentStyle,
-    };
-    setUserInfo(currentUserInfo);
-    console.log("User Info Saved:", currentUserInfo);
-    // 清空第二步的旧状态
-    setGeneratedTitles([]);
-    setSelectedTitle('');
-    setCustomTitleInput('');
-    setIsGeneratingTitles(false); //确保重置加载状态
-    setTitleProgress(0);
-    setTitleError(null);
-    
-    goToStep(2);
-    // Title generation will be triggered by the useEffect hook for step 2
-  };
-
-  const handleBackToInfo = () => {
-    goToStep(1);
-  };
-
-  const handleNextToGenerate = () => {
-    if (!validatePage2()) {
-      return; // 验证失败则停止
-    }
-    // 保存最终选择的标题到 userInfo
-    const finalTitle = selectedTitle === 'custom' ? customTitleInput.trim() : selectedTitle;
-    // Update userInfo state *before* navigating
-    const updatedUserInfo = { ...userInfo, title: finalTitle };
-    setUserInfo(updatedUserInfo);
-    
-    console.log("Navigating to Step 3 with Title:", finalTitle);
-    // Reset Page 3 state before navigating
-    setIsGeneratingArticle(false);
-    setArticleProgress(0);
-    setGeneratedArticleUrl(null);
-    setArticleError(null);
-    goToStep(3);
-    // Article generation will be triggered by the useEffect hook for step 3
-  };
-
-  const handleBackToTitles = () => {
-    // Reset Page 3 state when going back
-    setIsGeneratingArticle(false);
-    setArticleProgress(0);
-    setGeneratedArticleUrl(null);
-    setArticleError(null);
-    goToStep(2);
-  };
-  
-  // --- Title Selection Handlers ---
-  const handleSelectTitle = (titleValue: string) => {
-      setSelectedTitle(titleValue);
-      setFormError(null); // Clear potential validation error on selection
-      if (titleValue !== 'custom') {
-          setCustomTitleInput(''); // Clear custom input if a preset is selected
-      }
-  };
-
-  const handleRegenerateTitles = () => {
-      // 不需要检查 userInfo，因为在进入第二步时已经验证并保存
-      handleGenerateTitles(); // 直接调用生成函数
   };
 
   // --- History API Call ---
@@ -650,26 +550,24 @@ export default function ArticleGeneratorPage() {
     if (iframeRef.current) iframeRef.current.src = 'about:blank'; // Clear iframe on close
   };
 
-  // --- 辅助函数 (获取步骤样式) ---
-  const getStepClasses = (stepNumber: number) => {
-    const isActive = currentStep === stepNumber;
-    const isCompleted = currentStep > stepNumber;
+  // --- Title Selection Handlers ---
+  const handleSelectTitle = (titleValue: string) => {
+      setSelectedTitle(titleValue);
+      setFormError(null); 
+      if (titleValue !== 'custom') setCustomTitleInput('');
+  };
 
-    return {
-      number: cn(
-        'step-number w-8 h-8 rounded-full flex items-center justify-center font-medium mb-2 transition-all',
-        {
-          'bg-blue-600 text-white': isActive, 
-          'bg-green-500 text-white': isCompleted,
-          'bg-gray-200 text-gray-500': !isActive && !isCompleted,
-        }
-      ),
-      title: cn('step-title text-sm transition-all', {
-        'text-blue-700 font-medium': isActive,
-        'text-gray-900': isCompleted,
-        'text-gray-500': !isActive && !isCompleted,
-      }),
-    };
+  const handleCustomTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newCustomValue = e.target.value;
+      setCustomTitleInput(newCustomValue);
+      // If user types in custom field, ALWAYS set selection to 'custom'
+      if (newCustomValue.trim() !== '') {
+          setSelectedTitle('custom');
+      } else {
+          // If they clear the custom input, deselect the title entirely
+          setSelectedTitle(''); 
+      }
+      setFormError(null); // Clear form error on input change
   };
 
   // Date Formatting Helper
@@ -691,6 +589,7 @@ export default function ArticleGeneratorPage() {
     }
   };
 
+  // --- Render Logic ---
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans relative">
       {/* 2. Add Consistent Header */}
@@ -721,120 +620,111 @@ export default function ArticleGeneratorPage() {
       </header>
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 lg:flex lg:gap-8">
-        {/* Main Content - Left Side */}
-        <div className="flex-1 lg:max-w-3xl mb-8 lg:mb-0"> {/* Add bottom margin for smaller screens */} 
-          {/* Progress Steps - Styles seem okay */} 
-          <div className="relative flex justify-between mb-10">
-            <div className="absolute top-4 left-0 right-0 h-[2px] bg-gray-200 z-0"></div>
-            {[1, 2, 3].map((stepNum) => (
-              <div key={stepNum} className="relative flex flex-col items-center z-10">
-                <div className={getStepClasses(stepNum).number}>{stepNum}</div>
-                <div className={getStepClasses(stepNum).title}>
-                  {stepNum === 1 ? '基本信息' : stepNum === 2 ? '选择标题' : '生成文章'}
-                </div>
+        {/* Main Content - Left Side (All Sections) */} 
+        <div className="flex-1 lg:max-w-3xl mb-8 lg:mb-0 space-y-8">
+          
+          {/* Section 1: Basic Info */}
+          <section id="basic-info-section">
+            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+              <h2 className="text-xl font-semibold mb-6 text-gray-800">1. 基本信息</h2>
+              <div className="mb-5">
+                <label htmlFor="name" className="block text-sm font-medium mb-2 text-gray-700">姓名</label>
+                <input 
+                  type="text" 
+                  id="name" 
+                  placeholder="请输入您的姓名" 
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                  value={name} 
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
-            ))}
-          </div>
+              <div className="mb-5">
+                <label htmlFor="unit" className="block text-sm font-medium mb-2 text-gray-700">科室</label>
+                <input 
+                  type="text" 
+                  id="unit" 
+                  placeholder="请输入您的科室" 
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                  value={unit} 
+                  onChange={(e) => setUnit(e.target.value)}
+                />
+              </div>
+              <div className="mb-5">
+                <label htmlFor="direction" className="block text-sm font-medium mb-2 text-gray-700">方向</label>
+                <input 
+                  type="text" 
+                  id="direction" 
+                  placeholder="请输入文章方向或主题" 
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                  value={direction}
+                  onChange={(e) => setDirection(e.target.value)}
+                />
+              </div>
+              <div className="mb-5">
+                <label htmlFor="word_count" className="block text-sm font-medium mb-2 text-gray-700">字数</label>
+                <input 
+                  type="number" 
+                  id="word_count" 
+                  min="100" 
+                  max="5000" 
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                  value={wordCount} 
+                  onChange={(e) => setWordCount(parseInt(e.target.value) || 0)}
+                />
+              </div>
+              <div className="mb-5">
+                <label htmlFor="style" className="block text-sm font-medium mb-2 text-gray-700">文章风格</label>
+                <select 
+                  id="style" 
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white bg-no-repeat bg-right pr-8 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%221.5%22%3E%3Cpath%20d%3D%22m6%208%204%204%204-4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')]"
+                  value={selectedStyle} 
+                  onChange={(e) => setSelectedStyle(e.target.value)}
+                >
+                  <option value="生动有趣，角度新颖">生动有趣，角度新颖</option>
+                  <option value="通俗易懂，深入浅出">通俗易懂，深入浅出</option>
+                  <option value="幽默风趣，轻松活泼">幽默风趣，轻松活泼</option>
+                  <option value="严谨专业，循证可靠">严谨专业，循证可靠</option>
+                  <option value="亲切温暖，富有同理心">亲切温暖，富有同理心</option>
+                  <option value="故事化叙述，情景再现">故事化叙述，情景再现</option>
+                  <option value="生活化演绎，实用性强">生活化演绎，实用性强</option>
+                  <option value="custom">自定义风格</option>
+                </select>
+              </div>
+              {/* Custom Style Input */} 
+              {selectedStyle === 'custom' && (
+                <div className="mb-5 mt-3 animate-fade-in">
+                  <label htmlFor="customStyle" className="block text-sm font-medium mb-2 text-gray-700">自定义风格</label>
+                  <input 
+                    type="text" 
+                    id="customStyle" 
+                    placeholder="请输入自定义风格描述" 
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+                    value={customStyle}
+                    onChange={(e) => setCustomStyle(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          </section>
 
-          {/* Container for Pages - Styles seem okay */} 
-          <div className="w-full">
-            {/* Page 1 */} 
-            {currentStep === 1 && (
+          {/* Section 2: Title Selection */} 
+          <section id="title-selection-section">
+            <fieldset disabled={!isBasicInfoValid()} className="disabled:opacity-60 disabled:cursor-not-allowed">
               <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <h2 className="text-xl font-semibold mb-6 text-gray-800">请输入基本信息</h2>
-                <div className="mb-5">
-                  <label htmlFor="name" className="block text-sm font-medium mb-2 text-gray-700">姓名</label>
-                  <input 
-                    type="text" 
-                    id="name" 
-                    placeholder="请输入您的姓名" 
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-                <div className="mb-5">
-                  <label htmlFor="unit" className="block text-sm font-medium mb-2 text-gray-700">科室</label>
-                  <input 
-                    type="text" 
-                    id="unit" 
-                    placeholder="请输入您的科室" 
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
-                    value={unit} 
-                    onChange={(e) => setUnit(e.target.value)}
-                  />
-                </div>
-                <div className="mb-5">
-                  <label htmlFor="direction" className="block text-sm font-medium mb-2 text-gray-700">方向</label>
-                  <input 
-                    type="text" 
-                    id="direction" 
-                    placeholder="请输入文章方向或主题" 
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
-                    value={direction}
-                    onChange={(e) => setDirection(e.target.value)}
-                  />
-                </div>
-                <div className="mb-5">
-                  <label htmlFor="word_count" className="block text-sm font-medium mb-2 text-gray-700">字数</label>
-                  <input 
-                    type="number" 
-                    id="word_count" 
-                    min="100" 
-                    max="5000" 
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
-                    value={wordCount} 
-                    onChange={(e) => setWordCount(parseInt(e.target.value) || 0)}
-                  />
-                </div>
-                <div className="mb-5">
-                  <label htmlFor="style" className="block text-sm font-medium mb-2 text-gray-700">文章风格</label>
-                  <select 
-                    id="style" 
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white bg-no-repeat bg-right pr-8 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%221.5%22%3E%3Cpath%20d%3D%22m6%208%204%204%204-4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')]"
-                    value={selectedStyle} 
-                    onChange={(e) => setSelectedStyle(e.target.value)}
+                <h2 className="text-xl font-semibold mb-2 text-gray-800">2. 选择或生成标题</h2>
+                <p className="text-sm text-gray-500 mb-4">您可以选择下方 AI 生成的标题，或输入自定义标题。标题生成过程不会影响您继续操作。</p>
+
+                {/* Generate Titles Button - KEEP */}
+                <div className="mb-4">
+                  <button
+                    onClick={handleGenerateTitles}
+                    className="inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isGeneratingTitles || !isBasicInfoValid()}
                   >
-                    <option value="生动有趣，角度新颖">生动有趣，角度新颖</option>
-                    <option value="通俗易懂，深入浅出">通俗易懂，深入浅出</option>
-                    <option value="幽默风趣，轻松活泼">幽默风趣，轻松活泼</option>
-                    <option value="严谨专业，循证可靠">严谨专业，循证可靠</option>
-                    <option value="亲切温暖，富有同理心">亲切温暖，富有同理心</option>
-                    <option value="故事化叙述，情景再现">故事化叙述，情景再现</option>
-                    <option value="生活化演绎，实用性强">生活化演绎，实用性强</option>
-                    <option value="custom">自定义风格</option>
-                  </select>
-                </div>
-                {/* Custom Style Input */} 
-                {selectedStyle === 'custom' && (
-                  <div className="mb-5 mt-3 animate-fade-in">
-                    <label htmlFor="customStyle" className="block text-sm font-medium mb-2 text-gray-700">自定义风格</label>
-                    <input 
-                      type="text" 
-                      id="customStyle" 
-                      placeholder="请输入自定义风格描述" 
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
-                      value={customStyle}
-                      onChange={(e) => setCustomStyle(e.target.value)}
-                    />
-                  </div>
-                )}
-                <div className="mt-6">
-                  <button 
-                    onClick={handleNextToTitles}
-                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-                  >
-                    下一步
+                    {isGeneratingTitles ? '正在生成...' : 'AI 生成标题建议'}
                   </button>
                 </div>
-              </div>
-            )}
-            
-            {/* Page 2 */} 
-            {currentStep === 2 && (
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <h2 className="text-xl font-semibold mb-6 text-gray-800">请选择文章标题</h2>
-                
+
                 {/* Title Generation Progress */}
                 {isGeneratingTitles && (
                   <div className="mt-4 mb-6">
@@ -891,89 +781,37 @@ export default function ArticleGeneratorPage() {
                         </div>
                       ))}
                     </div>
-                    
-                    {/* Custom Title Option */}
-                    <div 
-                      onClick={() => handleSelectTitle('custom')}
-                      className={cn(
-                         'border rounded-md p-4 cursor-pointer transition-all relative hover:border-blue-400',
-                        {
-                           'border-blue-500 bg-blue-50 ring-1 ring-blue-500': selectedTitle === 'custom',
-                           'border-gray-300': selectedTitle !== 'custom'
-                         }
-                      )}
-                    >
-                      <div className="font-medium mb-1 text-sm">自定义标题</div>
-                      <div 
-                        className={cn(
-                          'absolute top-3 right-3 w-5 h-5 border-2 rounded-full flex items-center justify-center',
-                         {
-                            'border-blue-500 bg-white': selectedTitle === 'custom',
-                            'border-gray-300': selectedTitle !== 'custom'
-                          }
-                        )}
-                      >
-                         {selectedTitle === 'custom' && (
-                            <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
-                         )}
-                      </div>
-                      <input type="radio" name="title" value="custom" checked={selectedTitle === 'custom'} className="absolute opacity-0 w-0 h-0" readOnly />
-                    </div>
-                    
-                    {/* Custom Title Input Area */}
-                    {selectedTitle === 'custom' && (
-                      <div className="mt-4 animate-fade-in">
-                        <div className="mb-5">
-                          <input 
-                             type="text" 
-                             id="customTitle" 
-                             placeholder="请输入您的标题" 
-                             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
-                             value={customTitleInput}
-                             onChange={(e) => setCustomTitleInput(e.target.value)}
-                           />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Buttons */} 
-                    <div className="flex flex-col sm:flex-row justify-between gap-4 mt-6">
-                      <button 
-                        onClick={handleBackToInfo} 
-                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        disabled={isGeneratingTitles}
-                      >
-                        上一步
-                      </button>
-                      <button 
-                        onClick={handleRegenerateTitles} 
-                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        disabled={isGeneratingTitles}
-                      >
-                        重新生成
-                      </button>
-                      <button 
-                        onClick={handleNextToGenerate}
-                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-                        disabled={!selectedTitle || isGeneratingTitles || (selectedTitle === 'custom' && !customTitleInput.trim())}
-                      >
-                        生成文章
-                      </button>
-                    </div>
                   </div>
                 )}
 
+                {/* Custom Title Input Area - MOVED HERE and Always Visible (within fieldset) */}
+                <div className="mt-4"> {/* Adjust margin if needed */} 
+                   <label htmlFor="customTitle" className="block text-sm font-medium mb-2 text-gray-700">自定义标题</label>
+                   <input 
+                      type="text" 
+                      id="customTitle" 
+                      placeholder="在此输入自定义标题 (可选, 或使用上方AI建议)" 
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" 
+                      value={customTitleInput}
+                      onChange={handleCustomTitleChange}
+                      // Disable if an AI title is EXPLICITLY selected
+                      // disabled={selectedTitle !== '' && selectedTitle !== 'custom'}
+                    />
+                 </div>
+
                 {/* Placeholder or initial message if not loading and no titles/error yet */}
                  {!isGeneratingTitles && generatedTitles.length === 0 && !titleError && (
-                   <p className="text-sm text-gray-500 text-center py-4">请等待标题生成...</p>
+                   <p className="text-sm text-gray-500 text-center py-4">点击 "AI 生成标题建议" 获取智能推荐。</p> /* Updated placeholder */ 
                  )}
               </div>
-            )}
+            </fieldset>
+          </section>
 
-            {/* Page 3 */} 
-            {currentStep === 3 && (
+          {/* Section 3: Generate Article */} 
+          <section id="generate-article-section">
+            <fieldset disabled={!isBasicInfoValid() || !isTitleSelected()} className="disabled:opacity-60 disabled:cursor-not-allowed">
               <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <h2 className="text-xl font-semibold mb-6 text-gray-800">文章生成</h2>
+                <h2 className="text-xl font-semibold mb-6 text-gray-800">3. 生成文章</h2>
                 {/* Article Generation Progress */}
                 {isGeneratingArticle && (
                   <div className="mt-4 mb-6">
@@ -1018,22 +856,6 @@ export default function ArticleGeneratorPage() {
                         下载文章 (DOCX)
                       </a>
                     )}
-                    <div className="flex flex-col sm:flex-row justify-between gap-4 mt-6">
-                      <button 
-                        onClick={handleBackToTitles} 
-                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        disabled={isGeneratingArticle}
-                      >
-                        选择其他标题
-                      </button>
-                      <button 
-                        onClick={triggerArticleRegeneration} 
-                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-                        disabled={isGeneratingArticle}
-                      >
-                        重新生成文章
-                      </button>
-                    </div>
                   </div>
                 )}
                 
@@ -1041,21 +863,25 @@ export default function ArticleGeneratorPage() {
                 {!isGeneratingArticle && !generatedArticleUrl && !articleError && (
                     <p className="text-sm text-gray-500 text-center py-4">请等待文章生成...</p>
                 )}
+
+                {/* Generate Article Button - KEEP */}
+                <div className="mt-6">
+                   <button 
+                      onClick={handleGenerateArticle}
+                      className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                      disabled={!isBasicInfoValid() || !isTitleSelected() || isGeneratingArticle} 
+                    >
+                      {isGeneratingArticle ? '正在生成...' : '生成文章'}
+                    </button>
+                </div>
               </div>
-            )}
+            </fieldset>
+          </section>
 
-          </div>
-
-          {/* Form Error message container - Styles seem okay */} 
-          {formError && (
-            <div className="mt-4 bg-red-100 border border-red-300 text-red-700 text-sm rounded-md p-4 mb-5">
-              {formError}
-            </div>
-          )}
         </div>
 
-        {/* History Panel - Right Side - Styles seem okay */} 
-        <div className="lg:w-80 lg:shrink-0"> {/* Use shrink-0 to prevent shrinking */} 
+        {/* History Panel - Right Side */}
+        <div className="lg:w-80 lg:shrink-0">
           <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm sticky top-24"> {/* Add sticky positioning */} 
             <h2 className="text-lg font-semibold pb-3 mb-4 border-b border-gray-200 text-gray-800">历史文章</h2>
             {isLoadingHistory ? (
