@@ -8,14 +8,14 @@ import * as mammoth from 'mammoth'; // Import mammoth
 const TEMP_SYSTEM_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJzeXN0ZW0t5ZCO56uvIiwicm9sZSI6InN5c3RlbSIsInBlcm1pc3Npb25zIjpbInF1b3RhOnJlYWQiLCJxdW90YTp3cml0ZSIsImFydGljbGU6cmVhZCIsImFydGljbGU6d3JpdGUiLCJhcnRpY2xlOmRlbGV0ZSJdLCJpYXQiOjE3NDQyNDg3NDEsImV4cCI6MTc0Njg0MDc0MX0.aKnFmck6xwt4MMbegrLsssF7hZaZSrHbsgrjB24XJys';
 
 const styleOptions = [
-  { value: '生动有趣，角度新颖', label: '生动有趣，角度新颖' },
-  { value: '通俗易懂，深入浅出', label: '通俗易懂，深入浅出' },
-  { value: '幽默风趣，轻松活泼', label: '幽默风趣，轻松活泼' },
-  { value: '严谨专业，循证可靠', label: '严谨专业，循证可靠' },
-  { value: '亲切温暖，富有同理心', label: '亲切温暖，富有同理心' },
-  { value: '故事化叙述，情景再现', label: '故事化叙述，情景再现' },
-  { value: '生活化演绎，实用性强', label: '生活化演绎，实用性强' },
-  { value: 'custom', label: '自定义风格' },
+  { value: '生动有趣，角度新颖', label: '✨ 生动有趣，角度新颖' },
+  { value: '通俗易懂，深入浅出', label: '📚 通俗易懂，深入浅出' },
+  { value: '幽默风趣，轻松活泼', label: '😄 幽默风趣，轻松活泼' },
+  { value: '严谨专业，循证可靠', label: '🔬 严谨专业，循证可靠' },
+  { value: '亲切温暖，富有同理心', label: '💖 亲切温暖，富有同理心' },
+  { value: '故事化叙述，情景再现', label: '📖 故事化叙述，情景再现' },
+  { value: '生活化演绎，实用性强', label: '🧩 生活化演绎，实用性强' },
+  { value: 'custom', label: '🎨 自定义风格' },
 ];
 
 // 定义 UserInfo 类型
