@@ -7,6 +7,17 @@ import * as mammoth from 'mammoth'; // Import mammoth
 // Temporary Placeholder JWT - Replace with actual auth logic
 const TEMP_SYSTEM_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJzeXN0ZW0t5ZCO56uvIiwicm9sZSI6InN5c3RlbSIsInBlcm1pc3Npb25zIjpbInF1b3RhOnJlYWQiLCJxdW90YTp3cml0ZSIsImFydGljbGU6cmVhZCIsImFydGljbGU6d3JpdGUiLCJhcnRpY2xlOmRlbGV0ZSJdLCJpYXQiOjE3NDQyNDg3NDEsImV4cCI6MTc0Njg0MDc0MX0.aKnFmck6xwt4MMbegrLsssF7hZaZSrHbsgrjB24XJys';
 
+const styleOptions = [
+  { value: '生动有趣，角度新颖', label: '生动有趣，角度新颖' },
+  { value: '通俗易懂，深入浅出', label: '通俗易懂，深入浅出' },
+  { value: '幽默风趣，轻松活泼', label: '幽默风趣，轻松活泼' },
+  { value: '严谨专业，循证可靠', label: '严谨专业，循证可靠' },
+  { value: '亲切温暖，富有同理心', label: '亲切温暖，富有同理心' },
+  { value: '故事化叙述，情景再现', label: '故事化叙述，情景再现' },
+  { value: '生活化演绎，实用性强', label: '生活化演绎，实用性强' },
+  { value: 'custom', label: '自定义风格' },
+];
+
 // 定义 UserInfo 类型
 interface UserInfo {
   openid: string;
@@ -46,6 +57,7 @@ export default function ArticleGeneratorPage() {
   const [wordCount, setWordCount] = useState<number>(1500);
   const [selectedStyle, setSelectedStyle] = useState<string>('生动有趣，角度新颖');
   const [customStyle, setCustomStyle] = useState<string>('');
+  const [isStyleDropdownOpen, setIsStyleDropdownOpen] = useState<boolean>(false); // State for custom dropdown
   
   // Page 2 State
   const [isGeneratingTitles, setIsGeneratingTitles] = useState<boolean>(false);
@@ -73,6 +85,7 @@ export default function ArticleGeneratorPage() {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [docxHtml, setDocxHtml] = useState<string | null>(null);
   const [previewFileType, setPreviewFileType] = useState<'docx' | 'iframe' | 'unsupported' | 'error' | null>(null);
+  const styleDropdownRef = useRef<HTMLDivElement>(null); // Ref for style dropdown
   const iframeRef = useRef<HTMLIFrameElement>(null); // Ref for the iframe
 
   // --- Derived State for UI Control --- 
@@ -104,6 +117,19 @@ export default function ArticleGeneratorPage() {
     }
   }, [userOpenid]);
   
+  // Click outside handler for style dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (styleDropdownRef.current && !styleDropdownRef.current.contains(event.target as Node)) {
+        setIsStyleDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // --- 事件处理函数 ---
   const completeLogin = useCallback((uname: string) => {
     setIsLoggedIn(true);
@@ -589,6 +615,12 @@ export default function ArticleGeneratorPage() {
     }
   };
 
+  const handleSelectStyle = (value: string) => {
+    setSelectedStyle(value);
+    setIsStyleDropdownOpen(false);
+    setFormError(null); // Clear error on selection
+  };
+
   // --- Render Logic ---
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans relative">
@@ -673,23 +705,60 @@ export default function ArticleGeneratorPage() {
                 />
               </div>
               <div className="mb-5">
-                <label htmlFor="style" className="block text-sm font-medium mb-2 text-gray-700">文章风格</label>
-                <select 
-                  id="style" 
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white bg-no-repeat bg-right pr-8 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%221.5%22%3E%3Cpath%20d%3D%22m6%208%204%204%204-4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')]"
-                  value={selectedStyle} 
-                  onChange={(e) => setSelectedStyle(e.target.value)}
-                >
-                  <option value="生动有趣，角度新颖">生动有趣，角度新颖</option>
-                  <option value="通俗易懂，深入浅出">通俗易懂，深入浅出</option>
-                  <option value="幽默风趣，轻松活泼">幽默风趣，轻松活泼</option>
-                  <option value="严谨专业，循证可靠">严谨专业，循证可靠</option>
-                  <option value="亲切温暖，富有同理心">亲切温暖，富有同理心</option>
-                  <option value="故事化叙述，情景再现">故事化叙述，情景再现</option>
-                  <option value="生活化演绎，实用性强">生活化演绎，实用性强</option>
-                  <option value="custom">自定义风格</option>
-                </select>
+                <label htmlFor="style-button" className="block text-sm font-medium mb-2 text-gray-700">文章风格</label>
+                <div className="relative" ref={styleDropdownRef}>
+                  <button
+                    type="button"
+                    id="style-button"
+                    onClick={() => setIsStyleDropdownOpen(!isStyleDropdownOpen)}
+                    className={cn(
+                      "relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 sm:text-sm",
+                      { 
+                        'focus:ring-blue-500 focus:border-blue-500': isStyleDropdownOpen,
+                        'hover:border-gray-400': !isStyleDropdownOpen
+                      }
+                    )}
+                  >
+                    <span className="block truncate">{styleOptions.find(opt => opt.value === selectedStyle)?.label || '选择风格'}</span>
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      {/* Chevron up/down icon - Updated Path */}
+                      <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                         {/* DELETE OLD PATH AND REPLACE WITH NEW PATH BELOW */}
+                         <path fillRule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.24a.75.75 0 011.06-.04l2.7 2.458 2.7-2.458a.75.75 0 011.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" clipRule="evenodd" />
+                      </svg>
+                    </span>
+                  </button>
+                  
+                  {/* Dropdown Panel */}
+                  {isStyleDropdownOpen && (
+                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                      {styleOptions.map((option) => (
+                        <div
+                          key={option.value}
+                          onClick={() => handleSelectStyle(option.value)}
+                          className={cn(
+                            'cursor-pointer select-none relative py-2 pl-3 pr-9 text-gray-900 hover:bg-gray-100',
+                            { 'bg-blue-50 text-blue-900': selectedStyle === option.value } // Optional: Highlight selected in list
+                          )}
+                        >
+                          <span className={cn('block truncate', { 'font-semibold': selectedStyle === option.value })}>
+                            {option.label}
+                          </span>
+                          {/* Optional Checkmark for selected */}
+                          {selectedStyle === option.value && (
+                             <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-600">
+                               <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                 <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                               </svg>
+                             </span>
+                           )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+              
               {/* Custom Style Input */} 
               {selectedStyle === 'custom' && (
                 <div className="mb-5 mt-3 animate-fade-in">
@@ -721,7 +790,7 @@ export default function ArticleGeneratorPage() {
                     className="inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isGeneratingTitles || !isBasicInfoValid()}
                   >
-                    {isGeneratingTitles ? '正在生成...' : 'AI 生成标题建议'}
+                    {isGeneratingTitles ? '正在生成...' : '✨ AI 生成标题建议'}
                   </button>
                 </div>
 
@@ -859,19 +928,18 @@ export default function ArticleGeneratorPage() {
                         {/* Add Preview Button Here */}
                         <button
                           onClick={() => {
-                            // Construct a temporary object for preview
-                            // We need title and style from the generation context
-                            // For now, let's assume 'lastGeneratedArticleDetails' state exists (will add later)
-                            // if (lastGeneratedArticleDetails) {
-                            //   handleOpenPreview(lastGeneratedArticleDetails);
-                            // } 
                             // Temporary placeholder:
                             if (generatedArticleUrl) {
                                 handleOpenPreview({ 
                                     public_url: generatedArticleUrl, 
                                     // Need to get title and style from state
                                     title: customTitleInput || selectedTitle || '生成文章', // Placeholder title
-                                    style: selectedStyle === 'custom' ? customStyle : selectedStyle || null // Placeholder style
+                                    style: selectedStyle === 'custom' ? customStyle : selectedStyle || null, // Placeholder style
+                                    // Add missing required fields to satisfy ArticleRecord type:
+                                    id: -1, // Placeholder ID for non-history item
+                                    author_name: name || null, // Use name from state
+                                    word_count: wordCount || null, // Use wordCount from state
+                                    created_at: new Date().toISOString() // Use current time
                                 });
                             }
                           }}
