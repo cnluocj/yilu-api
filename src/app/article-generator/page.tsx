@@ -659,15 +659,15 @@ export default function ArticleGeneratorPage() {
       number: cn(
         'step-number w-8 h-8 rounded-full flex items-center justify-center font-medium mb-2 transition-all',
         {
-          'bg-primary-500 text-white': isActive,
-          'bg-green-500 text-white': isCompleted, // 使用绿色表示完成
-          'bg-accent-2 text-content-secondary': !isActive && !isCompleted,
+          'bg-blue-600 text-white': isActive, 
+          'bg-green-500 text-white': isCompleted,
+          'bg-gray-200 text-gray-500': !isActive && !isCompleted,
         }
       ),
       title: cn('step-title text-sm transition-all', {
-        'text-primary-600 font-medium': isActive,
-        'text-content-primary': isCompleted, // 完成的步骤标题也加深颜色
-        'text-content-secondary': !isActive && !isCompleted,
+        'text-blue-700 font-medium': isActive,
+        'text-gray-900': isCompleted,
+        'text-gray-500': !isActive && !isCompleted,
       }),
     };
   };
@@ -692,15 +692,15 @@ export default function ArticleGeneratorPage() {
   };
 
   return (
-    <div className="bg-accent-1 text-content-primary font-sans min-h-screen relative">
+    <div className="bg-gray-50 text-gray-900 font-sans min-h-screen relative">
       {/* Logged in user display */}
       {isLoggedIn && (
-        <div className="absolute top-5 right-5 bg-background-light rounded-full shadow-card px-4 py-2 text-sm flex items-center gap-3 z-10">
-          <span className="text-content-secondary">操作员:</span>
-          <span className="font-medium">{username}</span>
+        <div className="absolute top-5 right-5 bg-white rounded-full shadow-md px-4 py-2 text-sm flex items-center gap-3 z-10">
+          <span className="text-gray-600">操作员:</span>
+          <span className="font-medium text-gray-800">{username}</span>
           <button 
             onClick={handleLogout} 
-            className="text-xs font-medium px-2 py-1 rounded transition-all hover:bg-accent-2 text-content-secondary"
+            className="text-xs font-medium px-2 py-1 rounded transition-all hover:bg-gray-100 text-gray-600"
           >
             切换
           </button>
@@ -715,9 +715,9 @@ export default function ArticleGeneratorPage() {
             {/* <p className="text-content-secondary">AI赋能医疗科普创作，一键生成专业内容</p> */}
           </header>
 
-          {/* Progress Steps - 使用动态样式 */}
+          {/* Progress Steps - Use adjusted classes from getStepClasses */}
           <div className="relative flex justify-between mb-10">
-            <div className="absolute top-4 left-0 right-0 h-[2px] bg-accent-2 z-0"></div>
+            <div className="absolute top-4 left-0 right-0 h-[2px] bg-gray-200 z-0"></div>
             {[1, 2, 3].map((stepNum) => (
               <div key={stepNum} className="relative flex flex-col items-center z-10">
                 <div className={getStepClasses(stepNum).number}>{stepNum}</div>
@@ -728,62 +728,62 @@ export default function ArticleGeneratorPage() {
             ))}
           </div>
 
-          {/* Container for Pages - 使用条件渲染 */}
+          {/* Container for Pages - Use adjusted classes from getStepClasses */}
           <div className="w-full">
             {/* Page 1 */} 
             {currentStep === 1 && (
-              <div className="card-vercel p-6 animate-fade-in">
-                <h2 className="text-xl font-semibold mb-6">请输入基本信息</h2>
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h2 className="text-xl font-semibold mb-6 text-gray-800">请输入基本信息</h2>
                 <div className="mb-5">
-                  <label htmlFor="name" className="block text-sm font-medium mb-2 text-content-primary">姓名</label>
+                  <label htmlFor="name" className="block text-sm font-medium mb-2 text-gray-700">姓名</label>
                   <input 
                     type="text" 
                     id="name" 
                     placeholder="请输入您的姓名" 
-                    className="w-full" 
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
                     value={name} 
                     onChange={(e) => setName(e.target.value)}
                   />
                 </div>
                 <div className="mb-5">
-                  <label htmlFor="unit" className="block text-sm font-medium mb-2 text-content-primary">科室</label>
+                  <label htmlFor="unit" className="block text-sm font-medium mb-2 text-gray-700">科室</label>
                   <input 
                     type="text" 
                     id="unit" 
                     placeholder="请输入您的科室" 
-                    className="w-full" 
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
                     value={unit} 
                     onChange={(e) => setUnit(e.target.value)}
                   />
                 </div>
                 <div className="mb-5">
-                  <label htmlFor="direction" className="block text-sm font-medium mb-2 text-content-primary">方向</label>
+                  <label htmlFor="direction" className="block text-sm font-medium mb-2 text-gray-700">方向</label>
                   <input 
                     type="text" 
                     id="direction" 
                     placeholder="请输入文章方向或主题" 
-                    className="w-full" 
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
                     value={direction}
                     onChange={(e) => setDirection(e.target.value)}
                   />
                 </div>
                 <div className="mb-5">
-                  <label htmlFor="word_count" className="block text-sm font-medium mb-2 text-content-primary">字数</label>
+                  <label htmlFor="word_count" className="block text-sm font-medium mb-2 text-gray-700">字数</label>
                   <input 
                     type="number" 
                     id="word_count" 
                     min="100" 
                     max="5000" 
-                    className="w-full" 
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
                     value={wordCount} 
-                    onChange={(e) => setWordCount(parseInt(e.target.value) || 0)} // Handle potential NaN
+                    onChange={(e) => setWordCount(parseInt(e.target.value) || 0)}
                   />
                 </div>
                 <div className="mb-5">
-                  <label htmlFor="style" className="block text-sm font-medium mb-2 text-content-primary">文章风格</label>
+                  <label htmlFor="style" className="block text-sm font-medium mb-2 text-gray-700">文章风格</label>
                   <select 
                     id="style" 
-                    className="w-full" 
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white bg-no-repeat bg-right pr-8 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%221.5%22%3E%3Cpath%20d%3D%22m6%208%204%204%204-4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')]"
                     value={selectedStyle} 
                     onChange={(e) => setSelectedStyle(e.target.value)}
                   >
@@ -797,15 +797,15 @@ export default function ArticleGeneratorPage() {
                     <option value="custom">自定义风格</option>
                   </select>
                 </div>
-                {/* Custom Style Input - Conditional Rendering */}
+                {/* Custom Style Input */} 
                 {selectedStyle === 'custom' && (
                   <div className="mb-5 mt-3 animate-fade-in">
-                    <label htmlFor="customStyle" className="block text-sm font-medium mb-2 text-content-primary">自定义风格</label>
+                    <label htmlFor="customStyle" className="block text-sm font-medium mb-2 text-gray-700">自定义风格</label>
                     <input 
                       type="text" 
                       id="customStyle" 
                       placeholder="请输入自定义风格描述" 
-                      className="w-full" 
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
                       value={customStyle}
                       onChange={(e) => setCustomStyle(e.target.value)}
                     />
@@ -814,7 +814,7 @@ export default function ArticleGeneratorPage() {
                 <div className="mt-6">
                   <button 
                     onClick={handleNextToTitles}
-                    className="w-full btn-vercel bg-primary-600 hover:bg-primary-700 text-white disabled:bg-accent-3 disabled:text-accent-4 disabled:cursor-not-allowed"
+                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
                   >
                     下一步
                   </button>
@@ -824,25 +824,25 @@ export default function ArticleGeneratorPage() {
             
             {/* Page 2 */} 
             {currentStep === 2 && (
-              <div className="card-vercel p-6 animate-fade-in">
-                <h2 className="text-xl font-semibold mb-6">请选择文章标题</h2>
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h2 className="text-xl font-semibold mb-6 text-gray-800">请选择文章标题</h2>
                 
                 {/* Title Generation Progress */}
                 {isGeneratingTitles && (
                   <div className="mt-4 mb-6">
                     <div className="flex justify-between mb-2">
-                      <div className="text-sm text-content-secondary">正在生成标题...</div>
-                      <div className="text-sm text-content-secondary">{titleProgress}%</div>
+                      <div className="text-sm text-gray-500">正在生成标题...</div>
+                      <div className="text-sm text-gray-500">{titleProgress}%</div>
                     </div>
-                    <div className="progress-bar">
-                      <div className="progress-bar-fill" style={{ width: `${titleProgress}%` }}></div>
+                    <div className="overflow-hidden rounded-full bg-blue-100 h-1">
+                      <div className="bg-blue-500 h-1 rounded-full" style={{ width: `${titleProgress}%` }}></div>
                     </div>
                   </div>
                 )}
                 
                 {/* Title Error Display */}
                 {titleError && !isGeneratingTitles && (
-                  <div className="mt-4 mb-6 bg-red-50 border border-red-200 text-error-light text-sm rounded-md p-4">
+                  <div className="mt-4 mb-6 bg-red-100 border border-red-300 text-red-700 text-sm rounded-md p-4">
                     {titleError}
                   </div>
                 )}
@@ -857,25 +857,25 @@ export default function ArticleGeneratorPage() {
                           key={index}
                           onClick={() => handleSelectTitle(title)}
                           className={cn(
-                            'border rounded-md p-4 cursor-pointer transition-all relative radio-tile hover:bg-accent-1',
+                            'border rounded-md p-4 cursor-pointer transition-all relative hover:border-blue-400',
                             {
-                              'border-primary-500 bg-primary-50 selected': selectedTitle === title,
-                              'border-border-light': selectedTitle !== title
+                              'border-blue-500 bg-blue-50 ring-1 ring-blue-500': selectedTitle === title,
+                              'border-gray-300': selectedTitle !== title
                             }
                           )}
                         >
                           <div className="font-medium mb-1 text-sm">{title}</div>
                           <div 
                             className={cn(
-                              'absolute top-4 right-4 w-4 h-4 border-2 rounded-full transition-all radio-icon',
+                              'absolute top-3 right-3 w-5 h-5 border-2 rounded-full flex items-center justify-center',
                               {
-                                'border-primary-500 bg-primary-500': selectedTitle === title,
-                                'border-accent-3': selectedTitle !== title
+                                'border-blue-500 bg-white': selectedTitle === title,
+                                'border-gray-300': selectedTitle !== title
                               }
                             )}
                           >
                            {selectedTitle === title && (
-                              <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
+                              <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
                            )}
                           </div>
                           {/* Hidden actual radio for semantics if needed, but onClick handles it */}
@@ -888,26 +888,26 @@ export default function ArticleGeneratorPage() {
                     <div 
                       onClick={() => handleSelectTitle('custom')}
                       className={cn(
-                        'border rounded-md p-4 cursor-pointer transition-all relative radio-tile hover:bg-accent-1',
+                         'border rounded-md p-4 cursor-pointer transition-all relative hover:border-blue-400',
                         {
-                          'border-primary-500 bg-primary-50 selected': selectedTitle === 'custom',
-                          'border-border-light': selectedTitle !== 'custom'
-                        }
+                           'border-blue-500 bg-blue-50 ring-1 ring-blue-500': selectedTitle === 'custom',
+                           'border-gray-300': selectedTitle !== 'custom'
+                         }
                       )}
                     >
                       <div className="font-medium mb-1 text-sm">自定义标题</div>
                       <div 
                         className={cn(
-                          'absolute top-4 right-4 w-4 h-4 border-2 rounded-full transition-all radio-icon',
-                          {
-                             'border-primary-500 bg-primary-500': selectedTitle === 'custom',
-                             'border-accent-3': selectedTitle !== 'custom'
-                           }
+                          'absolute top-3 right-3 w-5 h-5 border-2 rounded-full flex items-center justify-center',
+                         {
+                            'border-blue-500 bg-white': selectedTitle === 'custom',
+                            'border-gray-300': selectedTitle !== 'custom'
+                          }
                         )}
                       >
-                       {selectedTitle === 'custom' && (
-                          <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
-                       )}
+                         {selectedTitle === 'custom' && (
+                            <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+                         )}
                       </div>
                       <input type="radio" name="title" value="custom" checked={selectedTitle === 'custom'} className="absolute opacity-0 w-0 h-0" readOnly />
                     </div>
@@ -920,7 +920,7 @@ export default function ArticleGeneratorPage() {
                              type="text" 
                              id="customTitle" 
                              placeholder="请输入您的标题" 
-                             className="w-full" 
+                             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
                              value={customTitleInput}
                              onChange={(e) => setCustomTitleInput(e.target.value)}
                            />
@@ -932,22 +932,22 @@ export default function ArticleGeneratorPage() {
                     <div className="flex flex-col sm:flex-row justify-between gap-4 mt-6">
                       <button 
                         onClick={handleBackToInfo} 
-                        className="flex-1 btn-vercel bg-accent-2 hover:bg-accent-3 text-content-primary"
-                        disabled={isGeneratingTitles} // Disable while generating
+                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        disabled={isGeneratingTitles}
                       >
                         上一步
                       </button>
                       <button 
                         onClick={handleRegenerateTitles} 
-                        className="flex-1 btn-vercel bg-accent-2 hover:bg-accent-3 text-content-primary"
-                        disabled={isGeneratingTitles} // Disable while generating
+                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        disabled={isGeneratingTitles}
                       >
                         重新生成
                       </button>
                       <button 
                         onClick={handleNextToGenerate}
-                        className="flex-1 btn-vercel bg-primary-600 hover:bg-primary-700 text-white disabled:bg-accent-3 disabled:text-accent-4 disabled:cursor-not-allowed"
-                        disabled={!selectedTitle || isGeneratingTitles || (selectedTitle === 'custom' && !customTitleInput.trim())} // Disable if no selection, generating, or custom is empty
+                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        disabled={!selectedTitle || isGeneratingTitles || (selectedTitle === 'custom' && !customTitleInput.trim())}
                       >
                         生成文章
                       </button>
@@ -957,31 +957,31 @@ export default function ArticleGeneratorPage() {
 
                 {/* Placeholder or initial message if not loading and no titles/error yet */}
                  {!isGeneratingTitles && generatedTitles.length === 0 && !titleError && (
-                   <p className="text-sm text-content-secondary text-center py-4">请等待标题生成...</p>
+                   <p className="text-sm text-gray-500 text-center py-4">请等待标题生成...</p>
                  )}
               </div>
             )}
 
             {/* Page 3 */} 
             {currentStep === 3 && (
-              <div className="card-vercel p-6 animate-fade-in">
-                <h2 className="text-xl font-semibold mb-6">文章生成</h2>
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h2 className="text-xl font-semibold mb-6 text-gray-800">文章生成</h2>
                 {/* Article Generation Progress */}
                 {isGeneratingArticle && (
                   <div className="mt-4 mb-6">
                     <div className="flex justify-between mb-2">
-                      <div className="text-sm text-content-secondary">正在生成文章...</div>
-                      <div className="text-sm text-content-secondary">{articleProgress}%</div>
+                      <div className="text-sm text-gray-500">正在生成文章...</div>
+                      <div className="text-sm text-gray-500">{articleProgress}%</div>
                     </div>
-                    <div className="progress-bar">
-                      <div className="progress-bar-fill" style={{ width: `${articleProgress}%` }}></div>
+                    <div className="overflow-hidden rounded-full bg-blue-100 h-1">
+                      <div className="bg-blue-500 h-1 rounded-full" style={{ width: `${articleProgress}%` }}></div>
                     </div>
                   </div>
                 )}
 
                 {/* Article Error Display */}
                 {articleError && !isGeneratingArticle && (
-                  <div className="mt-4 mb-6 bg-red-50 border border-red-200 text-error-light text-sm rounded-md p-4">
+                  <div className="mt-4 mb-6 bg-red-100 border border-red-300 text-red-700 text-sm rounded-md p-4">
                     {articleError}
                   </div>
                 )}
@@ -996,15 +996,15 @@ export default function ArticleGeneratorPage() {
                       </div>
                     )}
                     <h3 className="text-xl font-semibold mb-3">{articleError ? '生成失败' : '文章生成成功！'}</h3>
-                    <p className="text-content-secondary mb-6">
+                    <p className="text-gray-500 mb-6">
                       {articleError ? '请返回上一步重试或联系管理员。' : '您的文章已生成完毕，可立即下载'}
                     </p>
                     {generatedArticleUrl && !articleError && (
                       <a 
                         href={generatedArticleUrl} 
                         target="_blank" 
-                        rel="noopener noreferrer" // Good practice for target="_blank"
-                        className="inline-flex items-center gap-2 bg-primary-50 hover:bg-primary-100 text-primary-600 font-medium py-2 px-4 rounded-md transition-all mb-6"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-2 px-4 rounded-md transition-all mb-6 text-sm"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         下载文章 (DOCX)
@@ -1013,15 +1013,15 @@ export default function ArticleGeneratorPage() {
                     <div className="flex flex-col sm:flex-row justify-between gap-4 mt-6">
                       <button 
                         onClick={handleBackToTitles} 
-                        className="flex-1 btn-vercel bg-accent-2 hover:bg-accent-3 text-content-primary"
-                        disabled={isGeneratingArticle} // Disable while generating
+                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        disabled={isGeneratingArticle}
                       >
                         选择其他标题
                       </button>
                       <button 
-                        onClick={triggerArticleRegeneration} // Use the new function name here
-                        className="flex-1 btn-vercel bg-primary-600 hover:bg-primary-700 text-white"
-                        disabled={isGeneratingArticle} // Disable while generating
+                        onClick={triggerArticleRegeneration} 
+                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        disabled={isGeneratingArticle}
                       >
                         重新生成文章
                       </button>
@@ -1031,7 +1031,7 @@ export default function ArticleGeneratorPage() {
                 
                 {/* Placeholder or initial message if not loading and no result/error yet */}
                 {!isGeneratingArticle && !generatedArticleUrl && !articleError && (
-                    <p className="text-sm text-content-secondary text-center py-4">请等待文章生成...</p>
+                    <p className="text-sm text-gray-500 text-center py-4">请等待文章生成...</p>
                 )}
               </div>
             )}
@@ -1040,7 +1040,7 @@ export default function ArticleGeneratorPage() {
 
           {/* Form Error message container */} 
           {formError && (
-            <div className="mt-4 bg-red-50 border border-red-200 text-error-light text-sm rounded-md p-4 mb-5">
+            <div className="mt-4 bg-red-100 border border-red-300 text-red-700 text-sm rounded-md p-4 mb-5">
               {formError}
             </div>
           )}
@@ -1048,11 +1048,11 @@ export default function ArticleGeneratorPage() {
 
         {/* History Panel - Right Side */}
         <div className="lg:w-80 lg:ml-8 mt-8 lg:mt-0">
-          <div className="card-vercel p-6">
-            <h2 className="text-lg font-semibold pb-3 mb-4 border-b border-border-light">历史文章</h2>
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-semibold pb-3 mb-4 border-b border-gray-200 text-gray-800">历史文章</h2>
             {isLoadingHistory ? (
-              <div id="historyLoadingContainer" className="text-center py-5 text-content-secondary">
-                <svg className="animate-spin h-5 w-5 text-primary-500 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <div id="historyLoadingContainer" className="text-center py-5 text-gray-500">
+                <svg className="animate-spin h-5 w-5 text-blue-500 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -1061,12 +1061,12 @@ export default function ArticleGeneratorPage() {
             ) : (
               <div id="historyList" className="space-y-3 max-h-[600px] overflow-y-auto">
                 {historyError && !isLoadingHistory && (
-                  <div className="bg-red-100 border border-red-300 text-error-light text-sm rounded p-3">
+                  <div className="bg-red-100 border border-red-300 text-red-700 text-sm rounded p-3">
                     {historyError}
                   </div>
                 )}
                 {!historyError && historyArticles.length === 0 && (
-                  <p className="text-sm text-content-secondary text-center py-4">
+                  <p className="text-sm text-gray-500 text-center py-4">
                     {isLoggedIn ? '暂无历史文章' : '请先登录查看历史记录'}
                   </p>
                 )}
@@ -1075,21 +1075,21 @@ export default function ArticleGeneratorPage() {
                     <div 
                       key={article.id} 
                       onClick={() => handleOpenPreview(article)}
-                      className="p-3 border border-border-light rounded-md cursor-pointer transition-all hover:border-primary-500 hover:shadow-sm"
+                      className="p-3 border border-gray-200 rounded-md cursor-pointer transition-all hover:border-blue-400 hover:shadow-sm"
                     >
-                      <div className="font-medium mb-1 break-words text-sm">
+                      <div className="font-medium mb-1 break-words text-sm text-gray-800">
                         {article.title || '无标题'}
                       </div>
-                      <div className="flex justify-between text-xs text-content-secondary">
+                      <div className="flex justify-between text-xs text-gray-500">
                         <span>{article.author_name || '未知作者'}</span>
                         <span>{article.word_count ? `${article.word_count} 字` : '? 字'}</span>
                       </div>
                       {article.style && (
-                         <div className="text-xs text-primary-500 italic mt-1">
+                         <div className="text-xs text-blue-600 italic mt-1">
                             风格: {article.style}
                          </div>
                       )}
-                      <div className="text-xs text-content-secondary mt-1">
+                      <div className="text-xs text-gray-500 mt-1">
                         {formatDate(article.created_at)}
                       </div>
                     </div>
@@ -1101,15 +1101,15 @@ export default function ArticleGeneratorPage() {
         </div>
       </div>
 
-      {/* Login Modal */}
+      {/* Login Modal - Use RGBA for overlay */} 
       {!isLoggedIn && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-          <div className="bg-background-light rounded-lg shadow-card p-8 w-11/12 max-w-md">
-            <h2 className="text-xl font-semibold mb-2 text-center">登录系统</h2>
-            <p className="text-sm text-content-secondary text-center mb-6">请输入您的账号</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.7)]">
+          <div className="bg-white rounded-lg shadow-xl p-8 w-11/12 max-w-md">
+            <h2 className="text-xl font-semibold mb-2 text-center text-gray-800">登录系统</h2>
+            <p className="text-sm text-gray-500 text-center mb-6">请输入您的账号</p>
             {/* Login Error Display */}
             {loginError && (
-              <div className="bg-red-50 border border-red-200 text-error-light text-sm rounded-md p-3 mb-4">
+              <div className="bg-red-100 border border-red-300 text-red-700 text-sm rounded-md p-3 mb-4">
                 {loginError}
               </div>
             )}
@@ -1117,14 +1117,14 @@ export default function ArticleGeneratorPage() {
               type="text" 
               placeholder="请输入账号" 
               maxLength={20} 
-              className="mb-5 w-full"
+              className="mb-5 w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               value={loginInput} 
               onChange={(e) => setLoginInput(e.target.value)}
               onKeyPress={handleLoginKeyPress}
             />
             <button 
               onClick={handleLoginAttempt} 
-              className="w-full btn-vercel bg-primary-600 hover:bg-primary-700 text-white"
+              className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               登录
             </button>
@@ -1132,53 +1132,53 @@ export default function ArticleGeneratorPage() {
         </div>
       )}
       
-      {/* Preview Modal - Updated with conditional content */} 
+      {/* Preview Modal - Use RGBA for overlay */} 
       {showPreviewModal && previewArticle && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-70" onClick={handleClosePreview}> {/* Close on overlay click */} 
-          <div className="bg-background-light rounded-lg shadow-card m-4 max-w-4xl max-h-[90vh] w-full flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}> {/* Prevent closing when clicking inside */} 
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(0,0,0,0.7)]" onClick={handleClosePreview}>
+          <div className="bg-white rounded-lg shadow-xl m-4 max-w-4xl max-h-[90vh] w-full flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* Modal Header */} 
-            <div className="flex justify-between items-center p-4 border-b border-border-light">
-              <h3 className="text-lg font-medium truncate pr-2" title={previewArticle.title || '文章预览'}>
+            <div className="flex justify-between items-center p-4 border-b border-gray-200">
+              <h3 className="text-lg font-medium truncate pr-2 text-gray-800" title={previewArticle.title || '文章预览'}>
                  {previewArticle.title || '文章预览'}
                  {previewArticle.style && ` (${previewArticle.style})`}
                </h3>
               <button 
                 onClick={handleClosePreview} 
-                className="text-content-secondary hover:text-content-primary p-1 rounded-md transition-all hover:bg-accent-1 flex-shrink-0"
+                className="text-gray-500 hover:text-gray-700 p-1 rounded-md transition-all hover:bg-gray-100 flex-shrink-0"
                 aria-label="Close preview"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
             
-            {/* Modal Content */} 
-            <div className="flex-1 overflow-hidden p-4 relative"> 
+            {/* Modal Content - Make scrollable */} 
+            <div className="flex-1 overflow-y-auto p-4 relative bg-white">
                 {/* Loading State */} 
                 {isPreviewLoading && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10">
-                        <svg className="animate-spin h-8 w-8 text-primary-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10">
+                         <svg className="animate-spin h-8 w-8 text-blue-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <p className="text-content-secondary text-sm">正在加载预览...</p>
+                         </svg>
+                        <p className="text-gray-600 text-sm">正在加载预览...</p>
                     </div>
                 )}
                 
                 {/* Error / Unsupported State */} 
                 {(previewError || previewFileType === 'unsupported') && !isPreviewLoading && (
-                    <div className="w-full h-full border border-border-light rounded-md flex flex-col items-center justify-center p-8 text-center">
-                        <div className="w-16 h-16 mb-4 text-content-secondary opacity-50">
+                    <div className="w-full h-full border border-gray-200 rounded-md flex flex-col items-center justify-center p-8 text-center">
+                        <div className="w-16 h-16 mb-4 text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="feather feather-alert-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                         </div>
-                        <h4 className="text-xl font-medium mb-2">无法预览</h4>
-                        <p className="text-content-secondary mb-6">{previewError || "此文件格式不支持在线预览，请下载查看。"}</p>
+                        <h4 className="text-xl font-medium mb-2 text-gray-800">无法预览</h4>
+                        <p className="text-gray-600 mb-6">{previewError || "此文件格式不支持在线预览，请下载查看。"}</p>
                     </div>
                 )}
                 
                 {/* DOCX Preview Area */} 
                 <div 
                     className={cn(
-                        "w-full h-full border border-border-light rounded-md overflow-auto bg-white",
+                        "w-full h-full border border-gray-200 rounded-md overflow-auto bg-white text-gray-900",
                         { 'hidden': previewFileType !== 'docx' || isPreviewLoading || previewError }
                     )}
                     dangerouslySetInnerHTML={{ __html: docxHtml || '' }}
@@ -1189,24 +1189,24 @@ export default function ArticleGeneratorPage() {
                     ref={iframeRef}
                     title="文章预览" 
                     className={cn(
-                        "w-full h-full border border-border-light rounded-md",
+                        "w-full h-full border border-gray-200 rounded-md",
                         { 'hidden': previewFileType !== 'iframe' || isPreviewLoading || previewError }
                     )}
                     src={previewFileType === 'iframe' && previewArticle?.public_url ? previewArticle.public_url : 'about:blank'}
-                    sandbox="allow-scripts allow-same-origin" // Adjust sandbox as needed for security vs functionality
+                    sandbox="allow-scripts allow-same-origin"
                 >
                 </iframe>
             </div>
             
             {/* Modal Footer */} 
-            <div className="flex justify-end p-4 border-t border-border-light">
+            <div className="flex justify-end p-4 border-t border-gray-200">
               <a 
                 href={previewArticle.public_url || '#'} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className={cn(
-                    "btn-vercel bg-primary-600 hover:bg-primary-700 text-white inline-flex items-center gap-2",
-                    { "opacity-50 cursor-not-allowed pointer-events-none": !previewArticle.public_url } // Disable visually and functionally
+                    "inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500",
+                    { "opacity-50 cursor-not-allowed pointer-events-none": !previewArticle.public_url }
                 )}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
