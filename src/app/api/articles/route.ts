@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     }
     
     // 转换参数
-    const limit = limitParam ? parseInt(limitParam, 10) : 10;
+    const limit = limitParam ? parseInt(limitParam, 10) : 0;
     const offset = offsetParam ? parseInt(offsetParam, 10) : 0;
     
     // 获取文章列表

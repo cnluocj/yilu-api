@@ -226,18 +226,29 @@ export async function saveArticleToSupabase(
  */
 export async function getUserArticles(
   userId: string,
-  limit: number = 10,
+  limit: number | null = null, // Allow null for fetching all
   offset: number = 0
 ): Promise<{ records: Record<string, unknown>[], total: number }> {
   try {
-    console.log(`[${new Date().toISOString()}] 获取用户(${userId})的文章列表, 限制: ${limit}, 偏移: ${offset}`);
+    // Determine if a limit should be applied
+    const applyLimit = limit !== null && limit > 0;
     
-    const { data, error, count } = await supabase
+    let query = supabase
       .from('article_records')
       .select('*', { count: 'exact' })
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .order('created_at', { ascending: false });
+
+    if (applyLimit) {
+      console.log(`[${new Date().toISOString()}] 获取用户(${userId})的文章列表, 限制: ${limit}, 偏移: ${offset}`);
+      query = query.range(offset, offset + (limit || 1) - 1); // Apply range if limit is valid
+    } else {
+      console.log(`[${new Date().toISOString()}] 获取用户(${userId})的所有文章列表 (limit=${limit})`);
+      // No .range() call, fetch all
+    }
+    
+    // Execute the query
+    const { data, error, count } = await query;
     
     if (error) {
       console.error(`[${new Date().toISOString()}] 获取用户文章列表出错:`, error);

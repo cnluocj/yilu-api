@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import cn from 'classnames'; // 引入classnames库来帮助动态合并类名
-import * as mammoth from 'mammoth'; // Import mammoth
 import UserInfoForm from './components/UserInfoForm'; // Import the new component
 import TitleSelection from './components/TitleSelection'; // Import the new component
 import ArticleGeneration from './components/ArticleGeneration'; // Import the new component
