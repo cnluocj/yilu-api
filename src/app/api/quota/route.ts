@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
     
     // 权限检查: 普通用户(CUSTOMER)只能查询自己的配额
     if (auth.role === UserRole.CUSTOMER) {
-      // 如果是使用OpenID生成的令牌，验证用户只能查询自己的配额
+      // 验证用户只能查询自己的配额
       if (auth.userId && userId !== auth.userId) {
         console.error(`[${new Date().toISOString()}][${requestId}] 权限错误: 用户只能查询自己的配额, tokenUserId: ${auth.userId}, requestedUserId: ${userId}`);
         return NextResponse.json<ApiResponse<null>>(

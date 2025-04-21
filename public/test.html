@@ -78,8 +78,8 @@
   <h1>Yilu API 生成标题测试 (端口9090)</h1>
   
   <div class="form-group">
-    <label for="openid">OpenID:</label>
-    <input type="text" id="openid" value="wx_abcd1234efgh5678">
+    <label for="userid">UserID:</label>
+    <input type="text" id="userid" value="wx_abcd1234efgh5678">
   </div>
   
   <div class="form-group">
@@ -136,7 +136,7 @@
       
       // Collect form data
       const payload = {
-        openid: document.getElementById('openid').value,
+        userid: document.getElementById('userid').value,
         direction: document.getElementById('direction').value,
         word_count: parseInt(document.getElementById('word_count').value),
         name: document.getElementById('name').value,

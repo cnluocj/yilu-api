@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       
       console.log(`[${new Date().toISOString()}][${requestId}] JWT令牌验证: payload=${JSON.stringify(payload)}`);
       if (payload && payload.permissions && 
-          ((payload.permissions.includes('article:read') && (payload.userId === userId || payload.openId === userId)) || 
+          ((payload.permissions.includes('article:read') && payload.userId === userId) || 
            payload.role === 'admin' || 
            payload.role === 'system')) {
         isAuthorized = true;

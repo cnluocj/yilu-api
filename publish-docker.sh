@@ -170,7 +170,7 @@ services:
 
 \`\`\`json
 {
-  "openid": "wx_abcd1234efgh5678",
+  "userid": "wx_abcd1234efgh5678",
   "direction": "心血管疾病预防与保健",
   "word_count": 15,
   "name": "张医生",

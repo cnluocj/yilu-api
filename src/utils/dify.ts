@@ -18,11 +18,11 @@ export async function callDifyWorkflowAPI(
             direction: request.direction
           },
           response_mode: "streaming",
-          user: request.userid // Changed from openid
+          user: request.userid
         };
         
         // 记录请求信息
-        console.log(`[${new Date().toISOString()}] 请求Dify API - 用户: ${request.userid}, 方向: ${request.direction}`); // Changed from openid
+        console.log(`[${new Date().toISOString()}] 请求Dify API - 用户: ${request.userid}, 方向: ${request.direction}`);
         console.log(`[${new Date().toISOString()}] 请求Dify API - URL: ${config.apiUrl}/workflows/run`);
         console.log(`[${new Date().toISOString()}] 请求Dify API - 请求体: ${JSON.stringify(difyRequestBody)}`);
         

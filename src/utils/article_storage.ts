@@ -119,7 +119,7 @@ async function findAvailableFileName(
 export async function saveArticleToSupabase(
   fileUrl: string,
   userId: string,
-  articleInfo: Omit<GenerateArticleRequest, 'openid'> & { dify_task_id?: string }
+  articleInfo: Omit<GenerateArticleRequest, 'userid'> & { dify_task_id?: string }
 ): Promise<{ recordId: string, publicUrl: string, filePath: string }> {
   try {
     console.log(`[${new Date().toISOString()}] 开始保存文章到Supabase, 用户: ${userId}`);

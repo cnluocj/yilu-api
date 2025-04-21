@@ -18,7 +18,6 @@ export enum UserRole {
 // JWT载荷接口
 export interface JwtPayload {
   userId: string;
-  openId?: string;     // 微信OpenID
   role: UserRole;
   permissions?: string[]; // 权限列表
 }
@@ -84,10 +83,10 @@ export function refreshToken(token: string, expiresIn: string = JWT_EXPIRY): str
     const decoded = jwt.verify(token, JWT_SECRET, { ignoreExpiration: true });
     
     // 移除旧的时间戳
-    const { userId, role, permissions, openId } = decoded;
+    const { userId, role, permissions} = decoded;
     
     // 生成新令牌
-    return generateToken({ userId, role, permissions, openId }, expiresIn);
+    return generateToken({ userId, role, permissions}, expiresIn);
   } catch (error: unknown) {
     console.error(`[${new Date().toISOString()}] 刷新JWT令牌失败:`, error);
     return null;
@@ -140,13 +139,11 @@ export function createAdminToken(adminId: string): string {
 /**
  * 创建用户令牌
  * @param userId 用户ID
- * @param openId 微信OpenID (可选)
  * @returns JWT令牌
  */
-export function createCustomerToken(userId: string, openId?: string): string {
+export function createCustomerToken(userId: string): string {
   return generateToken({
     userId,
-    openId,
     role: UserRole.CUSTOMER
   }, '24h'); // 用户令牌有效期24小时
 } 

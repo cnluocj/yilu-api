@@ -7,7 +7,7 @@ import { generateToken, UserRole } from '@/utils/jwt';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, role, expiresIn, openId } = body;
+    const { userId, role, expiresIn } = body;
     
     // 验证必要参数
     if (!userId) {
@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
       userId,
       role: userRole,
       permissions,
-      openId // 可选的OpenID，用于微信等身份标识
     };
     
     // 生成JWT令牌，使用自定义过期时间（如果提供）

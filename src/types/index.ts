@@ -53,6 +53,7 @@ export interface UserServiceQuota {
 
 // 服务类型枚举
 export enum ServiceType {
+  ALL = 'all',
   KP = 'kp', // 科普
   GENERATE_ARTICLE = 'generate_article',
   GENERATE_TITLE = 'generate_title'

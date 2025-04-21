@@ -508,7 +508,7 @@
     let generatedTitles = [];
     let articleUrl = '';
     let userInfo = {
-      openid: '',
+      userid: '',
       name: '',
       unit: '',
       direction: '',
@@ -549,7 +549,7 @@
     function completeLogin(username) {
       loginModal.classList.add('hidden');
       loginModal.classList.remove('flex');
-      userInfo.openid = 'internal_' + username;
+      userInfo.userid = 'internal_' + username;
       usernameSpan.textContent = username;
       loggedInUser.classList.remove('hidden');
       loadArticleHistory();
@@ -562,7 +562,7 @@
 
     function handleLogout() {
       localStorage.removeItem('articleGenerator_username');
-      userInfo.openid = '';
+      userInfo.userid = '';
       loggedInUser.classList.add('hidden');
       loginModal.classList.remove('hidden');
       loginModal.classList.add('flex');
@@ -703,7 +703,7 @@
       
       // 保存用户信息
       userInfo = {
-        openid: userInfo ? userInfo.openid : '',
+        userid: userInfo ? userInfo.userid : '',
         name: nameInput ? nameInput.value.trim() : '',
         unit: unitInput ? unitInput.value.trim() : '',
         direction: directionInput ? directionInput.value.trim() : '',
@@ -828,7 +828,7 @@
             
             // 确保数据完整性
             const payload = {
-                openid: userInfo.openid || 'anonymous',
+                userid: userInfo.userid || 'anonymous',
                 direction: userInfo.direction || '健康科普',
                 word_count: userInfo.word_count || 1500,
                 name: userInfo.name || '未知用户',
@@ -916,7 +916,7 @@
 
         // 确保所有必要的字段都有默认值
         const payload = {
-          openid: userInfo.openid || 'anonymous',
+          userid: userInfo.userid || 'anonymous',
           direction: userInfo.direction || '健康科普',
           title: finalTitle,
           word_count: userInfo.word_count || 1500,
@@ -1086,7 +1086,7 @@
         historyList.innerHTML = ''; // Clear previous
         historyLoadingContainer.style.display = 'block'; // Show loading
         
-        const userId = userInfo && userInfo.openid;
+        const userId = userInfo && userInfo.userid;
         if (!userId) {
             console.log("User not logged in, skipping history load.");
             historyLoadingContainer.style.display = 'none';
