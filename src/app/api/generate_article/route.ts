@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       try {
         // 检查用户是否有足够的配额
         console.log(`[${new Date().toISOString()}][${requestId}] 检查用户(${body.userid})的文章生成服务配额`);
-        quota = await getUserQuota(body.userid, ServiceType.KP);
+        quota = await getUserQuota(body.userid, ServiceType.ALL);
         
         if (!quota || quota.remaining_quota <= 0) {
           console.error(`[${new Date().toISOString()}][${requestId}] 用户(${body.userid})的文章生成服务配额不足`);
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
                       if (fileCount > 0 && !skipQuotaCheck && quota) {
                         try {
                           console.log(`[${new Date().toISOString()}][${requestId}] 生成成功，文件数量: ${fileCount}，消耗用户(${body.userid})的一次文章生成服务配额`);
-                          const remainingQuota = await consumeQuota(body.userid, ServiceType.KP, `system-article-${requestId}`);
+                          const remainingQuota = await consumeQuota(body.userid, ServiceType.ALL, `system-article-${requestId}`);
                           console.log(`[${new Date().toISOString()}][${requestId}] 配额消耗成功，剩余: ${remainingQuota}`);
                         } catch (quotaError) {
                           console.error(`[${new Date().toISOString()}][${requestId}] 消耗配额时出错:`, quotaError);

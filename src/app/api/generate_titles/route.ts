@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       try {
         // 检查用户是否有足够的配额
         console.log(`[${new Date().toISOString()}][${requestId}] 检查用户(${body.userid})的标题生成服务配额`);
-        const quota = await getUserQuota(body.userid, ServiceType.KP);
+        const quota = await getUserQuota(body.userid, ServiceType.ALL);
         
         if (!quota || quota.remaining_quota <= 0) {
           console.error(`[${new Date().toISOString()}][${requestId}] 用户(${body.userid})的标题生成服务配额不足`);
