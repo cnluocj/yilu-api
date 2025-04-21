@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
     console.log(`[${new Date().toISOString()}][${requestId}] 请求参数: ${JSON.stringify(body)}`);
     
     // 验证请求数据（基本验证）
-    if (!body.direction || !body.openid) {
-      console.log(`[${new Date().toISOString()}][${requestId}] 验证失败: 缺少必要字段`);
+    if (!body.direction || !body.userid) {
+      console.log(`[${new Date().toISOString()}][${requestId}] 验证失败: 缺少必要字段 (direction or userid)`);
       return NextResponse.json(
         { error: '缺少必要字段' },
         { status: 400 }
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     let skipQuotaCheck = process.env.SKIP_QUOTA_CHECK === 'true'; // 对于测试环境，可配置跳过配额检查
 
     // internal开头的是内部接口，不进行配额检查
-    if (body.openid.startsWith('internal_')) {
+    if (body.userid.startsWith('internal_')) {
       skipQuotaCheck = true;
     }
 
@@ -112,18 +112,18 @@ export async function POST(request: NextRequest) {
     if (!useMockData && !skipQuotaCheck) {
       try {
         // 检查用户是否有足够的配额
-        console.log(`[${new Date().toISOString()}][${requestId}] 检查用户(${body.openid})的文章生成服务配额`);
-        quota = await getUserQuota(body.openid, ServiceType.KP);
+        console.log(`[${new Date().toISOString()}][${requestId}] 检查用户(${body.userid})的文章生成服务配额`);
+        quota = await getUserQuota(body.userid, ServiceType.KP);
         
         if (!quota || quota.remaining_quota <= 0) {
-          console.error(`[${new Date().toISOString()}][${requestId}] 用户(${body.openid})的文章生成服务配额不足`);
+          console.error(`[${new Date().toISOString()}][${requestId}] 用户(${body.userid})的文章生成服务配额不足`);
           return NextResponse.json(
             { error: '服务配额不足，请联系管理员添加配额' },
             { status: 403 }
           );
         }
         
-        console.log(`[${new Date().toISOString()}][${requestId}] 用户(${body.openid})的文章生成服务配额充足，剩余: ${quota.remaining_quota}`);
+        console.log(`[${new Date().toISOString()}][${requestId}] 用户(${body.userid})的文章生成服务配额充足，剩余: ${quota.remaining_quota}`);
       } catch (quotaError) {
         console.error(`[${new Date().toISOString()}][${requestId}] 检查配额时出错:`, quotaError);
         return NextResponse.json(
@@ -224,8 +224,8 @@ export async function POST(request: NextRequest) {
                       // 当文件数量 > 1 且配额检查未被跳过时，扣除配额
                       if (fileCount > 0 && !skipQuotaCheck && quota) {
                         try {
-                          console.log(`[${new Date().toISOString()}][${requestId}] 生成成功，文件数量: ${fileCount}，消耗用户(${body.openid})的一次文章生成服务配额`);
-                          const remainingQuota = await consumeQuota(body.openid, ServiceType.KP, `system-article-${requestId}`);
+                          console.log(`[${new Date().toISOString()}][${requestId}] 生成成功，文件数量: ${fileCount}，消耗用户(${body.userid})的一次文章生成服务配额`);
+                          const remainingQuota = await consumeQuota(body.userid, ServiceType.KP, `system-article-${requestId}`);
                           console.log(`[${new Date().toISOString()}][${requestId}] 配额消耗成功，剩余: ${remainingQuota}`);
                         } catch (quotaError) {
                           console.error(`[${new Date().toISOString()}][${requestId}] 消耗配额时出错:`, quotaError);

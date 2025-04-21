@@ -313,7 +313,7 @@ export async function callDifyGenerateArticleAPI(
             style: request.style || '生动有趣，角度新颖' // 默认风格
           },
           response_mode: "streaming",
-          user: request.openid // 使用openid作为用户标识
+          user: request.userid // 使用userid作为用户标识
         };
         
         // 记录请求信息
@@ -676,13 +676,14 @@ export async function callDifyGenerateArticleAPI(
                           title: request.title || '未命名标题',
                           word_count: request.word_count || 0,
                           dify_task_id: lastTaskId || '',
-                          style: request.style || '生动有趣，角度新颖'
+                          style: request.style || '生动有趣，角度新颖',
+                          userid: request.userid || 'anonymous'
                         };
                         
                         // 保存文章
                         const saveResult = await articleStorage.saveArticleToSupabase(
                           fileUrl, 
-                          request.openid ? request.openid : 'anonymous', 
+                          request.userid ? request.userid : 'anonymous', 
                           articleInfo
                         );
                         

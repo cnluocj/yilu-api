@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 interface GenerateArticlePayload {
-  openid: string;
+  userid: string;
   direction: string;
   title: string;
   word_count: number;

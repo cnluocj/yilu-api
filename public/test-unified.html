@@ -287,8 +287,8 @@
     <div class="form-container">
       <h2>文章生成</h2>
       <div class="form-group">
-        <label for="article-openid">OpenID:</label>
-        <input type="text" id="article-openid" value="wx_abcd1234efgh5678">
+        <label for="article-userid">UserID:</label>
+        <input type="text" id="article-userid" value="wx_abcd1234efgh5678">
       </div>
       
       <div class="form-group">
@@ -895,7 +895,7 @@
       
       // 收集表单数据
       const payload = {
-        openid: document.getElementById('article-openid').value,
+        userid: document.getElementById('article-userid').value,
         direction: document.getElementById('article-direction').value,
         title: document.getElementById('article-title').value,
         word_count: parseInt(document.getElementById('article-word_count').value),

@@ -18,7 +18,7 @@ const TEMP_SYSTEM_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJzeX
 
 // Define UserInfo Type
 interface UserInfo {
-  openid: string;
+  userid: string;
   name: string;
   unit: string;
   direction: string;
@@ -43,7 +43,7 @@ export default function ArticleGeneratorPage() {
   // --- State Definitions ---
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [username, setUsername] = useState<string>('');
-  const [userOpenid, setUserOpenid] = useState<string>('');
+  const [userid, setUserid] = useState<string>('');
   const [loginInput, setLoginInput] = useState<string>('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null); // 通用表单错误
@@ -105,12 +105,12 @@ export default function ArticleGeneratorPage() {
   const completeLogin = useCallback((uname: string) => {
     setIsLoggedIn(true);
     setUsername(uname);
-    const openid = 'internal_' + uname;
-    setUserOpenid(openid);
+    const currentUserId = 'internal_' + uname;
+    setUserid(currentUserId);
     setLoginError(null); 
     setLoginInput(''); 
-    // History loading is now triggered by the useEffect watching userOpenid
-  }, []); // Removed redundant dependencies
+    // History loading is now triggered by the useEffect watching userid
+  }, [setUserid]);
 
   // --- Derived State for UI Control --- 
   const isBasicInfoValid = useCallback(() => {
@@ -133,12 +133,12 @@ export default function ArticleGeneratorPage() {
   }, [completeLogin]); // Added completeLogin dependency
 
   useEffect(() => {
-    if (userOpenid) {
-      loadHistory(userOpenid); // Call the hook's function
+    if (userid) {
+      loadHistory(userid); // Call the hook's function
     } else {
       // setHistoryArticles([]); // State handled by hook
     }
-  }, [userOpenid, loadHistory]); // Add loadHistory dependency
+  }, [userid, loadHistory]); // Watch renamed state, add loadHistory dependency
 
   // --- Event Handlers ---
   const handleLoginAttempt = () => {
@@ -166,7 +166,7 @@ export default function ArticleGeneratorPage() {
     localStorage.removeItem('articleGenerator_username');
     setIsLoggedIn(false);
     setUsername('');
-    setUserOpenid('');
+    setUserid('');
     setName('');
     setUnit('');
     setDirection('');
@@ -220,7 +220,7 @@ export default function ArticleGeneratorPage() {
     }
     setFormError(null); 
     const payload = {
-        userid: userOpenid || 'anonymous', // Use userid key, value is still from userOpenid state
+        userid: userid || 'anonymous',
         direction: direction.trim(),
         word_count: wordCount, 
         name: name.trim(),
@@ -228,7 +228,7 @@ export default function ArticleGeneratorPage() {
     };
     console.log("Calling generateTitles from hook..."); 
     generateTitles(payload); 
-  }, [userOpenid, direction, wordCount, name, unit, validateBasicInfo, generateTitles, setFormError]);
+  }, [userid, direction, wordCount, name, unit, validateBasicInfo, generateTitles, setFormError]);
 
   const triggerArticleGeneration = useCallback(() => {
     if (!validateBasicInfo()) {
@@ -251,13 +251,13 @@ export default function ArticleGeneratorPage() {
     const currentStyle = selectedStyle === 'custom' ? customStyle.trim() : selectedStyle;
 
     const payload = {
-      openid: userOpenid || 'anonymous',
+      userid: userid || 'anonymous',
       direction: direction.trim(),
       title: finalTitle,
       word_count: wordCount,
       name: name.trim(),
       unit: unit.trim(),
-      style: currentStyle
+      style: currentStyle || '生动有趣，角度新颖'
     };
 
     generateArticle(payload); // Removed loadHistory callback here
@@ -269,7 +269,7 @@ export default function ArticleGeneratorPage() {
     customTitleInput, 
     selectedStyle, 
     customStyle, 
-    userOpenid, 
+    userid,
     direction, 
     wordCount, 
     name, 

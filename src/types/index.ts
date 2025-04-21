@@ -8,7 +8,7 @@ export interface GenerateTitlesRequest {
 }
 
 export interface GenerateArticleRequest {
-  openid: string;
+  userid: string;
   direction: string;
   word_count: number;
   name: string;
