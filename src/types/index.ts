@@ -1,6 +1,6 @@
 // Request Types
 export interface GenerateTitlesRequest {
-  openid: string;
+  userid: string;
   direction: string;
   word_count: number;
   name: string;

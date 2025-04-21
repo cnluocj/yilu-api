@@ -80,10 +80,10 @@ export async function POST(request: NextRequest) {
     console.log(`[${new Date().toISOString()}][${requestId}] 请求参数: ${JSON.stringify(body)}`);
     
     // 验证请求数据（基本验证）
-    if (!body.openid || !body.direction) {
-      console.log(`[${new Date().toISOString()}][${requestId}] 验证失败: 缺少必要字段`);
+    if (!body.userid || !body.direction) {
+      console.log(`[${new Date().toISOString()}][${requestId}] 验证失败: 缺少必要字段 (userid or direction)`);
       return NextResponse.json(
-        { error: '缺少必要字段' },
+        { error: '缺少必要字段 (userid or direction)' },
         { status: 400 }
       );
     }
@@ -93,25 +93,25 @@ export async function POST(request: NextRequest) {
     let skipQuotaCheck = process.env.SKIP_QUOTA_CHECK === 'true'; // 对于测试环境，可配置跳过配额检查
 
     // internal开头的是内部接口，不进行配额检查
-    if (body.openid.startsWith('internal_')) {
+    if (body.userid.startsWith('internal_')) {
       skipQuotaCheck = true;
     }
     
     if (!useMockData && !skipQuotaCheck) {
       try {
         // 检查用户是否有足够的配额
-        console.log(`[${new Date().toISOString()}][${requestId}] 检查用户(${body.openid})的标题生成服务配额`);
-        const quota = await getUserQuota(body.openid, ServiceType.KP);
+        console.log(`[${new Date().toISOString()}][${requestId}] 检查用户(${body.userid})的标题生成服务配额`);
+        const quota = await getUserQuota(body.userid, ServiceType.KP);
         
         if (!quota || quota.remaining_quota <= 0) {
-          console.error(`[${new Date().toISOString()}][${requestId}] 用户(${body.openid})的标题生成服务配额不足`);
+          console.error(`[${new Date().toISOString()}][${requestId}] 用户(${body.userid})的标题生成服务配额不足`);
           return NextResponse.json(
             { error: '服务配额不足，请联系管理员添加配额' },
             { status: 403 }
           );
         }
         
-        console.log(`[${new Date().toISOString()}][${requestId}] 用户(${body.openid})的标题生成服务配额充足，剩余: ${quota.remaining_quota}`);
+        console.log(`[${new Date().toISOString()}][${requestId}] 用户(${body.userid})的标题生成服务配额充足，剩余: ${quota.remaining_quota}`);
       } catch (quotaError) {
         console.error(`[${new Date().toISOString()}][${requestId}] 检查配额时出错:`, quotaError);
         return NextResponse.json(

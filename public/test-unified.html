@@ -239,8 +239,8 @@
     <div class="form-container">
       <h2>标题生成</h2>
       <div class="form-group">
-        <label for="titles-openid">OpenID:</label>
-        <input type="text" id="titles-openid" value="wx_abcd1234efgh5678">
+        <label for="titles-userid">UserID:</label>
+        <input type="text" id="titles-userid" value="wx_abcd1234efgh5678">
       </div>
       
       <div class="form-group">
@@ -791,7 +791,7 @@
       
       // 收集表单数据
       const payload = {
-        openid: document.getElementById('titles-openid').value,
+        userid: document.getElementById('titles-userid').value,
         direction: document.getElementById('titles-direction').value,
         word_count: parseInt(document.getElementById('titles-word_count').value),
         name: document.getElementById('titles-name').value,

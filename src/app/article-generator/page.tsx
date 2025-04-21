@@ -212,23 +212,22 @@ export default function ArticleGeneratorPage() {
 
   // Trigger Hook Handlers
   const triggerTitleGeneration = useCallback(() => {
-    console.log("Triggering Title Generation..."); // Log entry
+    console.log("Triggering Title Generation..."); 
     const basicInfoIsValid = validateBasicInfo();
-    console.log("Basic Info Validation Result:", basicInfoIsValid); // Log validation result
+    console.log("Basic Info Validation Result:", basicInfoIsValid); 
     if (!basicInfoIsValid) { 
-        // Form error is set inside validateBasicInfo
         return; 
     }
-    setFormError(null); // Clear any previous general error if validation passes
+    setFormError(null); 
     const payload = {
-        openid: userOpenid || 'anonymous',
+        userid: userOpenid || 'anonymous', // Use userid key, value is still from userOpenid state
         direction: direction.trim(),
         word_count: wordCount, 
         name: name.trim(),
         unit: unit.trim()
     };
-    console.log("Calling generateTitles from hook..."); // Log before calling hook
-    generateTitles(payload); // Call the function returned by the hook
+    console.log("Calling generateTitles from hook..."); 
+    generateTitles(payload); 
   }, [userOpenid, direction, wordCount, name, unit, validateBasicInfo, generateTitles, setFormError]);
 
   const triggerArticleGeneration = useCallback(() => {
