@@ -13,7 +13,6 @@ import { verifyToken, UserRole } from '@/utils/jwt';
 function validateAuth(request: NextRequest, requiredPermission: string): { 
   isAuthorized: boolean; 
   userId?: string;
-  openId?: string;
   role?: UserRole;
   error?: string 
 } {
@@ -40,7 +39,6 @@ function validateAuth(request: NextRequest, requiredPermission: string): {
       return { 
         isAuthorized: true, 
         userId: payload.userId,
-        openId: payload.openId,
         role: payload.role 
       };
     }
@@ -55,7 +53,6 @@ function validateAuth(request: NextRequest, requiredPermission: string): {
     return { 
       isAuthorized: true, 
       userId: payload.userId,
-      openId: payload.openId,
       role: payload.role 
     };
   } catch (error) {
@@ -120,16 +117,7 @@ export async function GET(request: NextRequest) {
     // 权限检查: 普通用户(CUSTOMER)只能查询自己的配额
     if (auth.role === UserRole.CUSTOMER) {
       // 如果是使用OpenID生成的令牌，验证用户只能查询自己的配额
-      if (auth.openId && userId !== `wx-${auth.openId}`) {
-        console.error(`[${new Date().toISOString()}][${requestId}] 权限错误: 用户只能查询自己的配额, tokenUserId: ${auth.userId}, requestedUserId: ${userId}`);
-        return NextResponse.json<ApiResponse<null>>(
-          { success: false, error: '权限不足: 只能查询自己的配额信息' },
-          { status: 403 }
-        );
-      }
-      
-      // 如果是常规用户令牌，同样验证
-      if (!auth.openId && userId !== auth.userId) {
+      if (auth.userId && userId !== auth.userId) {
         console.error(`[${new Date().toISOString()}][${requestId}] 权限错误: 用户只能查询自己的配额, tokenUserId: ${auth.userId}, requestedUserId: ${userId}`);
         return NextResponse.json<ApiResponse<null>>(
           { success: false, error: '权限不足: 只能查询自己的配额信息' },
