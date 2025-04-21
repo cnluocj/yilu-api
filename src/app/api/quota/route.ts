@@ -189,17 +189,8 @@ export async function POST(request: NextRequest) {
     
     // 权限检查: 普通用户(CUSTOMER)只能为自己添加配额
     if (auth.role === UserRole.CUSTOMER) {
-      // 如果是使用OpenID生成的令牌，验证用户只能为自己添加配额
-      if (auth.openId && body.user_id !== `wx-${auth.openId}`) {
-        console.error(`[${new Date().toISOString()}][${requestId}] 权限错误: 用户只能为自己添加配额, tokenUserId: ${auth.userId}, requestedUserId: ${body.user_id}`);
-        return NextResponse.json<ApiResponse<null>>(
-          { success: false, error: '权限不足: 只能为自己添加配额' },
-          { status: 403 }
-        );
-      }
-      
       // 如果是常规用户令牌，同样验证
-      if (!auth.openId && body.user_id !== auth.userId) {
+      if (!auth.userId && body.user_id !== auth.userId) {
         console.error(`[${new Date().toISOString()}][${requestId}] 权限错误: 用户只能为自己添加配额, tokenUserId: ${auth.userId}, requestedUserId: ${body.user_id}`);
         return NextResponse.json<ApiResponse<null>>(
           { success: false, error: '权限不足: 只能为自己添加配额' },
