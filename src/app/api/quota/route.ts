@@ -130,9 +130,19 @@ export async function GET(request: NextRequest) {
     const quota = await getUserQuota(userId, serviceId);
     console.log(`[${new Date().toISOString()}][${requestId}] 用户配额查询结果:`, quota);
     
+    // If quota is null (no record found), create a default object with 0 quota
+    const responseData: UserServiceQuota = quota ?? {
+        user_id: userId,
+        service_id: serviceId,
+        remaining_quota: 0,
+        // Optional: Add default created_at/updated_at if your frontend strictly requires them
+        // created_at: new Date().toISOString(), 
+        // updated_at: new Date().toISOString(), 
+    };
+    
     // 返回响应
-    return NextResponse.json<ApiResponse<UserServiceQuota | null>>(
-      { success: true, data: quota },
+    return NextResponse.json<ApiResponse<UserServiceQuota>>( // Ensure data is always UserServiceQuota, not null
+      { success: true, data: responseData },
       { status: 200 }
     );
   } catch (error) {
