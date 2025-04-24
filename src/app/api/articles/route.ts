@@ -78,13 +78,14 @@ export async function GET(request: NextRequest) {
     // 获取文章列表
     const result = await getUserArticles(userId, limit, offset);
     
-    // 返回结果
+    // 返回结果 - Wrapped in standard ApiResponse structure
     console.log(`[${new Date().toISOString()}][${requestId}] 成功获取文章列表，共${result.total}篇文章`);
-    return NextResponse.json(result);
+    return NextResponse.json({ success: true, data: result });
   } catch (error) {
     console.error(`[${new Date().toISOString()}] 获取文章列表出错:`, error);
+    // Ensure error response also follows the standard format
     return NextResponse.json(
-      { error: '获取文章列表时出错' },
+      { success: false, error: '获取文章列表时出错' },
       { status: 500 }
     );
   }

@@ -44,7 +44,18 @@ export function useArticleHistory(): HistoryResult {
       
       const data = await response.json();
       console.log("History data received (in hook):", data);
-      setHistoryArticles(data.records || []);
+      
+      // Handle the new response structure
+      if (data.success && data.data) {
+          setHistoryArticles(data.data.records || []);
+          // You might want to store/use data.data.total as well if needed for pagination
+      } else {
+          // Handle API returning success: false or missing data
+          const errorMsg = data.error || '获取历史记录失败，响应格式无效';
+          console.error('Error loading article history (API Error in hook):', errorMsg);
+          setHistoryError(`加载历史文章失败: ${errorMsg}`);
+          setHistoryArticles([]);
+      }
       
     } catch (error: any) {
       console.error('Error loading article history (in hook):', error);
