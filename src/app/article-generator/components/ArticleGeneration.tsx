@@ -1,12 +1,13 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArticleRecord } from '../page'; // Revert import back to ../page
 
 // --- Props Interface ---
 interface ArticleGenerationProps {
   isGeneratingArticle: boolean;
   articleProgress: number;
+  articleStatusTitle: string | null;
   generatedArticleUrl: string | null;
   articleError: string | null;
   isBasicInfoValid: boolean;
@@ -26,6 +27,7 @@ interface ArticleGenerationProps {
 const ArticleGeneration: React.FC<ArticleGenerationProps> = ({
   isGeneratingArticle,
   articleProgress,
+  articleStatusTitle,
   generatedArticleUrl,
   articleError,
   isBasicInfoValid,
@@ -62,8 +64,10 @@ const ArticleGeneration: React.FC<ArticleGenerationProps> = ({
           {/* Article Generation Progress */}
           {isGeneratingArticle && (
             <div className="mt-4 mb-6">
-              <div className="flex justify-between mb-2">
-                <div className="text-sm text-gray-500">正在生成文章...</div>
+              <div className="flex justify-between items-center mb-2">
+                <div className="text-sm text-gray-500 flex items-center">
+                  <span>{articleStatusTitle || '正在生成文章...'}</span>
+                </div>
                 <div className="text-sm text-gray-500">{articleProgress}%</div>
               </div>
               <div className="overflow-hidden rounded-full bg-blue-100 h-1">

@@ -323,6 +323,74 @@ export async function callDifyGenerateArticleAPI(
   
   return new ReadableStream({
     async start(controller) {
+      let animationIntervalId: NodeJS.Timeout | null = null;
+      let isWorkflowRunning = false;
+      
+      // State variables moved up to be accessible by timer closure
+      let lastTaskId = '';
+      let lastWorkflowRunId = '';
+      let workflowId = '';
+      let lastProgress = 0;
+      let lastSentTitle: string = '开始生成文章';
+      let lastEmojiPair: string[] = ['⏳', '⚙️'];
+      let currentEmojiIndex = 0;
+      let currentEllipsisIndex = 0; // Index for ellipsis states
+      const ellipsisStates = ['.', '..', '...']; // Ellipsis states
+      const titleMapping: Record<string, { title: string; emojiPair: string[] }> = {
+          "初步分析 (LLM)":     { title: "拟题分析中",       emojiPair: ['🤔', '🧐'] },
+          "[工具] 参考文献抓取": { title: "阅读参考文献中", emojiPair: ['📖', '📚'] },
+          "初版文章生成 (LLM)": { title: "文章撰写中",       emojiPair: ['✍️', '📝'] },
+          "格式优化 (LLM)":   { title: "文章格式美化中",   emojiPair: ['✨', '💅'] }
+      };
+      const defaultEmojiPair = ['⏳', '⚙️'];
+
+      // --- Timer function for animation ---
+      const startAnimationTimer = () => {
+        if (animationIntervalId) clearInterval(animationIntervalId); // Clear previous if any
+        
+        animationIntervalId = setInterval(() => {
+          if (!isWorkflowRunning) {
+            if (animationIntervalId) clearInterval(animationIntervalId);
+            animationIntervalId = null;
+            return;
+          }
+          
+          // Construct title with current emoji AND ellipsis
+          const emojiPrefix = (lastEmojiPair && lastEmojiPair.length >= 2) ? `${lastEmojiPair[currentEmojiIndex]} ` : '';
+          const ellipsisSuffix = ellipsisStates[currentEllipsisIndex];
+          const displayTitle = `${emojiPrefix}${lastSentTitle}${ellipsisSuffix}`;
+          
+          // Toggle emoji index for next time
+          currentEmojiIndex = (currentEmojiIndex + 1) % 2;
+          // Cycle ellipsis index for next time
+          currentEllipsisIndex = (currentEllipsisIndex + 1) % ellipsisStates.length;
+
+          const progressEvent = {
+            event: "workflow_running",
+            task_id: lastTaskId, 
+            workflow_run_id: lastWorkflowRunId,
+            data: {
+              workflow_id: workflowId,
+              progress: lastProgress.toString(), 
+              status: "running",
+              title: displayTitle // Send title with emoji and ellipsis
+            }
+          };
+          // Send update purely for animation
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
+
+        }, 600); // Animation interval (600ms)
+      };
+
+      // --- Function to stop animation timer ---
+      const stopAnimationTimer = () => {
+        isWorkflowRunning = false;
+        if (animationIntervalId) {
+          clearInterval(animationIntervalId);
+          animationIntervalId = null;
+        }
+      };
+
       try {
         // 准备请求Dify API的数据
         const difyRequestBody = {
@@ -369,21 +437,15 @@ export async function callDifyGenerateArticleAPI(
         // 进度跟踪
         const TOTAL_STEPS = 17; // 文章生成一共有13步
         let finishedSteps = 0; // 已完成的步数
-        let lastTaskId = '';
-        let lastWorkflowRunId = '';
-        let workflowId = ''; // 从Dify响应中获取的workflowId
-        let lastProgress = 0; // 上次发送的进度
+        let buffer = '';
         
         console.log(`[${new Date().toISOString()}] 开始处理生成文章Dify API响应流`);
         
-        // 缓冲区，用于拼接可能被截断的JSON数据
-        let buffer = '';
-        
-        // 读取SSE流
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
             console.log(`[${new Date().toISOString()}] 生成文章Dify API响应流结束`);
+            stopAnimationTimer(); // Ensure timer stops on stream end
             
             // 流结束时，尝试处理缓冲区中可能剩余的数据
             if (buffer.trim()) {
@@ -411,43 +473,34 @@ export async function callDifyGenerateArticleAPI(
           // 保留最后一个可能不完整的事件到缓冲区
           buffer = events.pop() || '';
           
-          // 处理所有完整的事件
           for (const event of events.filter(e => e.trim() !== '')) {
-            if (event.trim() === 'event: ping') {
-               // Handle ping event: Increment progress slowly if below 99
-               if (lastProgress < 99) {
-                const newProgress = Math.min(lastProgress + 1, 99);
-                if (newProgress > lastProgress) { // Only send if progress actually changed
-                  lastProgress = newProgress;
-                  const progressEvent = {
-                    event: "workflow_running",
-                    task_id: lastTaskId, // Use last known IDs
-                    workflow_run_id: lastWorkflowRunId,
-                    data: {
-                      workflow_id: workflowId, // Use last known workflowId
-                      progress: newProgress.toString(),
-                      status: "running"
+             // Ping events now update the progress state for the timer to pick up
+            if (event.trim() === 'event: ping') { 
+                console.log(`[${new Date().toISOString()}] Ping received.`);
+                // Increment progress state if below 99
+                if (lastProgress < 99) {
+                    const newProgress = Math.min(lastProgress + 1, 99);
+                    if (newProgress > lastProgress) {
+                        console.log(`[${new Date().toISOString()}] Progress updated by ping: ${newProgress}%`);
+                        lastProgress = newProgress; // Update state for timer
                     }
-                  };
-                  console.log(`[${new Date().toISOString()}] [Ping Received] 发送生成文章小增量进度更新: ${newProgress}%`);
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
                 }
-              }
-            } else if (event.startsWith('data: ')) {
-              // Handle data event: Call processEvent
+                continue; // Don't process ping further
+            } 
+            
+            if (event.startsWith('data: ')) {
               try {
-                processEvent(event);
+                processEvent(event); // Process data event
               } catch (e) {
                 console.error(`[${new Date().toISOString()}] 处理事件时出错 (in loop):`, e);
               }
             } else {
-              // Log other non-empty lines if necessary
               console.log(`[${new Date().toISOString()}] 忽略非标准SSE行: ${event}`);
             }
-          } // End for loop processing events
-        } // End while loop reading stream
+          } 
+        } 
         
-        // 处理单个SSE事件的函数
+        // --- Process Event Function --- 
         function processEvent(event: string) {
           // This function now only processes 'data:' events
           if (!event.startsWith('data: ')) {
@@ -541,7 +594,8 @@ export async function callDifyGenerateArticleAPI(
                 data: {
                   workflow_id: workflowId,
                   progress: "0",
-                  status: "running"
+                  status: "running",
+                  title: lastSentTitle // Send plain title
                 }
               };
               
@@ -550,36 +604,65 @@ export async function callDifyGenerateArticleAPI(
               
               controller.enqueue(encoder.encode(`data: ${JSON.stringify(startEvent)}\n\n`));
               lastProgress = 0;
+              lastSentTitle = '开始生成文章'; // Reset title
+              lastEmojiPair = defaultEmojiPair; // Reset emoji pair
+              currentEmojiIndex = 0; // Reset emoji index
+              currentEllipsisIndex = 0; // Reset ellipsis index
+              isWorkflowRunning = true; // Set running flag
+              startAnimationTimer(); // Start animation timer
             }
             else if (eventData.event === 'node_finished') {
-              // 节点完成，增加完成步数
               finishedSteps += 1;
-              console.log(`[${new Date().toISOString()}] 生成文章节点完成: ${finishedSteps}/${TOTAL_STEPS}`);
-              
-              // 计算进度百分比（最多到99%）
               const progressPercent = Math.min(Math.floor((finishedSteps / TOTAL_STEPS) * 100), 99);
-              
-              // 只有当进度有变化时才发送更新
               if (progressPercent > lastProgress) {
-                lastProgress = progressPercent;
-                const progressEvent = {
-                  event: "workflow_running",
-                  task_id: lastTaskId,
-                  workflow_run_id: lastWorkflowRunId,
-                  data: {
-                    workflow_id: workflowId,
-                    progress: progressPercent.toString(),
-                    status: "running"
-                  }
-                };
-                
-                console.log(`[${new Date().toISOString()}] 发送生成文章进度更新: ${progressPercent}%`);
-                
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
+                  console.log(`[${new Date().toISOString()}] Progress updated by node_finished: ${progressPercent}%`);
+                  lastProgress = progressPercent; // Update progress state for timer
+                  // Timer will handle sending the update
+              }
+            }
+            else if (eventData.event === 'node_started') {
+              const difyNodeTitle = eventData.data?.title;
+              if (difyNodeTitle && typeof difyNodeTitle === 'string') {
+                console.log(`[${new Date().toISOString()}] Dify Node Started: ${difyNodeTitle}`);
+                const mapping = titleMapping[difyNodeTitle];
+                if (mapping && mapping.title !== lastSentTitle) {
+                    console.log(`[${new Date().toISOString()}] State change: ${mapping.title} ${mapping.emojiPair.join('')}`);
+                    lastSentTitle = mapping.title; 
+                    lastEmojiPair = mapping.emojiPair;
+                    currentEmojiIndex = 0; // Reset emoji index for new status
+                    currentEllipsisIndex = 0; // Reset ellipsis index for new status
+                    
+                    // Send immediate update for the new status with first ellipsis
+                    const emojiPrefix = `${lastEmojiPair[currentEmojiIndex]} `;
+                    const ellipsisSuffix = ellipsisStates[currentEllipsisIndex];
+                    const displayTitle = `${emojiPrefix}${lastSentTitle}${ellipsisSuffix}`;
+
+                    const progressEvent = {
+                      event: "workflow_running",
+                      task_id: lastTaskId,
+                      workflow_run_id: lastWorkflowRunId,
+                      data: {
+                        workflow_id: workflowId,
+                        progress: lastProgress.toString(), 
+                        status: "running",
+                        title: displayTitle // Send title with emoji and ellipsis
+                      }
+                    };
+                    console.log(`[${new Date().toISOString()}] Sending immediate progress update for mapped node start: ${lastProgress}% - ${displayTitle}`);
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
+                    
+                    // Increment indices AFTER sending this first one, so timer starts with next state
+                    currentEmojiIndex = (currentEmojiIndex + 1) % 2; 
+                    currentEllipsisIndex = (currentEllipsisIndex + 1) % ellipsisStates.length;
+                }
+              } else {
+                 console.log(`[${new Date().toISOString()}] Node Started event received without a valid title in data object.`);
               }
             }
             else if (eventData.event === 'workflow_finished') {
               console.log(`[${new Date().toISOString()}] 生成文章工作流完成`);
+              stopAnimationTimer(); // Stop animation timer
+              lastProgress = 100; // Ensure final progress is 100
               
               try {
                 // 如果在workflow_finished事件中可以获取workflowId，则更新
@@ -894,6 +977,7 @@ export async function callDifyGenerateArticleAPI(
         }
       } catch (error: unknown) {
         console.error(`[${new Date().toISOString()}] 调用生成文章Dify API时出错:`, error);
+        stopAnimationTimer(); // Stop timer on error
         
         // 错误消息
         const errorMessage = error instanceof Error ? error.message : "未知错误";
@@ -916,6 +1000,9 @@ export async function callDifyGenerateArticleAPI(
         
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorEvent)}\n\n`));
         controller.close();
+      } finally {
+         // Ensure timer is cleaned up if stream closes unexpectedly
+         stopAnimationTimer();
       }
     }
   });

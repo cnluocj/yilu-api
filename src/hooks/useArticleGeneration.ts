@@ -13,6 +13,7 @@ interface GenerateArticlePayload {
 interface ArticleGenerationResult {
   isGeneratingArticle: boolean;
   articleProgress: number;
+  articleStatusTitle: string | null;
   generatedArticleUrl: string | null;
   articleError: string | null;
   generateArticle: (payload: GenerateArticlePayload, onComplete?: () => void) => Promise<void>;
@@ -21,12 +22,14 @@ interface ArticleGenerationResult {
 export function useArticleGeneration(): ArticleGenerationResult {
   const [isGeneratingArticle, setIsGeneratingArticle] = useState<boolean>(false);
   const [articleProgress, setArticleProgress] = useState<number>(0);
+  const [articleStatusTitle, setArticleStatusTitle] = useState<string | null>(null);
   const [generatedArticleUrl, setGeneratedArticleUrl] = useState<string | null>(null);
   const [articleError, setArticleError] = useState<string | null>(null);
 
   const generateArticle = async (payload: GenerateArticlePayload, onComplete?: () => void) => {
     setIsGeneratingArticle(true);
     setArticleProgress(0);
+    setArticleStatusTitle('开始生成文章');
     setGeneratedArticleUrl(null);
     setArticleError(null);
 
@@ -60,32 +63,34 @@ export function useArticleGeneration(): ArticleGenerationResult {
               if (eventData.data && eventData.data.progress !== undefined) {
                 setArticleProgress(parseInt(eventData.data.progress));
               }
+              if ((eventData.event === 'workflow_started' || eventData.event === 'workflow_running') && 
+                   eventData.data?.title && 
+                   typeof eventData.data.title === 'string') {
+                setArticleStatusTitle(eventData.data.title);
+              }
               if (eventData.event === 'workflow_finished') {
+                setArticleStatusTitle(null);
                 if (eventData.data && eventData.data.files && eventData.data.files.length > 0 && eventData.data.files[0].url) {
                   const finalUrl = eventData.data.files[0].url;
                   setGeneratedArticleUrl(finalUrl);
                   setIsGeneratingArticle(false);
                   console.log("Article generated (from hook), URL:", finalUrl);
-                  // Call the onComplete callback if provided
                   if (onComplete) {
-                    // Optional: Add a small delay before reloading history
                     setTimeout(onComplete, 1500); 
                   }
-                  // No return, state handles update
                 } else {
-                  throw new Error(eventData.data?.error || '生成文章失败，未收到文件URL');
+                  const errorDetail = eventData.data?.error || '生成文章失败，未收到文件URL或状态为失败';
+                  throw new Error(errorDetail);
                 }
-              } else if (eventData.event === 'workflow_failed') {
-                 throw new Error(eventData.data?.error || '生成文章工作流失败');
               }
             } catch (e: any) {
               console.error('Error parsing article event data (in hook):', e);
+              setArticleStatusTitle('❌ 处理事件时出错');
               if (e instanceof SyntaxError) {
                  console.warn("Incomplete JSON received (in hook)...");
               } else {
                  setArticleError(`处理文章事件时出错: ${e.message}`);
                  setIsGeneratingArticle(false);
-                 // Potentially break loop?
               }
             }
           }
@@ -97,12 +102,14 @@ export function useArticleGeneration(): ArticleGenerationResult {
          setIsGeneratingArticle(false);
          if (!generatedArticleUrl && !articleError) {
             setArticleError("文章生成超时或未返回结果");
+            setArticleStatusTitle('⏱️ 生成超时');
          }
       }
 
     } catch (error: any) {
       console.error('Error generating article (in hook):', error);
       setArticleError(`生成文章时出错: ${error.message}`);
+      setArticleStatusTitle('🔥 生成出错');
       setIsGeneratingArticle(false);
     }
   };
@@ -110,6 +117,7 @@ export function useArticleGeneration(): ArticleGenerationResult {
   return {
     isGeneratingArticle,
     articleProgress,
+    articleStatusTitle,
     generatedArticleUrl,
     articleError,
     generateArticle,

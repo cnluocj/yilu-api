@@ -91,7 +91,8 @@ export default function ArticleGeneratorPage() {
     articleProgress,
     generatedArticleUrl,
     articleError,
-    generateArticle // Function from the hook
+    generateArticle, // Function from the hook
+    articleStatusTitle, // Get the new state from the hook
   } = useArticleGeneration();
 
   const {
@@ -372,6 +373,7 @@ export default function ArticleGeneratorPage() {
              articleProgress={articleProgress}         // From hook
              generatedArticleUrl={generatedArticleUrl}   // From hook
              articleError={articleError}             // From hook
+             articleStatusTitle={articleStatusTitle}   // Pass down the new state
              isBasicInfoValid={isBasicInfoValid()} 
              isTitleSelected={isTitleSelected()} 
              handleGenerateArticle={triggerArticleGeneration} // Pass new trigger
