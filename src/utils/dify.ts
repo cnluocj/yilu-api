@@ -68,15 +68,37 @@ export async function callDifyWorkflowAPI(
           }
           
           const chunk = new TextDecoder().decode(value);
-          const events = chunk.split('\n\n').filter(e => e.trim() !== '');
+          // Split chunk into individual lines or events based on SSE format
+          const lines = chunk.split('\n').filter(line => line.trim() !== '');
           
           // 记录接收到的原始数据块
           console.log(`[${new Date().toISOString()}] 接收Dify数据: ${chunk.replace(/\n/g, '\\n')}`);
           
-          for (const event of events) {
-            if (event.startsWith('data: ')) {
+          for (const line of lines) {
+            if (line.trim() === 'event: ping') {
+              // Handle ping event: Increment progress slowly if below 99
+              if (lastProgress < 99) {
+                const newProgress = Math.min(lastProgress + 1, 99);
+                if (newProgress > lastProgress) { // Only send if progress actually changed
+                  lastProgress = newProgress;
+                  const progressEvent = {
+                    event: "workflow_running",
+                    task_id: lastTaskId, // Use last known IDs
+                    workflow_run_id: lastWorkflowRunId,
+                    data: {
+                      workflow_id: workflowId, // Use last known workflowId
+                      progress: newProgress.toString(),
+                      status: "running"
+                    }
+                  };
+                  console.log(`[${new Date().toISOString()}] [Ping Received] 发送小增量进度更新: ${newProgress}%`);
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
+                }
+              }
+            } else if (line.startsWith('data: ')) {
+              // Handle data event: Parse JSON and process
               try {
-                const eventData = JSON.parse(event.substring(6));
+                const eventData = JSON.parse(line.substring(6));
                 
                 // 记录事件类型
                 console.log(`[${new Date().toISOString()}] 接收到Dify事件: ${eventData.event || 'unknown'}`);
@@ -258,11 +280,11 @@ export async function callDifyWorkflowAPI(
                 }
               } catch (e) {
                 console.error(`[${new Date().toISOString()}] 解析Dify事件数据时出错:`, e);
-                console.error(`[${new Date().toISOString()}] 解析失败的数据: ${event.substring(6)}`);
+                console.error(`[${new Date().toISOString()}] 解析失败的数据: ${line.substring(6)}`);
               }
-            }
-          }
-        }
+            } // End of handling 'data:' line
+          } // End of loop through lines
+        } // End of while loop
       } catch (error: unknown) {
         console.error(`[${new Date().toISOString()}] 调用Dify API时出错:`, error);
         
@@ -345,7 +367,7 @@ export async function callDifyGenerateArticleAPI(
         }
         
         // 进度跟踪
-        const TOTAL_STEPS = 13; // 文章生成一共有13步
+        const TOTAL_STEPS = 17; // 文章生成一共有13步
         let finishedSteps = 0; // 已完成的步数
         let lastTaskId = '';
         let lastWorkflowRunId = '';
@@ -391,17 +413,47 @@ export async function callDifyGenerateArticleAPI(
           
           // 处理所有完整的事件
           for (const event of events.filter(e => e.trim() !== '')) {
-            try {
-              processEvent(event);
-            } catch (e) {
-              console.error(`[${new Date().toISOString()}] 处理事件时出错:`, e);
+            if (event.trim() === 'event: ping') {
+               // Handle ping event: Increment progress slowly if below 99
+               if (lastProgress < 99) {
+                const newProgress = Math.min(lastProgress + 1, 99);
+                if (newProgress > lastProgress) { // Only send if progress actually changed
+                  lastProgress = newProgress;
+                  const progressEvent = {
+                    event: "workflow_running",
+                    task_id: lastTaskId, // Use last known IDs
+                    workflow_run_id: lastWorkflowRunId,
+                    data: {
+                      workflow_id: workflowId, // Use last known workflowId
+                      progress: newProgress.toString(),
+                      status: "running"
+                    }
+                  };
+                  console.log(`[${new Date().toISOString()}] [Ping Received] 发送生成文章小增量进度更新: ${newProgress}%`);
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
+                }
+              }
+            } else if (event.startsWith('data: ')) {
+              // Handle data event: Call processEvent
+              try {
+                processEvent(event);
+              } catch (e) {
+                console.error(`[${new Date().toISOString()}] 处理事件时出错 (in loop):`, e);
+              }
+            } else {
+              // Log other non-empty lines if necessary
+              console.log(`[${new Date().toISOString()}] 忽略非标准SSE行: ${event}`);
             }
-          }
-        }
+          } // End for loop processing events
+        } // End while loop reading stream
         
         // 处理单个SSE事件的函数
         function processEvent(event: string) {
-          if (!event.startsWith('data: ')) return;
+          // This function now only processes 'data:' events
+          if (!event.startsWith('data: ')) {
+             console.warn('processEvent called with non-data event:', event); 
+             return;
+          }
           
           try {
             // 从事件文本中提取JSON数据
