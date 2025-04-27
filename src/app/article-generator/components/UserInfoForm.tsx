@@ -80,7 +80,7 @@ const UserInfoForm: React.FC<UserInfoFormProps> = ({
             type="text" 
             id="name" 
             placeholder="请输入您的姓名" 
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-base"
             value={name} 
             onChange={(e) => onNameChange(e.target.value)}
           />
@@ -91,7 +91,7 @@ const UserInfoForm: React.FC<UserInfoFormProps> = ({
             type="text" 
             id="unit" 
             placeholder="请输入您的科室" 
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-base"
             value={unit} 
             onChange={(e) => onUnitChange(e.target.value)}
           />
@@ -102,7 +102,7 @@ const UserInfoForm: React.FC<UserInfoFormProps> = ({
             type="text" 
             id="direction" 
             placeholder="请输入文章方向或主题" 
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-base"
             value={direction}
             onChange={(e) => onDirectionChange(e.target.value)}
           />
@@ -114,7 +114,7 @@ const UserInfoForm: React.FC<UserInfoFormProps> = ({
             id="word_count" 
             min="100" 
             max="5000" 
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-base"
             value={wordCount} 
             onChange={(e) => onWordCountChange(parseInt(e.target.value) || 0)}
           />
@@ -181,7 +181,7 @@ const UserInfoForm: React.FC<UserInfoFormProps> = ({
               type="text" 
               id="customStyle" 
               placeholder="请输入自定义风格描述" 
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-base"
               value={customStyle}
               onChange={(e) => onCustomStyleChange(e.target.value)}
             />

@@ -34,7 +34,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           type="text" 
           placeholder="请输入账号" 
           maxLength={20} 
-          className="mb-5 w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+          className="mb-5 w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-base"
           value={loginInput} 
           onChange={(e) => setLoginInput(e.target.value)}
           onKeyPress={handleLoginKeyPress}

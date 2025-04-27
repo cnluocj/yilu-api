@@ -113,7 +113,7 @@ const TitleSelection: React.FC<TitleSelectionProps> = ({
                 type="text" 
                 id="customTitle" 
                 placeholder="在此输入自定义标题 (可选, 或使用上方AI建议)" 
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" 
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-base"
                 value={customTitleInput}
                 onChange={handleCustomTitleChange}
               />
