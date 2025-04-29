@@ -24,6 +24,7 @@ interface UserInfo {
   direction: string;
   word_count: number;
   style: string;
+  journal: string; // Add journal field
   title?: string; // 添加可选的title字段
 }
 
@@ -55,6 +56,7 @@ export default function ArticleGeneratorPage() {
   const [wordCount, setWordCount] = useState<number>(2500);
   const [selectedStyle, setSelectedStyle] = useState<string>('生动有趣，角度新颖');
   const [customStyle, setCustomStyle] = useState<string>('');
+  const [journal, setJournal] = useState<string>('健康向导'); // Add journal state
 
   // Page 2 State (Most moved to hook)
   const [selectedTitle, setSelectedTitle] = useState<string>(''); 
@@ -176,6 +178,7 @@ export default function ArticleGeneratorPage() {
     setCustomStyle('');
     setSelectedTitle('');
     setCustomTitleInput('');
+    setJournal('健康向导'); // Reset journal when logging out
     setFormError(null);
     console.log("用户已登出");
   };
@@ -225,11 +228,12 @@ export default function ArticleGeneratorPage() {
         direction: direction.trim(),
         word_count: wordCount, 
         name: name.trim(),
-        unit: unit.trim()
+        unit: unit.trim(),
+        journal: journal.trim() // Add journal to payload
     };
     console.log("Calling generateTitles from hook..."); 
     generateTitles(payload); 
-  }, [userid, direction, wordCount, name, unit, validateBasicInfo, generateTitles, setFormError]);
+  }, [userid, direction, wordCount, name, unit, journal, validateBasicInfo, generateTitles, setFormError]);
 
   const triggerArticleGeneration = useCallback(() => {
     if (!validateBasicInfo()) {
@@ -258,6 +262,7 @@ export default function ArticleGeneratorPage() {
       word_count: wordCount,
       name: name.trim(),
       unit: unit.trim(),
+      journal: journal.trim(), // Add journal to payload
       style: currentStyle || '生动有趣，角度新颖'
     };
 
@@ -274,7 +279,8 @@ export default function ArticleGeneratorPage() {
     direction, 
     wordCount, 
     name, 
-    unit, 
+    unit,
+    journal, // Add journal to dependencies
     generateArticle,
     setFormError
   ]);
@@ -345,12 +351,14 @@ export default function ArticleGeneratorPage() {
              wordCount={wordCount}
              selectedStyle={selectedStyle}
              customStyle={customStyle}
+             journal={journal} // Pass journal to UserInfoForm
              onNameChange={setName}
              onUnitChange={setUnit}
              onDirectionChange={setDirection}
              onWordCountChange={setWordCount}
              onSelectedStyleChange={setSelectedStyle} // Pass the setter directly
              onCustomStyleChange={setCustomStyle}
+             onJournalChange={setJournal} // Pass journal setter
            />
 
           {/* Section 2: Title Selection - Use hook state/trigger */}
