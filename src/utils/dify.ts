@@ -339,6 +339,8 @@ export async function callDifyGenerateArticleAPI(
       const titleMapping: Record<string, { title: string; emojiPair: string[] }> = {
           "初步分析 (LLM)":     { title: "拟题分析中",       emojiPair: ['🤔', '🧐'] },
           "[工具] 参考文献抓取": { title: "阅读参考文献中", emojiPair: ['📖', '📚'] },
+          "(学会)[工具] 参考文献抓取": { title: "阅读参考文献中", emojiPair: ['📖', '📚'] },
+          "(必读)[工具] 参考文章概要浓缩": { title: "阅读参考文章中", emojiPair: ['📖', '📚'] },
           "初版文章生成 (LLM)": { title: "文章撰写中",       emojiPair: ['✍️', '📝'] },
           "格式优化 (LLM)":   { title: "文章格式美化中",   emojiPair: ['✨', '💅'] }
       };
@@ -436,7 +438,7 @@ export async function callDifyGenerateArticleAPI(
         }
         
         // 进度跟踪
-        const TOTAL_STEPS = 17; // 文章生成一共有13步
+        const TOTAL_STEPS = 19; // 文章生成一共有19步
         let finishedSteps = 0; // 已完成的步数
         let buffer = '';
         
