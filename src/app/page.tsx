@@ -17,6 +17,18 @@ export default function HomePage() {
         </svg>
       )
     },
+    // 病例扫描总结工具 
+    {
+      title: '病例扫描总结工具',
+      description: '一键总结病例，快速生成专业报告。',
+      href: 'https://dify.sandboxai.jinzhibang.com.cn/workflow/eZaS6PueJyeAOznJ',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-red-500">
+          <path d="M12 20h9"></path>
+          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+        </svg>
+      )
+    },
     {
       title: '拟题助手(旧)', // Updated title
       description: '基于聊天机器人的交互式标题生成工具。 ', // Updated description
