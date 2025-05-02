@@ -229,6 +229,23 @@ export async function callDifyWorkflowAPI(
                       controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
                     }
                   }
+                  
+                  if (eventData.data && eventData.data.text) {
+                    const textChunkEvent = {
+                      event: "text_chunk",
+                      task_id: lastTaskId,
+                      workflow_run_id: lastWorkflowRunId,
+                      data: {
+                        ...eventData.data,
+                        title: "生成标题中" // 添加当前标题
+                      }
+                    };
+                    
+                    const textContent = typeof eventData.data.text === 'string' ? eventData.data.text : String(eventData.data.text);
+                    console.log(`[${new Date().toISOString()}] 转发文本块事件: ${textContent.substring(0, 50)}${textContent.length > 50 ? '...' : ''}`);
+                    
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(textChunkEvent)}\n\n`));
+                  }
                 }
                 else if (eventData.event === 'workflow_finished') {
                   console.log(`[${new Date().toISOString()}] 工作流完成`);
@@ -660,6 +677,26 @@ export async function callDifyGenerateArticleAPI(
                 }
               } else {
                  console.log(`[${new Date().toISOString()}] Node Started event received without a valid title in data object.`);
+              }
+            }
+            else if (eventData.event === 'text_chunk') {
+              console.log(`[${new Date().toISOString()}] 接收到文本块`);
+              
+              if (eventData.data && eventData.data.text) {
+                const textChunkEvent = {
+                  event: "text_chunk",
+                  task_id: lastTaskId,
+                  workflow_run_id: lastWorkflowRunId,
+                  data: {
+                    ...eventData.data,
+                    title: lastSentTitle // 使用当前步骤的标题
+                  }
+                };
+                
+                const textContent = typeof eventData.data.text === 'string' ? eventData.data.text : String(eventData.data.text);
+                console.log(`[${new Date().toISOString()}] 转发文本块事件: ${textContent.substring(0, 50)}${textContent.length > 50 ? '...' : ''}`);
+                
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(textChunkEvent)}\n\n`));
               }
             }
             else if (eventData.event === 'workflow_finished') {
