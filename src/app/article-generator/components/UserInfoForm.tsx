@@ -31,6 +31,7 @@ interface UserInfoFormProps {
   selectedStyle: string;
   customStyle: string;
   journal: string;
+  outline: string;
   onNameChange: (value: string) => void;
   onUnitChange: (value: string) => void;
   onDirectionChange: (value: string) => void;
@@ -38,6 +39,7 @@ interface UserInfoFormProps {
   onSelectedStyleChange: (value: string) => void;
   onCustomStyleChange: (value: string) => void;
   onJournalChange: (value: string) => void;
+  onOutlineChange: (value: string) => void;
 }
 
 // --- Component ---
@@ -49,6 +51,7 @@ const UserInfoForm: React.FC<UserInfoFormProps> = ({
   selectedStyle,
   customStyle,
   journal,
+  outline,
   onNameChange,
   onUnitChange,
   onDirectionChange,
@@ -56,6 +59,7 @@ const UserInfoForm: React.FC<UserInfoFormProps> = ({
   onSelectedStyleChange,
   onCustomStyleChange,
   onJournalChange,
+  onOutlineChange,
 }) => {
   // State for the custom style dropdown
   const [isStyleDropdownOpen, setIsStyleDropdownOpen] = useState<boolean>(false);
@@ -248,20 +252,34 @@ const UserInfoForm: React.FC<UserInfoFormProps> = ({
           </div>
         </div>
         
-        {/* Custom Style Input */} 
+        {/* Show custom style input if "custom" is selected */}
         {selectedStyle === 'custom' && (
-          <div className="mb-5 mt-3 animate-fade-in">
-            <label htmlFor="customStyle" className="block text-sm font-medium mb-2 text-gray-700">自定义风格</label>
+          <div className="mb-5 mt-3">
+            <label htmlFor="custom_style" className="block text-sm font-medium mb-2 text-gray-700">自定义风格</label>
             <input 
               type="text" 
-              id="customStyle" 
-              placeholder="请输入自定义风格描述" 
+              id="custom_style" 
+              placeholder="请输入您希望的文章风格" 
               className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-base"
-              value={customStyle}
+              value={customStyle} 
               onChange={(e) => onCustomStyleChange(e.target.value)}
             />
           </div>
         )}
+        
+        {/* Article Outline Textarea */}
+        <div className="mb-5">
+          <label htmlFor="outline" className="block text-sm font-medium mb-2 text-gray-700">文章大纲（可选）</label>
+          <textarea 
+            id="outline" 
+            placeholder="请输入文章大纲，每行一个要点" 
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-base min-h-[180px]"
+            value={outline} 
+            onChange={(e) => onOutlineChange(e.target.value)}
+            rows={8}
+          />
+          <p className="mt-1 text-sm text-gray-500">填写大纲可以引导AI按照您的思路生成文章</p>
+        </div>
       </div>
     </section>
   );

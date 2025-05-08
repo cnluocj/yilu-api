@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS public.article_records (
     dify_task_id TEXT,
     style TEXT, -- 文章风格
     journal TEXT, -- 期刊
+    outline TEXT, -- 文章大纲
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

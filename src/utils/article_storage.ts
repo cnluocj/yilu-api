@@ -199,7 +199,8 @@ export async function saveArticleToSupabase(
         public_url: publicUrl,
         dify_task_id: articleInfo.dify_task_id || null,
         style: articleInfo.style || null,
-        journal: articleInfo.journal || null
+        journal: articleInfo.journal || null,
+        outline: articleInfo.outline || null
       })
       .select('id')
       .single();

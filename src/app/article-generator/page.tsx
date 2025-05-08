@@ -25,6 +25,7 @@ interface UserInfo {
   word_count: number;
   style: string;
   journal: string; // Add journal field
+  outline: string; // Add outline field
   title?: string; // 添加可选的title字段
 }
 
@@ -57,6 +58,7 @@ export default function ArticleGeneratorPage() {
   const [selectedStyle, setSelectedStyle] = useState<string>('生动有趣，角度新颖');
   const [customStyle, setCustomStyle] = useState<string>('');
   const [journal, setJournal] = useState<string>('健康向导'); // Add journal state
+  const [outline, setOutline] = useState<string>(''); // Add outline state
 
   // Page 2 State (Most moved to hook)
   const [selectedTitle, setSelectedTitle] = useState<string>(''); 
@@ -179,6 +181,7 @@ export default function ArticleGeneratorPage() {
     setSelectedTitle('');
     setCustomTitleInput('');
     setJournal('健康向导'); // Reset journal when logging out
+    setOutline(''); // Reset outline when logging out
     setFormError(null);
     console.log("用户已登出");
   };
@@ -263,7 +266,8 @@ export default function ArticleGeneratorPage() {
       name: name.trim(),
       unit: unit.trim(),
       journal: journal.trim(), // Add journal to payload
-      style: currentStyle || '生动有趣，角度新颖'
+      style: currentStyle || '生动有趣，角度新颖',
+      outline: outline.trim() // Add outline to payload
     };
 
     generateArticle(payload); // Removed loadHistory callback here
@@ -281,6 +285,7 @@ export default function ArticleGeneratorPage() {
     name, 
     unit,
     journal, // Add journal to dependencies
+    outline, // Add outline to dependencies
     generateArticle,
     setFormError
   ]);
@@ -352,6 +357,7 @@ export default function ArticleGeneratorPage() {
              selectedStyle={selectedStyle}
              customStyle={customStyle}
              journal={journal} // Pass journal to UserInfoForm
+             outline={outline} // Pass outline to UserInfoForm
              onNameChange={setName}
              onUnitChange={setUnit}
              onDirectionChange={setDirection}
@@ -359,6 +365,7 @@ export default function ArticleGeneratorPage() {
              onSelectedStyleChange={setSelectedStyle} // Pass the setter directly
              onCustomStyleChange={setCustomStyle}
              onJournalChange={setJournal} // Pass journal setter
+             onOutlineChange={setOutline} // Pass outline setter
            />
 
           {/* Section 2: Title Selection - Use hook state/trigger */}

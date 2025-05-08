@@ -420,7 +420,8 @@ export async function callDifyGenerateArticleAPI(
             subject: request.title,
             word_count: request.word_count,
             style: request.style || '生动有趣，角度新颖', // 默认风格
-            journal: request.journal || '健康向导' // 默认期刊
+            journal: request.journal || '健康向导', // 默认期刊
+            outline: request.outline || '' // 文章大纲
           },
           response_mode: "streaming",
           user: request.userid // 使用userid作为用户标识
@@ -853,6 +854,7 @@ export async function callDifyGenerateArticleAPI(
                           dify_task_id: lastTaskId || '',
                           style: request.style || '生动有趣，角度新颖',
                           journal: request.journal || '健康向导',
+                          outline: request.outline || '',
                           userid: request.userid || 'anonymous'
                         };
                         

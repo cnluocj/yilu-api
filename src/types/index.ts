@@ -16,6 +16,7 @@ export interface GenerateArticleRequest {
   title?: string;
   style?: string; // 文章风格
   journal?: string; // 期刊
+  outline?: string; // 文章大纲
 }
 
 // Response Types
