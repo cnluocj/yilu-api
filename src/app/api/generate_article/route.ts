@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GenerateArticleRequest, WorkflowEvent, ServiceType } from '@/types';
 import { callDifyGenerateArticleAPI, getArticleDifyConfig } from '@/utils/dify';
 import { getUserQuota, consumeQuota } from '@/utils/quota'; // 引入配额管理功能，更新函数名
+import { createTask, updateTaskStatus, TaskStatus, addTaskEvent } from '@/utils/task-manager';
 
 // 用于在开发环境中使用的模拟数据
 const mockResponseData: WorkflowEvent[] = [
@@ -135,18 +136,31 @@ export async function POST(request: NextRequest) {
 
     console.log(`[${new Date().toISOString()}][${requestId}] 使用模拟数据: ${useMockData}`);
     
+    // 创建任务并获取任务ID
+    const taskInfo = await createTask(body.userid, ServiceType.ALL);
+    const taskId = taskInfo.id;
+    
     // 设置流响应
     const encoder = new TextEncoder();
     let stream: ReadableStream<Uint8Array>;
     
     if (useMockData) {
       // 使用模拟数据进行响应
-      console.log(`[${new Date().toISOString()}][${requestId}] 使用模拟数据响应`);
+      console.log(`[${new Date().toISOString()}][${requestId}] 使用模拟数据响应, 任务ID: ${taskId}`);
       stream = new ReadableStream({
         async start(controller) {
           // 发送每个模拟数据项，添加延迟以模拟实时更新
           for (const item of mockResponseData) {
-            const data = `data: ${JSON.stringify(item)}\n\n`;
+            // 添加任务ID到事件数据中
+            const eventWithTaskId = {
+              ...item,
+              task_id: taskId
+            };
+            
+            // 将事件保存到任务历史记录
+            await addTaskEvent(body.userid, taskId, eventWithTaskId);
+            
+            const data = `data: ${JSON.stringify(eventWithTaskId)}\n\n`;
             controller.enqueue(encoder.encode(data));
             
             console.log(`[${new Date().toISOString()}][${requestId}] 发送模拟数据: ${JSON.stringify(item)}`);
@@ -161,19 +175,33 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // 使用实际的Dify API
-      console.log(`[${new Date().toISOString()}][${requestId}] 准备调用生成文章Dify API`);
+      console.log(`[${new Date().toISOString()}][${requestId}] 准备调用生成文章Dify API, 任务ID: ${taskId}`);
       const config = getArticleDifyConfig();
       
       // 检查API密钥是否已配置
       if (!config.apiKey) {
         console.log(`[${new Date().toISOString()}][${requestId}] 错误: 生成文章Dify API密钥未配置`);
+        
+        // 创建一个错误事件并保存到任务历史
+        await addTaskEvent(body.userid, taskId, {
+          event: 'error',
+          task_id: taskId,
+          data: {
+            error: '生成文章Dify API密钥未配置'
+          }
+        });
+        
         return NextResponse.json(
           { error: '生成文章Dify API密钥未配置，请在环境变量中设置ARTICLE_DIFY_API_KEY' },
           { status: 500 }
         );
       }
       
-      // 不再在这里先消耗配额，而是等待文件生成结果后再决定是否扣除配额
+      // 更新任务状态为进行中
+      await updateTaskStatus(body.userid, taskId, {
+        status: TaskStatus.RUNNING,
+        progress: 0
+      });
       
       // 调用Dify API并获取流响应
       console.log(`[${new Date().toISOString()}][${requestId}] 开始调用生成文章Dify API`);
@@ -199,29 +227,58 @@ export async function POST(request: NextRequest) {
             const { done, value } = await reader.read();
             if (done) break;
             
-            // 如果有数据，先写入输出流
-            writer.write(value);
+            // 如果有数据，先解码
+            let chunk = new TextDecoder().decode(value);
             
-            // 同时解析数据以检测文件数量
-            const chunk = new TextDecoder().decode(value);
+            // 向每个事件添加任务ID并保存到事件历史
+            if (chunk.includes('data:')) {
+              const events = chunk.split('\n\n');
+              const modifiedEvents = events.map(event => {
+                if (event.startsWith('data:')) {
+                  try {
+                    const jsonStr = event.substring(5).trim();
+                    const eventData = JSON.parse(jsonStr);
+                    // 添加任务ID
+                    eventData.task_id = taskId;
+                    
+                    // 异步保存事件到任务历史 (这里使用void处理Promise)
+                    void addTaskEvent(body.userid, taskId, eventData);
+                    
+                    return `data: ${JSON.stringify(eventData)}`;
+                  } catch (e) {
+                    return event;
+                  }
+                }
+                return event;
+              });
+              
+              chunk = modifiedEvents.join('\n\n') + (chunk.endsWith('\n\n') ? '\n\n' : '');
+              writer.write(encoder.encode(chunk));
+            } else {
+              writer.write(value);
+            }
+            
+            // 同时解析数据以检测文件数量和更新任务状态
             buffer += chunk;
             
-            // 检查是否包含workflow_finished事件
-            if (buffer.includes('"event":"workflow_finished"') || buffer.includes('"event": "workflow_finished"')) {
-              isWorkflowFinished = true;
-              
-              // 尝试提取文件数量
-              try {
-                // 分割成事件并找到workflow_finished
-                const events = buffer.split('\n\n');
-                for (const event of events) {
-                  if (event.startsWith('data: ') && (event.includes('"event":"workflow_finished"') || event.includes('"event": "workflow_finished"'))) {
-                    const eventData = JSON.parse(event.substring(6));
+            // 处理事件并更新任务状态
+            const events = buffer.split('\n\n');
+            buffer = events.pop() || '';
+            
+            for (const event of events) {
+              if (event.startsWith('data: ')) {
+                try {
+                  const eventData = JSON.parse(event.substring(6));
+                  
+                  // 检查是否是工作流完成事件
+                  if (eventData.event === 'workflow_finished') {
+                    isWorkflowFinished = true;
+                    
                     if (eventData.data && eventData.data.files && Array.isArray(eventData.data.files)) {
                       fileCount = eventData.data.files.length;
                       console.log(`[${new Date().toISOString()}][${requestId}] 检测到工作流完成事件，文件数量: ${fileCount}`);
                       
-                      // 当文件数量 > 1 且配额检查未被跳过时，扣除配额
+                      // 当文件数量 > 0 且配额检查未被跳过时，扣除配额
                       if (fileCount > 0 && !skipQuotaCheck && quota) {
                         try {
                           console.log(`[${new Date().toISOString()}][${requestId}] 生成成功，文件数量: ${fileCount}，消耗用户(${body.userid})的一次文章生成服务配额`);
@@ -234,12 +291,11 @@ export async function POST(request: NextRequest) {
                       } else {
                         console.log(`[${new Date().toISOString()}][${requestId}] 不消耗配额，原因: ${skipQuotaCheck ? '跳过配额检查' : fileCount > 0 ? '' : '无文件生成'}`);
                       }
-                      break; // 找到后退出循环
                     }
                   }
+                } catch (e) {
+                  console.error(`[${new Date().toISOString()}][${requestId}] 解析事件数据失败:`, e);
                 }
-              } catch (e) {
-                console.error(`[${new Date().toISOString()}][${requestId}] 解析完成事件数据失败:`, e);
               }
             }
           }
@@ -247,12 +303,31 @@ export async function POST(request: NextRequest) {
           // 最后再检查一次，以防漏检
           if (!isWorkflowFinished) {
             console.log(`[${new Date().toISOString()}][${requestId}] 流结束但未检测到工作流完成事件，不消耗配额`);
+            
+            // 添加一个错误事件到任务历史
+            await addTaskEvent(body.userid, taskId, {
+              event: 'error',
+              task_id: taskId,
+              data: {
+                error: '生成文章超时或未返回结果'
+              }
+            });
           }
           
           // 关闭输出流
           writer.close();
         } catch (error) {
           console.error(`[${new Date().toISOString()}][${requestId}] 处理响应流时出错:`, error);
+          
+          // 添加一个错误事件到任务历史
+          await addTaskEvent(body.userid, taskId, {
+            event: 'error',
+            task_id: taskId,
+            data: {
+              error: `处理响应流时出错: ${error instanceof Error ? error.message : '未知错误'}`
+            }
+          });
+          
           writer.abort(error);
         }
       })();
@@ -262,15 +337,16 @@ export async function POST(request: NextRequest) {
     }
 
     // 在响应返回前记录日志
-    console.log(`[${new Date().toISOString()}][${requestId}] 返回生成文章流响应`);
+    console.log(`[${new Date().toISOString()}][${requestId}] 返回生成文章流响应，任务ID: ${taskId}`);
     
-    // 返回流响应
+    // 返回流响应，同时包含任务ID
     return new NextResponse(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
-        'X-Request-ID': requestId // 添加请求ID便于跟踪
+        'X-Request-ID': requestId,
+        'X-Task-ID': taskId // 在响应头中添加任务ID
       }
     });
   } catch (error) {
