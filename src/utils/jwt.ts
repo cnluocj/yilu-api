@@ -25,10 +25,10 @@ export interface JwtPayload {
 /**
  * 生成JWT令牌
  * @param payload 令牌载荷
- * @param expiresIn 过期时间
+ * @param expiresIn 过期时间，若为undefined则创建永久有效的令牌
  * @returns JWT令牌
  */
-export function generateToken(payload: JwtPayload, expiresIn: string = JWT_EXPIRY): string {
+export function generateToken(payload: JwtPayload, expiresIn: string | undefined = JWT_EXPIRY): string {
   try {
     // 确保payload包含了必要的字段
     if (!payload.userId || !payload.role) {
@@ -41,8 +41,9 @@ export function generateToken(payload: JwtPayload, expiresIn: string = JWT_EXPIR
     }
     
     // 生成JWT
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn });
-    console.log(`[${new Date().toISOString()}] 成功为用户 ${payload.userId} 生成JWT令牌，角色: ${payload.role}`);
+    const options = expiresIn ? { expiresIn } : {};
+    const token = jwt.sign(payload, JWT_SECRET, options);
+    console.log(`[${new Date().toISOString()}] 成功为用户 ${payload.userId} 生成JWT令牌，角色: ${payload.role}${expiresIn ? '' : '，永久有效'}`);
     
     return token;
   } catch (error: unknown) {
@@ -121,7 +122,7 @@ export function createSystemToken(serviceId: string): string {
     userId: `system-${serviceId}`,
     role: UserRole.SYSTEM,
     permissions: ['quota:read', 'quota:write', 'article:read', 'article:write', 'article:delete']
-  }, '30d'); // 系统令牌有效期较长
+  }, '3650d'); // 系统令牌有效期10年
 }
 
 /**
