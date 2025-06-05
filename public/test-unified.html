@@ -229,6 +229,7 @@
   <ul class="tabs">
     <li id="tab-article" class="active">生成文章</li>
     <li id="tab-title">生成标题</li>
+    <li id="tab-case-summary">病案总结</li>
     <li id="tab-articles">文章管理</li>
     <li id="tab-quota">配额管理</li>
     <li id="tab-jwt">JWT测试</li>
@@ -334,7 +335,56 @@
       <div id="article-result" class="result"></div>
     </div>
   </div>
-  
+
+  <!-- 病案总结选项卡内容 -->
+  <div id="case-summary-tab" class="tab-content">
+    <div class="form-container">
+      <h2>病案总结生成</h2>
+      <div class="form-group">
+        <label for="case-summary-userid">UserID:</label>
+        <input type="text" id="case-summary-userid" value="wx_abcd1234efgh5678">
+      </div>
+
+      <div class="form-group">
+        <label for="case-summary-name">医生姓名:</label>
+        <input type="text" id="case-summary-name" value="张医生">
+      </div>
+
+      <div class="form-group">
+        <label for="case-summary-unit">科室:</label>
+        <input type="text" id="case-summary-unit" value="内科">
+      </div>
+
+      <div class="form-group">
+        <label>病案图片:</label>
+        <div class="file-upload-area" id="case-summary-file-upload-area" style="border: 2px dashed #1a73e8; border-radius: 10px; padding: 30px; text-align: center; background-color: #f8f9fa; cursor: pointer; transition: all 0.3s ease;">
+          <p>📁 点击选择图片文件或拖拽文件到此处</p>
+          <p style="font-size: 12px; color: #7f8c8d;">支持 JPG, PNG, GIF, WebP 格式</p>
+          <input type="file" id="case-summary-files" name="files" multiple accept="image/*" style="display: none;">
+        </div>
+        <div class="file-list" id="case-summary-file-list" style="margin-top: 15px;"></div>
+      </div>
+
+      <button id="generate-case-summary" class="submit-button">生成病案总结</button>
+    </div>
+
+    <div class="progress-container" id="case-summary-progress-container" style="display: none;">
+      <h3>生成进度: <span id="case-summary-progress-value">0</span>%</h3>
+      <progress id="case-summary-progress-bar" value="0" max="100"></progress>
+      <div id="case-summary-progress-text" style="text-align: center; margin-top: 10px; font-weight: bold;">准备中...</div>
+    </div>
+
+    <div class="summary-container" id="case-summary-container" style="display: none;">
+      <h3>病案总结:</h3>
+      <div id="case-summary-content" style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; border-left: 4px solid #1a73e8; white-space: pre-wrap; font-family: 'Courier New', monospace; max-height: 400px; overflow-y: auto;"></div>
+    </div>
+
+    <div class="result-container">
+      <h3>原始响应:</h3>
+      <div id="case-summary-result" class="result"></div>
+    </div>
+  </div>
+
   <!-- 文章管理选项卡内容 -->
   <div id="articles-tab" class="tab-content">
     <div class="form-container">
@@ -408,6 +458,9 @@
           <label for="query-service-id">服务类型:</label>
           <select id="query-service-id">
             <option value="all">all</option>
+            <option value="generate_title">generate_title</option>
+            <option value="generate_article">generate_article</option>
+            <option value="generate_case_summary">generate_case_summary</option>
           </select>
         </div>
         
@@ -432,6 +485,9 @@
           <label for="add-service-id">服务类型:</label>
           <select id="add-service-id">
             <option value="all">all</option>
+            <option value="generate_title">generate_title</option>
+            <option value="generate_article">generate_article</option>
+            <option value="generate_case_summary">generate_case_summary</option>
           </select>
         </div>
         
@@ -537,7 +593,7 @@
     // 页面加载时根据URL hash切换到对应标签
     document.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.substring(1);
-      const allowableTabs = ['article', 'title', 'articles', 'quota', 'jwt'];
+      const allowableTabs = ['article', 'title', 'case-summary', 'articles', 'quota', 'jwt'];
       
       if (hash && allowableTabs.includes(hash)) {
         switchToTab('tab-' + hash);
@@ -549,7 +605,7 @@
     // 监听URL hash变化
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.substring(1);
-      const allowableTabs = ['article', 'title', 'articles', 'quota', 'jwt'];
+      const allowableTabs = ['article', 'title', 'case-summary', 'articles', 'quota', 'jwt'];
       
       if (hash && allowableTabs.includes(hash)) {
         switchToTab('tab-' + hash);
@@ -1344,7 +1400,202 @@
           }
         });
       }
+
+      // 病案总结功能
+      let caseSummarySelectedFiles = [];
+
+      // 文件上传区域处理
+      const caseSummaryFileUploadArea = document.getElementById('case-summary-file-upload-area');
+      const caseSummaryFileInput = document.getElementById('case-summary-files');
+      const caseSummaryFileList = document.getElementById('case-summary-file-list');
+
+      if (caseSummaryFileUploadArea && caseSummaryFileInput) {
+        caseSummaryFileUploadArea.addEventListener('click', () => caseSummaryFileInput.click());
+
+        caseSummaryFileUploadArea.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          caseSummaryFileUploadArea.style.borderColor = '#27ae60';
+          caseSummaryFileUploadArea.style.backgroundColor = '#d5f4e6';
+        });
+
+        caseSummaryFileUploadArea.addEventListener('dragleave', () => {
+          caseSummaryFileUploadArea.style.borderColor = '#1a73e8';
+          caseSummaryFileUploadArea.style.backgroundColor = '#f8f9fa';
+        });
+
+        caseSummaryFileUploadArea.addEventListener('drop', (e) => {
+          e.preventDefault();
+          caseSummaryFileUploadArea.style.borderColor = '#1a73e8';
+          caseSummaryFileUploadArea.style.backgroundColor = '#f8f9fa';
+          const files = Array.from(e.dataTransfer.files);
+          addCaseSummaryFiles(files);
+        });
+
+        caseSummaryFileInput.addEventListener('change', (e) => {
+          const files = Array.from(e.target.files);
+          addCaseSummaryFiles(files);
+        });
+      }
+
+      function addCaseSummaryFiles(files) {
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+        caseSummarySelectedFiles = [...caseSummarySelectedFiles, ...imageFiles];
+        updateCaseSummaryFileList();
+      }
+
+      function removeCaseSummaryFile(index) {
+        caseSummarySelectedFiles.splice(index, 1);
+        updateCaseSummaryFileList();
+      }
+
+      function updateCaseSummaryFileList() {
+        if (!caseSummaryFileList) return;
+
+        caseSummaryFileList.innerHTML = '';
+        caseSummarySelectedFiles.forEach((file, index) => {
+          const fileItem = document.createElement('div');
+          fileItem.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background-color: #ecf0f1; border-radius: 5px; margin-bottom: 5px;';
+          fileItem.innerHTML = `
+            <span>📷 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+            <button type="button" onclick="removeCaseSummaryFile(${index})" style="background-color: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;">删除</button>
+          `;
+          caseSummaryFileList.appendChild(fileItem);
+        });
+      }
+
+      // 病案总结生成
+      const generateCaseSummaryBtn = document.getElementById('generate-case-summary');
+      if (generateCaseSummaryBtn) {
+        generateCaseSummaryBtn.addEventListener('click', async () => {
+          if (caseSummarySelectedFiles.length === 0) {
+            alert('请至少选择一个图片文件');
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append('userid', document.getElementById('case-summary-userid').value);
+          formData.append('name', document.getElementById('case-summary-name').value);
+          formData.append('unit', document.getElementById('case-summary-unit').value);
+
+          caseSummarySelectedFiles.forEach(file => {
+            formData.append('files', file);
+          });
+
+          await generateCaseSummary(formData);
+        });
+      }
+
+      async function generateCaseSummary(formData) {
+        const submitBtn = document.getElementById('generate-case-summary');
+        const progressContainer = document.getElementById('case-summary-progress-container');
+        const summaryContainer = document.getElementById('case-summary-container');
+        const progressBar = document.getElementById('case-summary-progress-bar');
+        const progressValue = document.getElementById('case-summary-progress-value');
+        const progressText = document.getElementById('case-summary-progress-text');
+        const summaryContent = document.getElementById('case-summary-content');
+        const resultDiv = document.getElementById('case-summary-result');
+
+        // 重置状态
+        submitBtn.disabled = true;
+        submitBtn.textContent = '生成中...';
+        progressContainer.style.display = 'block';
+        summaryContainer.style.display = 'none';
+        progressBar.value = 0;
+        progressValue.textContent = '0';
+        progressText.textContent = '准备中...';
+        resultDiv.textContent = '';
+
+        try {
+          const response = await fetch('/api/generate_case_summary', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const taskId = response.headers.get('X-Task-ID');
+          console.log(`获取到任务ID: ${taskId}`);
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let results = [];
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const eventData = JSON.parse(line.substring(6));
+                  resultDiv.textContent += JSON.stringify(eventData, null, 2) + '\n';
+
+                  if (eventData.event === 'workflow_started') {
+                    progressText.textContent = '开始分析病案...';
+                    progressBar.value = 5;
+                    progressValue.textContent = '5';
+                  } else if (eventData.event === 'workflow_running') {
+                    const progress = parseInt(eventData.data?.progress || '0');
+                    const title = eventData.data?.title || '处理中...';
+                    progressBar.value = progress;
+                    progressValue.textContent = progress.toString();
+                    progressText.textContent = `${title} (${progress}%)`;
+                  } else if (eventData.event === 'text_chunk') {
+                    const text = eventData.data?.text || '';
+                    if (text) {
+                      results.push(text);
+                      // 实时显示部分结果
+                      summaryContainer.style.display = 'block';
+                      summaryContent.textContent = results.join('');
+                    }
+                  } else if (eventData.event === 'workflow_finished') {
+                    progressBar.value = 100;
+                    progressValue.textContent = '100';
+
+                    if (eventData.data?.status === 'failed') {
+                      progressText.textContent = '生成失败';
+                      summaryContainer.style.display = 'block';
+                      summaryContent.style.color = '#d32f2f';
+                      summaryContent.textContent = eventData.data?.result?.join('\n') || '生成失败';
+                    } else {
+                      progressText.textContent = '生成完成！';
+                      summaryContainer.style.display = 'block';
+                      summaryContent.style.color = '#388e3c';
+
+                      const finalResult = eventData.data?.result?.join('\n') || results.join('');
+                      summaryContent.textContent = finalResult || '生成完成，但未获取到结果内容';
+                    }
+                  }
+                } catch (e) {
+                  console.error('解析事件失败:', e);
+                }
+              }
+            }
+          }
+
+        } catch (error) {
+          console.error('生成失败:', error);
+          progressText.textContent = '生成失败';
+          summaryContainer.style.display = 'block';
+          summaryContent.style.color = '#d32f2f';
+          summaryContent.textContent = `错误: ${error.message}`;
+          resultDiv.textContent += `错误: ${error.message}\n`;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '生成病案总结';
+        }
+      }
+
+      // 将函数暴露到全局作用域，以便HTML中的onclick可以访问
+      window.removeCaseSummaryFile = removeCaseSummaryFile;
     });
   </script>
 </body>
-</html> 
+</html>

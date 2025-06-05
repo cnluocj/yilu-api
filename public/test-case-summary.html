@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>病案总结生成测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .file-upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .file-upload-area:hover {
+            border-color: #2980b9;
+            background-color: #e3f2fd;
+        }
+        .file-upload-area.dragover {
+            border-color: #27ae60;
+            background-color: #d5f4e6;
+        }
+        .file-list {
+            margin-top: 15px;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+        .file-item button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .result-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .result-content {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #e74c3c;
+            background-color: #fdf2f2;
+            border-left-color: #e74c3c;
+        }
+        .success {
+            color: #27ae60;
+            background-color: #f0f9f4;
+            border-left-color: #27ae60;
+        }
+        .log-container {
+            margin-top: 20px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+        .toggle-logs {
+            margin-top: 10px;
+            background-color: #34495e;
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 病案总结生成测试</h1>
+        
+        <form id="caseSummaryForm">
+            <div class="form-group">
+                <label for="userid">用户ID:</label>
+                <input type="text" id="userid" name="userid" value="test_user_001" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="name">医生姓名:</label>
+                <input type="text" id="name" name="name" value="张医生" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="unit">科室:</label>
+                <input type="text" id="unit" name="unit" value="内科" required>
+            </div>
+            
+            <div class="form-group">
+                <label>病案图片:</label>
+                <div class="file-upload-area" id="fileUploadArea">
+                    <p>📁 点击选择图片文件或拖拽文件到此处</p>
+                    <p style="font-size: 12px; color: #7f8c8d;">支持 JPG, PNG, GIF, WebP 格式</p>
+                    <input type="file" id="files" name="files" multiple accept="image/*" style="display: none;">
+                </div>
+                <div class="file-list" id="fileList"></div>
+            </div>
+            
+            <button type="submit" id="submitBtn">🚀 生成病案总结</button>
+        </form>
+        
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">准备中...</div>
+        </div>
+        
+        <div class="result-container" id="resultContainer">
+            <h3>生成结果:</h3>
+            <div class="result-content" id="resultContent"></div>
+        </div>
+        
+        <button class="toggle-logs" onclick="toggleLogs()">📋 显示/隐藏日志</button>
+        <div class="log-container" id="logContainer"></div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+        
+        // 文件上传区域处理
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('files');
+        const fileList = document.getElementById('fileList');
+        
+        fileUploadArea.addEventListener('click', () => fileInput.click());
+        
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.add('dragover');
+        });
+        
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.classList.remove('dragover');
+        });
+        
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            addFiles(files);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            addFiles(files);
+        });
+        
+        function addFiles(files) {
+            const imageFiles = files.filter(file => file.type.startsWith('image/'));
+            selectedFiles = [...selectedFiles, ...imageFiles];
+            updateFileList();
+        }
+        
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        }
+        
+        function updateFileList() {
+            fileList.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span>📷 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                    <button type="button" onclick="removeFile(${index})">删除</button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+        
+        // 表单提交处理
+        document.getElementById('caseSummaryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (selectedFiles.length === 0) {
+                alert('请至少选择一个图片文件');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('userid', document.getElementById('userid').value);
+            formData.append('name', document.getElementById('name').value);
+            formData.append('unit', document.getElementById('unit').value);
+            
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+            
+            await generateCaseSummary(formData);
+        });
+        
+        async function generateCaseSummary(formData) {
+            const submitBtn = document.getElementById('submitBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const resultContainer = document.getElementById('resultContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const resultContent = document.getElementById('resultContent');
+            
+            // 重置状态
+            submitBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            resultContainer.style.display = 'none';
+            progressFill.style.width = '0%';
+            progressText.textContent = '准备中...';
+            
+            try {
+                log('开始生成病案总结...');
+                
+                const response = await fetch('/api/generate_case_summary', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const taskId = response.headers.get('X-Task-ID');
+                log(`获取到任务ID: ${taskId}`);
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let results = [];
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const eventData = JSON.parse(line.substring(6));
+                                log(`接收事件: ${eventData.event}`);
+                                
+                                if (eventData.event === 'workflow_started') {
+                                    progressText.textContent = '开始分析病案...';
+                                    progressFill.style.width = '5%';
+                                } else if (eventData.event === 'workflow_running') {
+                                    const progress = parseInt(eventData.data?.progress || '0');
+                                    const title = eventData.data?.title || '处理中...';
+                                    progressFill.style.width = `${progress}%`;
+                                    progressText.textContent = `${title} (${progress}%)`;
+                                } else if (eventData.event === 'text_chunk') {
+                                    const text = eventData.data?.text || '';
+                                    if (text) {
+                                        results.push(text);
+                                        // 实时显示部分结果
+                                        resultContainer.style.display = 'block';
+                                        resultContent.className = 'result-content';
+                                        resultContent.textContent = results.join('');
+                                    }
+                                } else if (eventData.event === 'workflow_finished') {
+                                    progressFill.style.width = '100%';
+                                    
+                                    if (eventData.data?.status === 'failed') {
+                                        progressText.textContent = '生成失败';
+                                        resultContainer.style.display = 'block';
+                                        resultContent.className = 'result-content error';
+                                        resultContent.textContent = eventData.data?.result?.join('\n') || '生成失败';
+                                    } else {
+                                        progressText.textContent = '生成完成！';
+                                        resultContainer.style.display = 'block';
+                                        resultContent.className = 'result-content success';
+                                        
+                                        const finalResult = eventData.data?.result?.join('\n') || results.join('');
+                                        resultContent.textContent = finalResult || '生成完成，但未获取到结果内容';
+                                    }
+                                }
+                            } catch (e) {
+                                log(`解析事件失败: ${e.message}`);
+                            }
+                        }
+                    }
+                }
+                
+                log('病案总结生成完成');
+                
+            } catch (error) {
+                log(`生成失败: ${error.message}`);
+                progressText.textContent = '生成失败';
+                resultContainer.style.display = 'block';
+                resultContent.className = 'result-content error';
+                resultContent.textContent = `错误: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+        
+        function log(message) {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            logContainer.innerHTML += `[${timestamp}] ${message}\n`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function toggleLogs() {
+            const logContainer = document.getElementById('logContainer');
+            logContainer.style.display = logContainer.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>

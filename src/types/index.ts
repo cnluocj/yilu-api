@@ -19,6 +19,13 @@ export interface GenerateArticleRequest {
   outline?: string; // 文章大纲
 }
 
+export interface GenerateCaseSummaryRequest {
+  userid: string;
+  name: string;
+  unit: string;
+  files: File[];
+}
+
 // Response Types
 export interface WorkflowData {
   workflow_id: string;
@@ -58,7 +65,8 @@ export enum ServiceType {
   ALL = 'all',
   KP = 'kp', // 科普
   GENERATE_ARTICLE = 'generate_article',
-  GENERATE_TITLE = 'generate_title'
+  GENERATE_TITLE = 'generate_title',
+  GENERATE_CASE_SUMMARY = 'generate_case_summary' // 病案总结
 }
 
 // 添加服务配额请求
