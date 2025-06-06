@@ -46,6 +46,12 @@ export interface GenerateCaseTopicRequest {
   summary: string;
 }
 
+export interface GenerateCaseReportRequest {
+  userid: string;
+  summary: string;
+  title: string;
+}
+
 // Response Types
 export interface WorkflowData {
   workflow_id: string;

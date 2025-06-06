@@ -1,4 +1,4 @@
-import { DifyAPIConfig, GenerateTitlesRequest, GenerateArticleRequest, GenerateCaseSummaryRequest } from '@/types';
+import { DifyAPIConfig, GenerateTitlesRequest, GenerateArticleRequest, GenerateCaseSummaryRequest, GenerateCaseTopicRequest, GenerateCaseReportRequest } from '@/types';
 
 /**
  * 调用Dify API执行工作流
@@ -1123,6 +1123,24 @@ export function getCaseTopicDifyConfig(): DifyAPIConfig {
 }
 
 /**
+ * 获取病案报告专用的Dify配置
+ */
+export function getCaseReportDifyConfig(): DifyAPIConfig {
+  // 病案报告专用API Key
+  const apiKey = process.env.CASE_REPORT_DIFY_API_KEY || 'app-gWH39gHNorohRp018C7Wll0Q';
+
+  // 使用相同的baseUrl
+  const baseUrl = process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn';
+  const apiUrl = process.env.DIFY_API_URL || 'http://sandboxai.jinzhibang.com.cn/v1';
+
+  return {
+    apiKey,
+    baseUrl,
+    apiUrl,
+  };
+}
+
+/**
  * 上传文件到Dify并获取upload_file_id
  */
 export async function uploadFileToDify(file: File, config: DifyAPIConfig): Promise<string> {
@@ -1806,6 +1824,265 @@ export async function callDifyCaseTopicAPI(
             workflow_id: "error",
             progress: "100",
             result: [`病案拟题生成失败: ${error instanceof Error ? error.message : '未知错误'}`],
+            elapsed_time: "0",
+            status: "failed"
+          }
+        };
+
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorEvent)}\n\n`));
+      }
+
+      controller.close();
+    }
+  });
+}
+
+/**
+ * 调用Dify API执行病案报告工作流
+ */
+export async function callDifyCaseReportAPI(
+  config: DifyAPIConfig,
+  request: GenerateCaseReportRequest
+): Promise<ReadableStream<Uint8Array>> {
+  const encoder = new TextEncoder();
+
+  return new ReadableStream({
+    async start(controller) {
+      try {
+        // 准备请求Dify API的数据
+        const difyRequestBody = {
+          inputs: {
+            summary: request.summary,
+            title: request.title
+          },
+          response_mode: "streaming",
+          user: request.userid
+        };
+
+        console.log(`[${new Date().toISOString()}] 请求病案报告Dify API - 用户: ${request.userid}`);
+        console.log(`[${new Date().toISOString()}] 请求病案报告Dify API - URL: ${config.apiUrl}/workflows/run`);
+        console.log(`[${new Date().toISOString()}] 请求病案报告Dify API - 标题: ${request.title.substring(0, 50)}...`);
+
+        // 调用Dify API
+        const response = await fetch(`${config.apiUrl}/workflows/run`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${config.apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(difyRequestBody)
+        });
+
+        console.log(`[${new Date().toISOString()}] 病案报告Dify API响应状态: ${response.status} ${response.statusText}`);
+
+        if (!response.ok) {
+          throw new Error(`病案报告Dify API 请求失败: ${response.status} ${response.statusText}`);
+        }
+
+        // 处理SSE流
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('无法读取病案报告Dify API响应');
+        }
+
+        let lastTaskId = '';
+        let lastWorkflowRunId = '';
+        let workflowId = '';
+        let collectedTextChunks: string[] = [];
+        let workflowFinished = false;
+
+        console.log(`[${new Date().toISOString()}] 开始处理病案报告Dify API响应流`);
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            console.log(`[${new Date().toISOString()}] 病案报告Dify API响应流结束`);
+            break;
+          }
+
+          const chunk = new TextDecoder().decode(value);
+          const lines = chunk.split('\n');
+
+          console.log(`[${new Date().toISOString()}] 接收病案报告Dify数据: ${chunk.replace(/\n/g, '\\n')}`);
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const eventData = JSON.parse(line.substring(6));
+
+                console.log(`[${new Date().toISOString()}] 接收到病案报告事件: ${eventData.event || 'unknown'}`);
+
+                // 提取ID信息
+                if (eventData.task_id) lastTaskId = eventData.task_id;
+                if (eventData.workflow_run_id) lastWorkflowRunId = eventData.workflow_run_id;
+                if (eventData.data?.workflow_id) workflowId = eventData.data.workflow_id;
+
+                if (eventData.event === 'workflow_started') {
+                  const startEvent = {
+                    event: "workflow_started",
+                    task_id: lastTaskId,
+                    workflow_run_id: lastWorkflowRunId,
+                    data: {
+                      workflow_id: workflowId,
+                      progress: "0",
+                      status: "running",
+                      title: "开始生成病案报告"
+                    }
+                  };
+
+                  console.log(`[${new Date().toISOString()}] 发送病案报告开始事件`);
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(startEvent)}\n\n`));
+                }
+                else if (eventData.event === 'node_started' || eventData.event === 'node_finished') {
+                  // 简单的进度更新
+                  const progress = eventData.event === 'node_started' ? "30" : "60";
+                  const title = eventData.event === 'node_started' ? "分析病案内容" : "生成报告中";
+
+                  const progressEvent = {
+                    event: "workflow_running",
+                    task_id: lastTaskId,
+                    workflow_run_id: lastWorkflowRunId,
+                    data: {
+                      workflow_id: workflowId,
+                      progress,
+                      status: "running",
+                      title
+                    }
+                  };
+
+                  console.log(`[${new Date().toISOString()}] 发送病案报告进度更新: ${progress}%`);
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressEvent)}\n\n`));
+                }
+                else if (eventData.event === 'text_chunk') {
+                  console.log(`[${new Date().toISOString()}] 接收到病案报告文本块`);
+
+                  if (eventData.data && eventData.data.text) {
+                    const text = String(eventData.data.text);
+                    collectedTextChunks.push(text);
+
+                    const textChunkEvent = {
+                      event: "text_chunk",
+                      task_id: lastTaskId,
+                      workflow_run_id: lastWorkflowRunId,
+                      data: {
+                        text,
+                        title: "生成病案报告中"
+                      }
+                    };
+
+                    console.log(`[${new Date().toISOString()}] 转发病案报告文本块: ${text.substring(0, 50)}...`);
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(textChunkEvent)}\n\n`));
+                  }
+                }
+                else if (eventData.event === 'workflow_finished') {
+                  console.log(`[${new Date().toISOString()}] 病案报告工作流完成`);
+                  workflowFinished = true;
+
+                  // 解析结果
+                  let result: string[] = [];
+
+                  console.log(`[${new Date().toISOString()}] 病案报告完成事件原始数据:`, JSON.stringify(eventData.data, null, 2));
+
+                  if (eventData.data && eventData.data.outputs) {
+                    const outputs = eventData.data.outputs;
+                    console.log(`[${new Date().toISOString()}] 病案报告outputs结构:`, JSON.stringify(outputs, null, 2));
+
+                    if (outputs.text) {
+                      result = [String(outputs.text)];
+                      console.log(`[${new Date().toISOString()}] 从outputs.text获取结果: ${result[0].length} 字符`);
+                    } else if (outputs.result) {
+                      result = Array.isArray(outputs.result) ? outputs.result : [String(outputs.result)];
+                      console.log(`[${new Date().toISOString()}] 从outputs.result获取结果: ${result.length} 项`);
+                    } else {
+                      // 尝试获取outputs中的第一个字符串值
+                      const outputKeys = Object.keys(outputs);
+                      console.log(`[${new Date().toISOString()}] outputs可用字段:`, outputKeys);
+                      for (const key of outputKeys) {
+                        if (typeof outputs[key] === 'string' && outputs[key].trim().length > 0) {
+                          result = [String(outputs[key])];
+                          console.log(`[${new Date().toISOString()}] 从outputs.${key}获取结果: ${result[0].length} 字符`);
+                          break;
+                        }
+                      }
+                    }
+
+                    console.log(`[${new Date().toISOString()}] 解析到病案报告结果: ${result.length} 项`);
+                  } else {
+                    console.log(`[${new Date().toISOString()}] 没有找到outputs数据`);
+                  }
+
+                  // 如果没有从outputs获取到结果，使用收集的文本块
+                  if (result.length === 0 && collectedTextChunks.length > 0) {
+                    result = [collectedTextChunks.join('')];
+                    console.log(`[${new Date().toISOString()}] 使用收集的文本块作为结果: ${result[0].length} 字符`);
+                  }
+
+                  // 如果还是没有结果，记录警告
+                  if (result.length === 0) {
+                    console.log(`[${new Date().toISOString()}] 警告: 没有获取到任何结果内容`);
+                    result = ['未能获取到生成的病案报告内容'];
+                  }
+
+                  // 发送完成事件
+                  const finishEvent = {
+                    event: "workflow_finished",
+                    task_id: lastTaskId,
+                    workflow_run_id: lastWorkflowRunId,
+                    data: {
+                      workflow_id: workflowId,
+                      progress: "100",
+                      result,
+                      elapsed_time: eventData.data?.elapsed_time?.toString() || "0",
+                      status: "succeeded"
+                    }
+                  };
+
+                  console.log(`[${new Date().toISOString()}] 发送病案报告完成事件`);
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(finishEvent)}\n\n`));
+                }
+              } catch (e) {
+                console.error(`[${new Date().toISOString()}] 解析病案报告事件数据时出错:`, e);
+              }
+            }
+          }
+        }
+
+        // 流结束后检查是否已发送完成事件
+        if (!workflowFinished) {
+          console.log(`[${new Date().toISOString()}] 流结束但未收到workflow_finished事件，手动发送完成事件`);
+
+          // 使用收集的文本块作为结果
+          const result = collectedTextChunks.length > 0 ? [collectedTextChunks.join('')] : ['病案报告生成完成'];
+
+          const finishEvent = {
+            event: "workflow_finished",
+            task_id: lastTaskId || "manual-finish-" + Date.now(),
+            workflow_run_id: lastWorkflowRunId || "manual-finish-" + Date.now(),
+            data: {
+              workflow_id: workflowId,
+              progress: "100",
+              result,
+              elapsed_time: "0",
+              status: "succeeded"
+            }
+          };
+
+          console.log(`[${new Date().toISOString()}] 发送手动完成事件，结果长度: ${result[0].length} 字符`);
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(finishEvent)}\n\n`));
+        }
+
+      } catch (error: unknown) {
+        console.log(`[${new Date().toISOString()}] 病案报告Dify API调用失败:`, error);
+
+        // 发送错误事件
+        const errorEvent = {
+          event: "workflow_finished",
+          task_id: "error-" + Date.now(),
+          workflow_run_id: "error-" + Date.now(),
+          data: {
+            workflow_id: "error",
+            progress: "100",
+            result: [`病案报告生成失败: ${error instanceof Error ? error.message : '未知错误'}`],
             elapsed_time: "0",
             status: "failed"
           }
