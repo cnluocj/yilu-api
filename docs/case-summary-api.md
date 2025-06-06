@@ -8,12 +8,14 @@
 
 - **接口地址**: `POST /api/generate_case_summary`
 - **请求方式**: `POST`
-- **内容类型**: `multipart/form-data`
+- **内容类型**: `multipart/form-data` 或 `application/json`
 - **响应格式**: `Server-Sent Events (SSE)` 流式响应
 
-## 请求参数
+## 请求方式
 
-### 必需参数
+### 方式一：FormData上传（Web端推荐）
+
+**内容类型**: `multipart/form-data`
 
 | 参数名 | 类型 | 说明 | 示例 |
 |--------|------|------|------|
@@ -22,11 +24,46 @@
 | `unit` | string | 科室名称 | `内科` |
 | `files` | File[] | 病案图片文件（支持多文件） | 病历.jpg, 检查报告.png |
 
+### 方式二：Base64上传（小程序推荐）
+
+**内容类型**: `application/json`
+
+```json
+{
+  "userid": "wx_user123456",
+  "name": "张医生",
+  "unit": "内科",
+  "images": [
+    {
+      "data": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+      "name": "病历.jpg",
+      "type": "image/jpeg"
+    }
+  ]
+}
+```
+
+| 参数名 | 类型 | 说明 | 示例 |
+|--------|------|------|------|
+| `userid` | string | 用户唯一标识 | `wx_user123456` |
+| `name` | string | 医生姓名 | `张医生` |
+| `unit` | string | 科室名称 | `内科` |
+| `images` | Base64ImageData[] | Base64编码的图片数组 | 见下方说明 |
+
+#### Base64ImageData 结构
+
+| 字段名 | 类型 | 必需 | 说明 |
+|--------|------|------|------|
+| `data` | string | 是 | Base64编码的图片数据（包含data:image/xxx;base64,前缀） |
+| `name` | string | 是 | 文件名 |
+| `type` | string | 否 | MIME类型，默认为image/jpeg |
+
 ### 文件要求
 
 - **支持格式**: JPG, JPEG, PNG, GIF, WebP
 - **文件大小**: 建议单个文件不超过10MB
 - **文件数量**: 支持多文件上传，建议不超过10个文件
+- **Base64注意**: Base64编码会增加约33%的数据传输量
 
 ## 响应格式
 
@@ -178,6 +215,63 @@ data: {"event":"workflow_finished","task_id":"xxx","data":{...}}
 ## 测试环境
 
 - **测试地址**: `http://localhost:9090/api/generate_case_summary`
-- **测试页面**: `http://localhost:9090/test-case-summary.html`
+- **Web端测试页面**: `http://localhost:9090/test-case-summary.html`
+- **小程序测试页面**: `http://localhost:9090/test-miniprogram-case-summary.html`
+
+## 小程序集成建议
+
+### 优势
+- ✅ 支持SSE实时进度更新
+- ✅ 一次请求完成所有操作
+- ✅ 兼容微信小程序的网络限制
+- ✅ 无需处理文件上传的复杂逻辑
+
+### 注意事项
+- ⚠️ Base64编码会增加约33%的数据传输量
+- ⚠️ 大图片可能影响性能，建议压缩后上传
+- ⚠️ 注意小程序的请求大小限制
+
+### 小程序示例代码
+
+```javascript
+// 选择图片
+wx.chooseImage({
+  count: 9,
+  sizeType: ['compressed'],
+  sourceType: ['album', 'camera'],
+  success: async (res) => {
+    const images = [];
+
+    // 转换为Base64
+    for (const tempFilePath of res.tempFilePaths) {
+      const base64 = wx.getFileSystemManager().readFileSync(tempFilePath, 'base64');
+      images.push({
+        data: `data:image/jpeg;base64,${base64}`,
+        name: `image_${Date.now()}.jpg`,
+        type: 'image/jpeg'
+      });
+    }
+
+    // 发送请求
+    wx.request({
+      url: 'https://your-domain.com/api/generate_case_summary',
+      method: 'POST',
+      header: {
+        'content-type': 'application/json'
+      },
+      data: {
+        userid: 'wx_user123',
+        name: '张医生',
+        unit: '内科',
+        images: images
+      },
+      success: (res) => {
+        // 处理SSE响应
+        // 注意：小程序可能需要轮询或WebSocket来接收实时更新
+      }
+    });
+  }
+});
+```
 
 如有疑问或需要技术支持，请联系后端开发团队。

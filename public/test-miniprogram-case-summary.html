@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小程序病案总结测试（Base64方式）</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .info-box {
+            background-color: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .file-upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .file-upload-area:hover {
+            border-color: #2980b9;
+            background-color: #e3f2fd;
+        }
+        .file-list {
+            margin-top: 15px;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+        .file-item button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .result-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .result-content {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #27ae60;
+            background-color: #f0f9f4;
+            border-left-color: #27ae60;
+        }
+        .error {
+            color: #e74c3c;
+            background-color: #fdf2f2;
+            border-left-color: #e74c3c;
+        }
+        .base64-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 小程序病案总结测试（Base64方式）</h1>
+        
+        <div class="info-box">
+            <h4>💡 小程序集成说明</h4>
+            <p>此页面演示小程序如何通过Base64编码的方式上传图片并接收SSE流式响应：</p>
+            <ul>
+                <li>✅ 支持SSE实时进度更新</li>
+                <li>✅ 一次请求完成所有操作</li>
+                <li>✅ 兼容微信小程序的网络限制</li>
+                <li>⚠️ Base64会增加约33%的数据传输量</li>
+            </ul>
+        </div>
+        
+        <form id="caseSummaryForm">
+            <div class="form-group">
+                <label for="userid">用户ID:</label>
+                <input type="text" id="userid" name="userid" value="wx_miniprogram_001" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="name">医生姓名:</label>
+                <input type="text" id="name" name="name" value="张医生" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="unit">科室:</label>
+                <input type="text" id="unit" name="unit" value="内科" required>
+            </div>
+            
+            <div class="form-group">
+                <label>病案图片:</label>
+                <div class="file-upload-area" id="fileUploadArea">
+                    <p>📁 点击选择图片文件</p>
+                    <p style="font-size: 12px; color: #7f8c8d;">支持 JPG, PNG, GIF, WebP 格式</p>
+                    <input type="file" id="files" name="files" multiple accept="image/*" style="display: none;">
+                </div>
+                <div class="file-list" id="fileList"></div>
+            </div>
+            
+            <button type="submit" id="submitBtn">🚀 生成病案总结（Base64方式）</button>
+        </form>
+        
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">准备中...</div>
+        </div>
+        
+        <div class="result-container" id="resultContainer">
+            <h3>生成结果:</h3>
+            <div class="result-content" id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+        let base64Images = [];
+        
+        // 文件上传区域处理
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('files');
+        const fileList = document.getElementById('fileList');
+        
+        fileUploadArea.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            addFiles(files);
+        });
+        
+        function addFiles(files) {
+            const imageFiles = files.filter(file => file.type.startsWith('image/'));
+            selectedFiles = [...selectedFiles, ...imageFiles];
+            convertToBase64();
+            updateFileList();
+        }
+        
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            base64Images.splice(index, 1);
+            updateFileList();
+        }
+        
+        function updateFileList() {
+            fileList.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const base64Size = base64Images[index] ? base64Images[index].data.length : 0;
+                const originalSize = (file.size / 1024 / 1024).toFixed(2);
+                const base64SizeMB = (base64Size * 0.75 / 1024 / 1024).toFixed(2); // 估算Base64解码后的大小
+                
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div>
+                        <div>📷 ${file.name}</div>
+                        <div class="base64-info">
+                            原始大小: ${originalSize} MB | Base64大小: ${base64SizeMB} MB
+                        </div>
+                    </div>
+                    <button type="button" onclick="removeFile(${index})">删除</button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+        
+        // 转换文件为Base64
+        async function convertToBase64() {
+            base64Images = [];
+            for (const file of selectedFiles) {
+                try {
+                    const base64 = await fileToBase64(file);
+                    base64Images.push({
+                        data: base64,
+                        name: file.name,
+                        type: file.type
+                    });
+                } catch (error) {
+                    console.error('Base64转换失败:', error);
+                }
+            }
+            updateFileList();
+        }
+        
+        // 文件转Base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+        
+        // 表单提交处理
+        document.getElementById('caseSummaryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (selectedFiles.length === 0) {
+                alert('请至少选择一个图片文件');
+                return;
+            }
+            
+            const requestData = {
+                userid: document.getElementById('userid').value,
+                name: document.getElementById('name').value,
+                unit: document.getElementById('unit').value,
+                images: base64Images
+            };
+            
+            await generateCaseSummary(requestData);
+        });
+        
+        async function generateCaseSummary(data) {
+            const submitBtn = document.getElementById('submitBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const resultContainer = document.getElementById('resultContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const resultContent = document.getElementById('resultContent');
+            
+            // 重置状态
+            submitBtn.disabled = true;
+            submitBtn.textContent = '生成中...';
+            progressContainer.style.display = 'block';
+            resultContainer.style.display = 'none';
+            progressFill.style.width = '0%';
+            progressText.textContent = '准备中...';
+            
+            try {
+                console.log('发送Base64请求，数据大小:', JSON.stringify(data).length, 'bytes');
+                
+                const response = await fetch('/api/generate_case_summary', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const taskId = response.headers.get('X-Task-ID');
+                console.log(`获取到任务ID: ${taskId}`);
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let results = [];
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const eventData = JSON.parse(line.substring(6));
+                                console.log(`接收事件: ${eventData.event}`);
+                                
+                                if (eventData.event === 'workflow_started') {
+                                    progressText.textContent = '开始分析病案...';
+                                    progressFill.style.width = '5%';
+                                } else if (eventData.event === 'workflow_running') {
+                                    const progress = parseInt(eventData.data?.progress || '0');
+                                    const title = eventData.data?.title || '处理中...';
+                                    progressFill.style.width = `${progress}%`;
+                                    progressText.textContent = `${title} (${progress}%)`;
+                                } else if (eventData.event === 'text_chunk') {
+                                    const text = eventData.data?.text || '';
+                                    if (text) {
+                                        results.push(text);
+                                        // 实时显示部分结果
+                                        resultContainer.style.display = 'block';
+                                        resultContent.className = 'result-content';
+                                        resultContent.textContent = results.join('');
+                                    }
+                                } else if (eventData.event === 'workflow_finished') {
+                                    progressFill.style.width = '100%';
+                                    
+                                    if (eventData.data?.status === 'failed') {
+                                        progressText.textContent = '生成失败';
+                                        resultContainer.style.display = 'block';
+                                        resultContent.className = 'result-content error';
+                                        resultContent.textContent = eventData.data?.result?.join('\n') || '生成失败';
+                                    } else {
+                                        progressText.textContent = '生成完成！';
+                                        resultContainer.style.display = 'block';
+                                        resultContent.className = 'result-content success';
+                                        
+                                        const finalResult = eventData.data?.result?.join('\n') || results.join('');
+                                        resultContent.textContent = finalResult || '生成完成，但未获取到结果内容';
+                                    }
+                                }
+                            } catch (e) {
+                                console.error(`解析事件失败: ${e.message}`);
+                            }
+                        }
+                    }
+                }
+                
+                console.log('病案总结生成完成');
+                
+            } catch (error) {
+                console.error(`生成失败: ${error.message}`);
+                progressText.textContent = '生成失败';
+                resultContainer.style.display = 'block';
+                resultContent.className = 'result-content error';
+                resultContent.textContent = `错误: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 生成病案总结（Base64方式）';
+            }
+        }
+    </script>
+</body>
+</html>

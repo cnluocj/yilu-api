@@ -5,23 +5,60 @@ import { createTask, updateTaskStatus, addTaskEvent } from '@/utils/task-manager
 
 export async function POST(request: NextRequest) {
   console.log(`[${new Date().toISOString()}] 接收到病案总结生成请求`);
-  
+
   try {
-    // 解析multipart/form-data
-    const formData = await request.formData();
-    
-    // 获取基本参数
-    const userid = formData.get('userid') as string;
-    const name = formData.get('name') as string;
-    const unit = formData.get('unit') as string;
-    
-    // 获取文件
-    const files: File[] = [];
-    const fileEntries = formData.getAll('files');
-    
-    for (const entry of fileEntries) {
-      if (entry instanceof File) {
-        files.push(entry);
+    const contentType = request.headers.get('content-type') || '';
+    let userid: string, name: string, unit: string, files: File[];
+
+    if (contentType.includes('application/json')) {
+      // JSON格式请求（小程序Base64方式）
+      console.log(`[${new Date().toISOString()}] 处理JSON格式请求（Base64图片）`);
+      const body = await request.json();
+      userid = body.userid;
+      name = body.name;
+      unit = body.unit;
+
+      // 将Base64图片转换为File对象
+      files = [];
+      if (body.images && Array.isArray(body.images)) {
+        for (let i = 0; i < body.images.length; i++) {
+          const imageData = body.images[i];
+          if (imageData.data && imageData.name) {
+            try {
+              // 解析Base64数据
+              const base64Data = imageData.data.replace(/^data:image\/[a-z]+;base64,/, '');
+              const buffer = Buffer.from(base64Data, 'base64');
+
+              // 创建File对象
+              const file = new File([buffer], imageData.name, {
+                type: imageData.type || 'image/jpeg'
+              });
+              files.push(file);
+              console.log(`[${new Date().toISOString()}] 转换Base64图片: ${imageData.name}, 大小: ${buffer.length} bytes`);
+            } catch (error) {
+              console.error(`[${new Date().toISOString()}] Base64图片转换失败:`, error);
+            }
+          }
+        }
+      }
+    } else {
+      // FormData格式请求（原有方式）
+      console.log(`[${new Date().toISOString()}] 处理FormData格式请求`);
+      const formData = await request.formData();
+
+      // 获取基本参数
+      userid = formData.get('userid') as string;
+      name = formData.get('name') as string;
+      unit = formData.get('unit') as string;
+
+      // 获取文件
+      files = [];
+      const fileEntries = formData.getAll('files');
+
+      for (const entry of fileEntries) {
+        if (entry instanceof File) {
+          files.push(entry);
+        }
       }
     }
     

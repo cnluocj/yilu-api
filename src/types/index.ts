@@ -26,6 +26,21 @@ export interface GenerateCaseSummaryRequest {
   files: File[];
 }
 
+// 小程序Base64图片数据
+export interface Base64ImageData {
+  data: string;  // Base64编码的图片数据
+  name: string;  // 文件名
+  type?: string; // MIME类型
+}
+
+// 小程序病案总结请求
+export interface MiniProgramCaseSummaryRequest {
+  userid: string;
+  name: string;
+  unit: string;
+  images: Base64ImageData[];
+}
+
 export interface GenerateCaseTopicRequest {
   userid: string;
   summary: string;

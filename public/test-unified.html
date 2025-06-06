@@ -231,6 +231,7 @@
     <li id="tab-title">生成标题</li>
     <li id="tab-case-summary">病案总结</li>
     <li id="tab-case-topic">病案拟题</li>
+    <li id="tab-miniprogram">小程序测试</li>
     <li id="tab-articles">文章管理</li>
     <li id="tab-quota">配额管理</li>
     <li id="tab-jwt">JWT测试</li>
@@ -422,6 +423,67 @@
     <div class="result-container">
       <h3>原始响应:</h3>
       <div id="case-topic-result" class="result"></div>
+    </div>
+  </div>
+
+  <!-- 小程序测试选项卡内容 -->
+  <div id="miniprogram-tab" class="tab-content">
+    <div class="form-container">
+      <h2>小程序病案总结测试（Base64方式）</h2>
+
+      <div style="background-color: #e8f4fd; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #3498db;">
+        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">💡 小程序集成说明</h4>
+        <p style="margin: 0; font-size: 14px; color: #555;">此功能演示小程序如何通过Base64编码的方式上传图片并接收SSE流式响应：</p>
+        <ul style="margin: 10px 0 0 20px; font-size: 14px; color: #555;">
+          <li>✅ 支持SSE实时进度更新</li>
+          <li>✅ 一次请求完成所有操作</li>
+          <li>✅ 兼容微信小程序的网络限制</li>
+          <li>⚠️ Base64会增加约33%的数据传输量</li>
+        </ul>
+      </div>
+
+      <div class="form-group">
+        <label for="miniprogram-userid">UserID:</label>
+        <input type="text" id="miniprogram-userid" value="wx_miniprogram_001">
+      </div>
+
+      <div class="form-group">
+        <label for="miniprogram-name">医生姓名:</label>
+        <input type="text" id="miniprogram-name" value="张医生">
+      </div>
+
+      <div class="form-group">
+        <label for="miniprogram-unit">科室:</label>
+        <input type="text" id="miniprogram-unit" value="内科">
+      </div>
+
+      <div class="form-group">
+        <label>病案图片:</label>
+        <div class="file-upload-area" id="miniprogram-file-upload-area" style="border: 2px dashed #1a73e8; border-radius: 10px; padding: 30px; text-align: center; background-color: #f8f9fa; cursor: pointer; transition: all 0.3s ease;">
+          <p>📁 点击选择图片文件</p>
+          <p style="font-size: 12px; color: #7f8c8d;">支持 JPG, PNG, GIF, WebP 格式</p>
+          <input type="file" id="miniprogram-files" name="files" multiple accept="image/*" style="display: none;">
+        </div>
+        <div class="file-list" id="miniprogram-file-list" style="margin-top: 15px;"></div>
+      </div>
+
+      <button id="generate-miniprogram-case-summary" class="submit-button">🚀 生成病案总结（Base64方式）</button>
+    </div>
+
+    <div class="progress-container" id="miniprogram-progress-container" style="display: none;">
+      <h3>生成进度: <span id="miniprogram-progress-value">0</span>%</h3>
+      <progress id="miniprogram-progress-bar" value="0" max="100"></progress>
+      <div id="miniprogram-progress-text" style="text-align: center; margin-top: 10px; font-weight: bold;">准备中...</div>
+    </div>
+
+    <div class="summary-container" id="miniprogram-summary-container" style="display: none;">
+      <h3>病案总结:</h3>
+      <div id="miniprogram-summary-content" style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; border-left: 4px solid #1a73e8; white-space: pre-wrap; font-family: 'Courier New', monospace; max-height: 400px; overflow-y: auto;"></div>
+    </div>
+
+    <div class="result-container">
+      <h3>原始响应:</h3>
+      <div id="miniprogram-result" class="result"></div>
     </div>
   </div>
 
@@ -633,7 +695,7 @@
     // 页面加载时根据URL hash切换到对应标签
     document.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.substring(1);
-      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'articles', 'quota', 'jwt'];
+      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'miniprogram', 'articles', 'quota', 'jwt'];
       
       if (hash && allowableTabs.includes(hash)) {
         switchToTab('tab-' + hash);
@@ -645,7 +707,7 @@
     // 监听URL hash变化
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.substring(1);
-      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'articles', 'quota', 'jwt'];
+      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'miniprogram', 'articles', 'quota', 'jwt'];
       
       if (hash && allowableTabs.includes(hash)) {
         switchToTab('tab-' + hash);
@@ -1776,6 +1838,225 @@
 
       // 将函数暴露到全局作用域
       window.useCaseTopicSample = useCaseTopicSample;
+
+      // 小程序测试功能
+      let miniprogramSelectedFiles = [];
+      let miniprogramBase64Images = [];
+
+      // 文件上传区域处理
+      const miniprogramFileUploadArea = document.getElementById('miniprogram-file-upload-area');
+      const miniprogramFileInput = document.getElementById('miniprogram-files');
+      const miniprogramFileList = document.getElementById('miniprogram-file-list');
+
+      if (miniprogramFileUploadArea && miniprogramFileInput) {
+        miniprogramFileUploadArea.addEventListener('click', () => miniprogramFileInput.click());
+
+        miniprogramFileInput.addEventListener('change', (e) => {
+          const files = Array.from(e.target.files);
+          addMiniprogramFiles(files);
+        });
+      }
+
+      function addMiniprogramFiles(files) {
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+        miniprogramSelectedFiles = [...miniprogramSelectedFiles, ...imageFiles];
+        convertMiniprogramToBase64();
+        updateMiniprogramFileList();
+      }
+
+      function removeMiniprogramFile(index) {
+        miniprogramSelectedFiles.splice(index, 1);
+        miniprogramBase64Images.splice(index, 1);
+        updateMiniprogramFileList();
+      }
+
+      function updateMiniprogramFileList() {
+        if (!miniprogramFileList) return;
+
+        miniprogramFileList.innerHTML = '';
+        miniprogramSelectedFiles.forEach((file, index) => {
+          const base64Size = miniprogramBase64Images[index] ? miniprogramBase64Images[index].data.length : 0;
+          const originalSize = (file.size / 1024 / 1024).toFixed(2);
+          const base64SizeMB = (base64Size * 0.75 / 1024 / 1024).toFixed(2);
+
+          const fileItem = document.createElement('div');
+          fileItem.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background-color: #ecf0f1; border-radius: 5px; margin-bottom: 5px;';
+          fileItem.innerHTML = `
+            <div>
+              <div>📷 ${file.name}</div>
+              <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 3px; padding: 5px; margin-top: 5px; font-size: 11px; color: #856404;">
+                原始: ${originalSize} MB | Base64: ${base64SizeMB} MB
+              </div>
+            </div>
+            <button type="button" onclick="removeMiniprogramFile(${index})" style="background-color: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;">删除</button>
+          `;
+          miniprogramFileList.appendChild(fileItem);
+        });
+      }
+
+      // 文件转Base64
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
+      }
+
+      // 转换文件为Base64
+      async function convertMiniprogramToBase64() {
+        miniprogramBase64Images = [];
+        for (const file of miniprogramSelectedFiles) {
+          try {
+            const base64 = await fileToBase64(file);
+            miniprogramBase64Images.push({
+              data: base64,
+              name: file.name,
+              type: file.type
+            });
+          } catch (error) {
+            console.error('Base64转换失败:', error);
+          }
+        }
+        updateMiniprogramFileList();
+      }
+
+      // 小程序病案总结生成
+      const generateMiniprogramBtn = document.getElementById('generate-miniprogram-case-summary');
+      if (generateMiniprogramBtn) {
+        generateMiniprogramBtn.addEventListener('click', async () => {
+          if (miniprogramSelectedFiles.length === 0) {
+            alert('请至少选择一个图片文件');
+            return;
+          }
+
+          const requestData = {
+            userid: document.getElementById('miniprogram-userid').value,
+            name: document.getElementById('miniprogram-name').value,
+            unit: document.getElementById('miniprogram-unit').value,
+            images: miniprogramBase64Images
+          };
+
+          await generateMiniprogramCaseSummary(requestData);
+        });
+      }
+
+      async function generateMiniprogramCaseSummary(data) {
+        const submitBtn = document.getElementById('generate-miniprogram-case-summary');
+        const progressContainer = document.getElementById('miniprogram-progress-container');
+        const summaryContainer = document.getElementById('miniprogram-summary-container');
+        const progressBar = document.getElementById('miniprogram-progress-bar');
+        const progressValue = document.getElementById('miniprogram-progress-value');
+        const progressText = document.getElementById('miniprogram-progress-text');
+        const summaryContent = document.getElementById('miniprogram-summary-content');
+        const resultDiv = document.getElementById('miniprogram-result');
+
+        // 重置状态
+        submitBtn.disabled = true;
+        submitBtn.textContent = '生成中...';
+        progressContainer.style.display = 'block';
+        summaryContainer.style.display = 'none';
+        progressBar.value = 0;
+        progressValue.textContent = '0';
+        progressText.textContent = '准备中...';
+        resultDiv.textContent = '';
+
+        try {
+          console.log('发送Base64请求，数据大小:', JSON.stringify(data).length, 'bytes');
+
+          const response = await fetch('/api/generate_case_summary', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const taskId = response.headers.get('X-Task-ID');
+          console.log(`获取到任务ID: ${taskId}`);
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let results = [];
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const eventData = JSON.parse(line.substring(6));
+                  resultDiv.textContent += JSON.stringify(eventData, null, 2) + '\n';
+
+                  if (eventData.event === 'workflow_started') {
+                    progressText.textContent = '开始分析病案...';
+                    progressBar.value = 5;
+                    progressValue.textContent = '5';
+                  } else if (eventData.event === 'workflow_running') {
+                    const progress = parseInt(eventData.data?.progress || '0');
+                    const title = eventData.data?.title || '处理中...';
+                    progressBar.value = progress;
+                    progressValue.textContent = progress.toString();
+                    progressText.textContent = `${title} (${progress}%)`;
+                  } else if (eventData.event === 'text_chunk') {
+                    const text = eventData.data?.text || '';
+                    if (text) {
+                      results.push(text);
+                      // 实时显示部分结果
+                      summaryContainer.style.display = 'block';
+                      summaryContent.textContent = results.join('');
+                    }
+                  } else if (eventData.event === 'workflow_finished') {
+                    progressBar.value = 100;
+                    progressValue.textContent = '100';
+
+                    if (eventData.data?.status === 'failed') {
+                      progressText.textContent = '生成失败';
+                      summaryContainer.style.display = 'block';
+                      summaryContent.style.color = '#d32f2f';
+                      summaryContent.textContent = eventData.data?.result?.join('\n') || '生成失败';
+                    } else {
+                      progressText.textContent = '生成完成！';
+                      summaryContainer.style.display = 'block';
+                      summaryContent.style.color = '#388e3c';
+
+                      const finalResult = eventData.data?.result?.join('\n') || results.join('');
+                      summaryContent.textContent = finalResult || '生成完成，但未获取到结果内容';
+                    }
+                  }
+                } catch (e) {
+                  console.error('解析事件失败:', e);
+                }
+              }
+            }
+          }
+
+        } catch (error) {
+          console.error('生成失败:', error);
+          progressText.textContent = '生成失败';
+          summaryContainer.style.display = 'block';
+          summaryContent.style.color = '#d32f2f';
+          summaryContent.textContent = `错误: ${error.message}`;
+          resultDiv.textContent += `错误: ${error.message}\n`;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '🚀 生成病案总结（Base64方式）';
+        }
+      }
+
+      // 将函数暴露到全局作用域
+      window.removeMiniprogramFile = removeMiniprogramFile;
     });
   </script>
 </body>
