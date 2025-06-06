@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCaseSummaryDifyConfig, callDifyCaseSummaryAPI } from '@/utils/dify';
-import { getUserQuota, consumeQuota } from '@/utils/quota';
 import { ServiceType } from '@/types';
 import { createTask, updateTaskStatus, addTaskEvent } from '@/utils/task-manager';
 
@@ -57,28 +56,8 @@ export async function POST(request: NextRequest) {
     
     console.log(`[${new Date().toISOString()}] 病案总结请求参数 - 用户: ${userid}, 医生: ${name}, 科室: ${unit}, 文件数量: ${files.length}`);
     
-    // 检查配额（如果启用）
-    const skipQuotaCheck = process.env.SKIP_QUOTA_CHECK === 'true';
-    if (!skipQuotaCheck) {
-      console.log(`[${new Date().toISOString()}] 检查用户配额 - 用户: ${userid}, 服务: ${ServiceType.ALL}`);
-
-      const quota = await getUserQuota(userid, ServiceType.ALL);
-      if (!quota || quota.remaining_quota <= 0) {
-        console.log(`[${new Date().toISOString()}] 用户配额不足 - 用户: ${userid}, 剩余: ${quota?.remaining_quota || 0}`);
-        return NextResponse.json(
-          {
-            error: '配额不足',
-            remainingQuota: quota?.remaining_quota || 0,
-            message: '您的病案总结服务配额已用完，请联系管理员充值。'
-          },
-          { status: 403 }
-        );
-      }
-
-      console.log(`[${new Date().toISOString()}] 配额检查通过 - 用户: ${userid}, 剩余: ${quota.remaining_quota}`);
-    } else {
-      console.log(`[${new Date().toISOString()}] 跳过配额检查（开发模式）`);
-    }
+    // 病案总结功能目前处于测试阶段，跳过配额检查
+    console.log(`[${new Date().toISOString()}] 病案总结测试阶段 - 跳过配额检查 - 用户: ${userid}`);
     
     // 创建任务
     const task = await createTask(userid, ServiceType.ALL);
@@ -101,7 +80,7 @@ export async function POST(request: NextRequest) {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
-        let quotaConsumed = false;
+        // 测试阶段不消费配额
         
         try {
           // 调用Dify API
@@ -139,16 +118,8 @@ export async function POST(request: NextRequest) {
                     const success = eventData.data?.status !== 'failed';
 
                     if (success) {
-                      // 只有在成功时才消费配额
-                      if (!skipQuotaCheck && !quotaConsumed) {
-                        try {
-                          await consumeQuota(userid, ServiceType.ALL);
-                          quotaConsumed = true;
-                          console.log(`[${new Date().toISOString()}] 病案总结成功，消费配额 - 用户: ${userid}`);
-                        } catch (quotaError) {
-                          console.error(`[${new Date().toISOString()}] 消费配额失败:`, quotaError);
-                        }
-                      }
+                      // 测试阶段不消费配额
+                      console.log(`[${new Date().toISOString()}] 病案总结成功（测试阶段，不消费配额） - 用户: ${userid}`);
 
                       await updateTaskStatus(userid, taskId, {
                         status: 'completed' as any,

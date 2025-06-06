@@ -1105,6 +1105,24 @@ export function getCaseSummaryDifyConfig(): DifyAPIConfig {
 }
 
 /**
+ * 获取病案拟题专用的Dify配置
+ */
+export function getCaseQuestionDifyConfig(): DifyAPIConfig {
+  // 病案拟题专用API Key
+  const apiKey = process.env.CASE_QUESTION_DIFY_API_KEY || 'app-h0GZLxEkF2uDP5l8CnvoY7ZH';
+
+  // 使用相同的baseUrl
+  const baseUrl = process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn';
+  const apiUrl = process.env.DIFY_API_URL || 'http://sandboxai.jinzhibang.com.cn/v1';
+
+  return {
+    apiKey,
+    baseUrl,
+    apiUrl,
+  };
+}
+
+/**
  * 上传文件到Dify并获取upload_file_id
  */
 export async function uploadFileToDify(file: File, config: DifyAPIConfig): Promise<string> {
@@ -1243,6 +1261,8 @@ export async function callDifyCaseSummaryAPI(
         let lastWorkflowRunId = '';
         let workflowId = '';
         let lastProgress = 0;
+        let workflowFinished = false;
+        let collectedTextChunks: string[] = [];
 
         console.log(`[${new Date().toISOString()}] 开始处理病案总结Dify API响应流`);
 
@@ -1346,8 +1366,12 @@ export async function callDifyCaseSummaryAPI(
                 else if (eventData.event === 'text_chunk') {
                   console.log(`[${new Date().toISOString()}] 接收到病案总结文本块`);
 
-                  // 转发文本块事件
+                  // 收集文本块用于最终结果
                   if (eventData.data && eventData.data.text) {
+                    const textContent = typeof eventData.data.text === 'string' ? eventData.data.text : String(eventData.data.text);
+                    collectedTextChunks.push(textContent);
+
+                    // 转发文本块事件
                     const textChunkEvent = {
                       event: "text_chunk",
                       task_id: lastTaskId,
@@ -1358,14 +1382,13 @@ export async function callDifyCaseSummaryAPI(
                       }
                     };
 
-                    const textContent = typeof eventData.data.text === 'string' ? eventData.data.text : String(eventData.data.text);
                     console.log(`[${new Date().toISOString()}] 转发病案总结文本块: ${textContent.substring(0, 50)}${textContent.length > 50 ? '...' : ''}`);
-
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify(textChunkEvent)}\n\n`));
                   }
                 }
                 else if (eventData.event === 'workflow_finished') {
                   console.log(`[${new Date().toISOString()}] 病案总结工作流完成`);
+                  workflowFinished = true;
 
                   // 解析结果
                   let result: string[] = [];
@@ -1380,6 +1403,12 @@ export async function callDifyCaseSummaryAPI(
                     }
 
                     console.log(`[${new Date().toISOString()}] 解析到病案总结结果: ${result.length} 项`);
+                  }
+
+                  // 如果没有从outputs获取到结果，使用收集的文本块
+                  if (result.length === 0 && collectedTextChunks.length > 0) {
+                    result = [collectedTextChunks.join('')];
+                    console.log(`[${new Date().toISOString()}] 使用收集的文本块作为结果: ${result[0].length} 字符`);
                   }
 
                   // 发送完成事件
@@ -1406,6 +1435,31 @@ export async function callDifyCaseSummaryAPI(
             }
           }
         }
+
+        // 流结束后检查是否已发送完成事件
+        if (!workflowFinished) {
+          console.log(`[${new Date().toISOString()}] 流结束但未收到workflow_finished事件，手动发送完成事件`);
+
+          // 使用收集的文本块作为结果
+          const result = collectedTextChunks.length > 0 ? [collectedTextChunks.join('')] : ['病案总结生成完成'];
+
+          const finishEvent = {
+            event: "workflow_finished",
+            task_id: lastTaskId || "manual-finish-" + Date.now(),
+            workflow_run_id: lastWorkflowRunId || "manual-finish-" + Date.now(),
+            data: {
+              workflow_id: workflowId,
+              progress: "100",
+              result,
+              elapsed_time: "0",
+              status: "succeeded"
+            }
+          };
+
+          console.log(`[${new Date().toISOString()}] 发送手动完成事件，结果长度: ${result[0].length} 字符`);
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(finishEvent)}\n\n`));
+        }
+
       } catch (error: unknown) {
         console.error(`[${new Date().toISOString()}] 调用病案总结Dify API时出错:`, error);
 
