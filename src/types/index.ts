@@ -26,6 +26,11 @@ export interface GenerateCaseSummaryRequest {
   files: File[];
 }
 
+export interface GenerateCaseTopicRequest {
+  userid: string;
+  summary: string;
+}
+
 // Response Types
 export interface WorkflowData {
   workflow_id: string;

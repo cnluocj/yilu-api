@@ -230,6 +230,7 @@
     <li id="tab-article" class="active">生成文章</li>
     <li id="tab-title">生成标题</li>
     <li id="tab-case-summary">病案总结</li>
+    <li id="tab-case-topic">病案拟题</li>
     <li id="tab-articles">文章管理</li>
     <li id="tab-quota">配额管理</li>
     <li id="tab-jwt">JWT测试</li>
@@ -382,6 +383,45 @@
     <div class="result-container">
       <h3>原始响应:</h3>
       <div id="case-summary-result" class="result"></div>
+    </div>
+  </div>
+
+  <!-- 病案拟题选项卡内容 -->
+  <div id="case-topic-tab" class="tab-content">
+    <div class="form-container">
+      <h2>病案拟题生成</h2>
+      <div class="form-group">
+        <label for="case-topic-userid">UserID:</label>
+        <input type="text" id="case-topic-userid" value="wx_abcd1234efgh5678">
+      </div>
+
+      <div class="form-group">
+        <label for="case-topic-summary">病案总结:</label>
+        <div style="background-color: #e8f4fd; padding: 15px; border-radius: 5px; margin-bottom: 10px; border-left: 4px solid #3498db;">
+          <h4 style="margin: 0 0 10px 0; color: #2c3e50;">💡 示例病案总结</h4>
+          <p style="margin: 0; font-size: 14px; color: #555;">【患者基本信息】姓名：张三，年龄：45岁，性别：男【主诉】胸闷气短3天【现病史】患者3天前无明显诱因出现胸闷气短，活动后加重，伴有心悸，无胸痛、咳嗽、咳痰等症状。【既往史】高血压病史5年，规律服用降压药物。【体格检查】血压150/90mmHg，心率95次/分，心律齐，双肺呼吸音清，无干湿性啰音。【辅助检查】心电图示：窦性心律，ST段轻度压低。【诊断】1.冠心病？2.高血压病【治疗建议】1.进一步完善冠脉造影检查2.调整降压药物3.低盐低脂饮食4.适当运动</p>
+          <button type="button" onclick="useCaseTopicSample()" style="background-color: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-top: 5px;">使用此示例</button>
+        </div>
+        <textarea id="case-topic-summary" placeholder="请输入病案总结内容..." style="width: 100%; min-height: 200px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+      </div>
+
+      <button id="generate-case-topic" class="submit-button">生成题目</button>
+    </div>
+
+    <div class="progress-container" id="case-topic-progress-container" style="display: none;">
+      <h3>生成进度: <span id="case-topic-progress-value">0</span>%</h3>
+      <progress id="case-topic-progress-bar" value="0" max="100"></progress>
+      <div id="case-topic-progress-text" style="text-align: center; margin-top: 10px; font-weight: bold;">准备中...</div>
+    </div>
+
+    <div class="topic-container" id="case-topic-container" style="display: none;">
+      <h3>生成的题目:</h3>
+      <div id="case-topic-content" style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; border-left: 4px solid #1a73e8; white-space: pre-wrap; font-family: 'Courier New', monospace; max-height: 400px; overflow-y: auto;"></div>
+    </div>
+
+    <div class="result-container">
+      <h3>原始响应:</h3>
+      <div id="case-topic-result" class="result"></div>
     </div>
   </div>
 
@@ -593,7 +633,7 @@
     // 页面加载时根据URL hash切换到对应标签
     document.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.substring(1);
-      const allowableTabs = ['article', 'title', 'case-summary', 'articles', 'quota', 'jwt'];
+      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'articles', 'quota', 'jwt'];
       
       if (hash && allowableTabs.includes(hash)) {
         switchToTab('tab-' + hash);
@@ -605,7 +645,7 @@
     // 监听URL hash变化
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.substring(1);
-      const allowableTabs = ['article', 'title', 'case-summary', 'articles', 'quota', 'jwt'];
+      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'articles', 'quota', 'jwt'];
       
       if (hash && allowableTabs.includes(hash)) {
         switchToTab('tab-' + hash);
@@ -1595,6 +1635,147 @@
 
       // 将函数暴露到全局作用域，以便HTML中的onclick可以访问
       window.removeCaseSummaryFile = removeCaseSummaryFile;
+
+      // 病案拟题功能
+      function useCaseTopicSample() {
+        const sampleText = "【患者基本信息】姓名：张三，年龄：45岁，性别：男【主诉】胸闷气短3天【现病史】患者3天前无明显诱因出现胸闷气短，活动后加重，伴有心悸，无胸痛、咳嗽、咳痰等症状。【既往史】高血压病史5年，规律服用降压药物。【体格检查】血压150/90mmHg，心率95次/分，心律齐，双肺呼吸音清，无干湿性啰音。【辅助检查】心电图示：窦性心律，ST段轻度压低。【诊断】1.冠心病？2.高血压病【治疗建议】1.进一步完善冠脉造影检查2.调整降压药物3.低盐低脂饮食4.适当运动";
+        document.getElementById('case-topic-summary').value = sampleText;
+      }
+
+      // 病案拟题生成
+      const generateCaseTopicBtn = document.getElementById('generate-case-topic');
+      if (generateCaseTopicBtn) {
+        generateCaseTopicBtn.addEventListener('click', async () => {
+          const userid = document.getElementById('case-topic-userid').value.trim();
+          const summary = document.getElementById('case-topic-summary').value.trim();
+
+          if (!userid) {
+            alert('请输入用户ID');
+            return;
+          }
+
+          if (!summary) {
+            alert('请输入病案总结内容');
+            return;
+          }
+
+          await generateCaseTopic({ userid, summary });
+        });
+      }
+
+      async function generateCaseTopic(data) {
+        const submitBtn = document.getElementById('generate-case-topic');
+        const progressContainer = document.getElementById('case-topic-progress-container');
+        const topicContainer = document.getElementById('case-topic-container');
+        const progressBar = document.getElementById('case-topic-progress-bar');
+        const progressValue = document.getElementById('case-topic-progress-value');
+        const progressText = document.getElementById('case-topic-progress-text');
+        const topicContent = document.getElementById('case-topic-content');
+        const resultDiv = document.getElementById('case-topic-result');
+
+        // 重置状态
+        submitBtn.disabled = true;
+        submitBtn.textContent = '生成中...';
+        progressContainer.style.display = 'block';
+        topicContainer.style.display = 'none';
+        progressBar.value = 0;
+        progressValue.textContent = '0';
+        progressText.textContent = '准备中...';
+        resultDiv.textContent = '';
+
+        try {
+          const response = await fetch('/api/generate_case_topic', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const taskId = response.headers.get('X-Task-ID');
+          console.log(`获取到任务ID: ${taskId}`);
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let results = [];
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const eventData = JSON.parse(line.substring(6));
+                  resultDiv.textContent += JSON.stringify(eventData, null, 2) + '\n';
+
+                  if (eventData.event === 'workflow_started') {
+                    progressText.textContent = '开始生成题目...';
+                    progressBar.value = 5;
+                    progressValue.textContent = '5';
+                  } else if (eventData.event === 'workflow_running') {
+                    const progress = parseInt(eventData.data?.progress || '0');
+                    const title = eventData.data?.title || '处理中...';
+                    progressBar.value = progress;
+                    progressValue.textContent = progress.toString();
+                    progressText.textContent = `${title} (${progress}%)`;
+                  } else if (eventData.event === 'text_chunk') {
+                    const text = eventData.data?.text || '';
+                    if (text) {
+                      results.push(text);
+                      // 实时显示部分结果
+                      topicContainer.style.display = 'block';
+                      topicContent.textContent = results.join('');
+                    }
+                  } else if (eventData.event === 'workflow_finished') {
+                    progressBar.value = 100;
+                    progressValue.textContent = '100';
+
+                    if (eventData.data?.status === 'failed') {
+                      progressText.textContent = '生成失败';
+                      topicContainer.style.display = 'block';
+                      topicContent.style.color = '#d32f2f';
+                      topicContent.textContent = eventData.data?.result?.join('\n') || '生成失败';
+                    } else {
+                      progressText.textContent = '生成完成！';
+                      topicContainer.style.display = 'block';
+                      topicContent.style.color = '#388e3c';
+
+                      const finalResult = eventData.data?.result?.join('\n') || results.join('');
+                      topicContent.textContent = finalResult || '生成完成，但未获取到结果内容';
+                    }
+                  }
+                } catch (e) {
+                  console.error('解析事件失败:', e);
+                }
+              }
+            }
+          }
+
+        } catch (error) {
+          console.error('生成失败:', error);
+          progressText.textContent = '生成失败';
+          topicContainer.style.display = 'block';
+          topicContent.style.color = '#d32f2f';
+          topicContent.textContent = `错误: ${error.message}`;
+          resultDiv.textContent += `错误: ${error.message}\n`;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '生成题目';
+        }
+      }
+
+      // 将函数暴露到全局作用域
+      window.useCaseTopicSample = useCaseTopicSample;
     });
   </script>
 </body>

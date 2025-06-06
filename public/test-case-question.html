@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>病案拟题生成测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .result-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .result-content {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #e74c3c;
+            background-color: #fdf2f2;
+            border-left-color: #e74c3c;
+        }
+        .success {
+            color: #27ae60;
+            background-color: #f0f9f4;
+            border-left-color: #27ae60;
+        }
+        .log-container {
+            margin-top: 20px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+        .toggle-logs {
+            margin-top: 10px;
+            background-color: #34495e;
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+        .sample-summary {
+            background-color: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 4px solid #3498db;
+        }
+        .sample-summary h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .sample-summary p {
+            margin: 0;
+            font-size: 14px;
+            color: #555;
+        }
+        .use-sample-btn {
+            background-color: #27ae60;
+            font-size: 12px;
+            padding: 5px 10px;
+            margin-top: 5px;
+        }
+        .use-sample-btn:hover {
+            background-color: #229954;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 病案拟题生成测试</h1>
+        
+        <form id="caseQuestionForm">
+            <div class="form-group">
+                <label for="userid">用户ID:</label>
+                <input type="text" id="userid" name="userid" value="test_user_question_001" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="summary">病案总结:</label>
+                
+                <!-- 示例病案总结 -->
+                <div class="sample-summary">
+                    <h4>💡 示例病案总结</h4>
+                    <p>【患者基本信息】姓名：张三，年龄：45岁，性别：男【主诉】胸闷气短3天【现病史】患者3天前无明显诱因出现胸闷气短，活动后加重，伴有心悸，无胸痛、咳嗽、咳痰等症状。【既往史】高血压病史5年，规律服用降压药物。【体格检查】血压150/90mmHg，心率95次/分，心律齐，双肺呼吸音清，无干湿性啰音。【辅助检查】心电图示：窦性心律，ST段轻度压低。【诊断】1.冠心病？2.高血压病【治疗建议】1.进一步完善冠脉造影检查2.调整降压药物3.低盐低脂饮食4.适当运动</p>
+                    <button type="button" class="use-sample-btn" onclick="useSampleSummary()">使用此示例</button>
+                </div>
+                
+                <textarea id="summary" name="summary" placeholder="请输入病案总结内容..." required></textarea>
+            </div>
+            
+            <button type="submit" id="submitBtn">🚀 生成题目</button>
+        </form>
+        
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">准备中...</div>
+        </div>
+        
+        <div class="result-container" id="resultContainer">
+            <h3>生成的题目:</h3>
+            <div class="result-content" id="resultContent"></div>
+        </div>
+        
+        <button class="toggle-logs" onclick="toggleLogs()">📋 显示/隐藏日志</button>
+        <div class="log-container" id="logContainer"></div>
+    </div>
+
+    <script>
+        // 使用示例病案总结
+        function useSampleSummary() {
+            const sampleText = "【患者基本信息】姓名：张三，年龄：45岁，性别：男【主诉】胸闷气短3天【现病史】患者3天前无明显诱因出现胸闷气短，活动后加重，伴有心悸，无胸痛、咳嗽、咳痰等症状。【既往史】高血压病史5年，规律服用降压药物。【体格检查】血压150/90mmHg，心率95次/分，心律齐，双肺呼吸音清，无干湿性啰音。【辅助检查】心电图示：窦性心律，ST段轻度压低。【诊断】1.冠心病？2.高血压病【治疗建议】1.进一步完善冠脉造影检查2.调整降压药物3.低盐低脂饮食4.适当运动";
+            document.getElementById('summary').value = sampleText;
+        }
+        
+        // 表单提交处理
+        document.getElementById('caseQuestionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const userid = document.getElementById('userid').value.trim();
+            const summary = document.getElementById('summary').value.trim();
+            
+            if (!userid) {
+                alert('请输入用户ID');
+                return;
+            }
+            
+            if (!summary) {
+                alert('请输入病案总结内容');
+                return;
+            }
+            
+            await generateCaseQuestion({ userid, summary });
+        });
+        
+        async function generateCaseQuestion(data) {
+            const submitBtn = document.getElementById('submitBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const resultContainer = document.getElementById('resultContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const resultContent = document.getElementById('resultContent');
+            
+            // 重置状态
+            submitBtn.disabled = true;
+            submitBtn.textContent = '生成中...';
+            progressContainer.style.display = 'block';
+            resultContainer.style.display = 'none';
+            progressFill.style.width = '0%';
+            progressText.textContent = '准备中...';
+            
+            try {
+                log('开始生成病案题目...');
+                
+                const response = await fetch('/api/generate_case_topic', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const taskId = response.headers.get('X-Task-ID');
+                log(`获取到任务ID: ${taskId}`);
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let results = [];
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const eventData = JSON.parse(line.substring(6));
+                                log(`接收事件: ${eventData.event}`);
+                                
+                                if (eventData.event === 'workflow_started') {
+                                    progressText.textContent = '开始生成题目...';
+                                    progressFill.style.width = '5%';
+                                } else if (eventData.event === 'workflow_running') {
+                                    const progress = parseInt(eventData.data?.progress || '0');
+                                    const title = eventData.data?.title || '处理中...';
+                                    progressFill.style.width = `${progress}%`;
+                                    progressText.textContent = `${title} (${progress}%)`;
+                                } else if (eventData.event === 'text_chunk') {
+                                    const text = eventData.data?.text || '';
+                                    if (text) {
+                                        results.push(text);
+                                        // 实时显示部分结果
+                                        resultContainer.style.display = 'block';
+                                        resultContent.className = 'result-content';
+                                        resultContent.textContent = results.join('');
+                                    }
+                                } else if (eventData.event === 'workflow_finished') {
+                                    progressFill.style.width = '100%';
+                                    
+                                    if (eventData.data?.status === 'failed') {
+                                        progressText.textContent = '生成失败';
+                                        resultContainer.style.display = 'block';
+                                        resultContent.className = 'result-content error';
+                                        resultContent.textContent = eventData.data?.result?.join('\n') || '生成失败';
+                                    } else {
+                                        progressText.textContent = '生成完成！';
+                                        resultContainer.style.display = 'block';
+                                        resultContent.className = 'result-content success';
+                                        
+                                        const finalResult = eventData.data?.result?.join('\n') || results.join('');
+                                        resultContent.textContent = finalResult || '生成完成，但未获取到结果内容';
+                                    }
+                                }
+                            } catch (e) {
+                                log(`解析事件失败: ${e.message}`);
+                            }
+                        }
+                    }
+                }
+                
+                log('病案拟题生成完成');
+                
+            } catch (error) {
+                log(`生成失败: ${error.message}`);
+                progressText.textContent = '生成失败';
+                resultContainer.style.display = 'block';
+                resultContent.className = 'result-content error';
+                resultContent.textContent = `错误: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 生成题目';
+            }
+        }
+        
+        function log(message) {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            logContainer.innerHTML += `[${timestamp}] ${message}\n`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function toggleLogs() {
+            const logContainer = document.getElementById('logContainer');
+            logContainer.style.display = logContainer.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>
