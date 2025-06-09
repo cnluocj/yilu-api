@@ -180,14 +180,18 @@ shell:
 # 调试健康检查
 debug-health:
 	@echo "$(BLUE)🔍 调试健康检查:$(NC)"
-	@echo "$(YELLOW)1. 检查端口是否开放:$(NC)"
-	@sudo docker compose exec $(SERVICE_NAME) sh -c "nc -z localhost 9090 && echo '✅ 端口9090开放' || echo '❌ 端口9090未开放'"
+	@echo "$(YELLOW)1. 检查容器IP和端口:$(NC)"
+	@sudo docker compose exec $(SERVICE_NAME) sh -c "echo '容器IP: '$(hostname -i) && netstat -tlnp | grep 9090"
 	@echo "$(YELLOW)2. 检查进程是否运行:$(NC)"
-	@sudo docker compose exec $(SERVICE_NAME) sh -c "ps aux | grep node"
-	@echo "$(YELLOW)3. 测试健康检查端点:$(NC)"
-	@sudo docker compose exec $(SERVICE_NAME) sh -c "wget -qO- http://localhost:9090/api/health 2>/dev/null || echo '❌ wget失败'"
-	@echo "$(YELLOW)4. 检查网络连接:$(NC)"
-	@sudo docker compose exec $(SERVICE_NAME) sh -c "netstat -tlnp | grep 9090 || echo '❌ 端口9090未监听'"
+	@sudo docker compose exec $(SERVICE_NAME) sh -c "ps aux | grep -E '(node|next)' | grep -v grep"
+	@echo "$(YELLOW)3. 测试健康检查端点（容器IP）:$(NC)"
+	@sudo docker compose exec $(SERVICE_NAME) sh -c "curl -f http://\$$(hostname -i):9090/api/health 2>/dev/null && echo '✅ 容器IP访问成功' || echo '❌ 容器IP访问失败'"
+	@echo "$(YELLOW)4. 测试健康检查端点（127.0.0.1）:$(NC)"
+	@sudo docker compose exec $(SERVICE_NAME) sh -c "curl -f http://127.0.0.1:9090/api/health 2>/dev/null && echo '✅ 127.0.0.1访问成功' || echo '❌ 127.0.0.1访问失败'"
+	@echo "$(YELLOW)5. 测试健康检查端点（localhost）:$(NC)"
+	@sudo docker compose exec $(SERVICE_NAME) sh -c "curl -f http://localhost:9090/api/health 2>/dev/null && echo '✅ localhost访问成功' || echo '❌ localhost访问失败'"
+	@echo "$(YELLOW)6. 模拟Docker健康检查命令:$(NC)"
+	@sudo docker compose exec $(SERVICE_NAME) sh -c "curl -f http://\$$(hostname -i):9090/api/health || curl -f http://127.0.0.1:9090/api/health" && echo "$(GREEN)✅ 健康检查命令成功$(NC)" || echo "$(RED)❌ 健康检查命令失败$(NC)"
 
 # 检查健康状态
 health:
