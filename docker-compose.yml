@@ -36,7 +36,7 @@ services:
       - SKIP_QUOTA_CHECK=${SKIP_QUOTA_CHECK:-false}
       
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9090/api/health"]
+      test: ["CMD", "sh", "-c", "curl -f http://$(hostname -i):9090/api/health || curl -f http://127.0.0.1:9090/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
