@@ -1223,7 +1223,8 @@ export async function callDifyCaseSummaryAPI(
             console.log(`[${new Date().toISOString()}] 文件 ${file.name} 上传成功，ID: ${uploadFileId}`);
           } catch (uploadError) {
             console.error(`[${new Date().toISOString()}] 文件 ${file.name} 上传失败:`, uploadError);
-            throw new Error(`文件上传失败: ${uploadError.message}`);
+            const errorMessage = uploadError instanceof Error ? uploadError.message : '未知错误';
+            throw new Error(`文件上传失败: ${errorMessage}`);
           }
         }
 
