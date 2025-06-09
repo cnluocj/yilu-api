@@ -182,5 +182,17 @@ health:
 	@echo "$(BLUE)🏥 检查服务健康状态:$(NC)"
 	@sudo docker compose ps
 	@echo ""
-	@echo "$(BLUE)📊 容器详细信息:$(NC)"
-	@sudo docker inspect $(SERVICE_NAME) --format='{{.State.Status}}: {{.State.Health.Status}}' 2>/dev/null || echo "健康检查未配置"
+	@echo "$(BLUE)📊 容器健康状态:$(NC)"
+	@HEALTH_STATUS=$$(sudo docker inspect $(SERVICE_NAME) --format='{{.State.Health.Status}}' 2>/dev/null) && \
+	if [ "$$HEALTH_STATUS" = "healthy" ]; then \
+		echo "$(GREEN)✅ 服务健康状态: $$HEALTH_STATUS$(NC)"; \
+	elif [ "$$HEALTH_STATUS" = "unhealthy" ]; then \
+		echo "$(RED)❌ 服务健康状态: $$HEALTH_STATUS$(NC)"; \
+		echo "$(YELLOW)📋 最近的健康检查日志:$(NC)"; \
+		sudo docker inspect $(SERVICE_NAME) --format='{{range .State.Health.Log}}{{.Output}}{{end}}' 2>/dev/null || echo "无健康检查日志"; \
+	else \
+		echo "$(YELLOW)⚠️ 服务健康状态: $$HEALTH_STATUS$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(BLUE)🌐 测试API端点:$(NC)"
+	@curl -s http://localhost:9090/api/health | jq . 2>/dev/null || echo "API端点无响应或jq未安装"
