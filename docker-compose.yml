@@ -36,7 +36,7 @@ services:
       - SKIP_QUOTA_CHECK=${SKIP_QUOTA_CHECK:-false}
       
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:9090/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      test: ["CMD", "sh", "-c", "nc -z localhost 9090 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

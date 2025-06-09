@@ -177,6 +177,18 @@ shell:
 	@echo "$(BLUE)🐚 进入容器 shell:$(NC)"
 	@sudo docker compose exec $(SERVICE_NAME) /bin/sh
 
+# 调试健康检查
+debug-health:
+	@echo "$(BLUE)🔍 调试健康检查:$(NC)"
+	@echo "$(YELLOW)1. 检查端口是否开放:$(NC)"
+	@sudo docker compose exec $(SERVICE_NAME) sh -c "nc -z localhost 9090 && echo '✅ 端口9090开放' || echo '❌ 端口9090未开放'"
+	@echo "$(YELLOW)2. 检查进程是否运行:$(NC)"
+	@sudo docker compose exec $(SERVICE_NAME) sh -c "ps aux | grep node"
+	@echo "$(YELLOW)3. 测试健康检查端点:$(NC)"
+	@sudo docker compose exec $(SERVICE_NAME) sh -c "wget -qO- http://localhost:9090/api/health 2>/dev/null || echo '❌ wget失败'"
+	@echo "$(YELLOW)4. 检查网络连接:$(NC)"
+	@sudo docker compose exec $(SERVICE_NAME) sh -c "netstat -tlnp | grep 9090 || echo '❌ 端口9090未监听'"
+
 # 检查健康状态
 health:
 	@echo "$(BLUE)🏥 检查服务健康状态:$(NC)"
