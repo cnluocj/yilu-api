@@ -1146,20 +1146,55 @@ export function getCaseReportDifyConfig(): DifyAPIConfig {
 export async function uploadFileToDify(file: any, config: DifyAPIConfig): Promise<string> {
   console.log(`[${new Date().toISOString()}] 开始上传文件到Dify: ${file.name}, 大小: ${file.size} bytes`);
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('user', 'api-user');
-
   const uploadUrl = `${config.apiUrl}/files/upload`;
   console.log(`[${new Date().toISOString()}] 文件上传URL: ${uploadUrl}`);
 
-  const response = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${config.apiKey}`,
-    },
-    body: formData
-  });
+  let response: Response;
+
+  // 检查是否是我们的自定义文件对象（包含buffer属性）
+  if (file.buffer && Buffer.isBuffer(file.buffer)) {
+    console.log(`[${new Date().toISOString()}] 检测到Base64转换的文件，使用multipart/form-data手动构建`);
+
+    // 手动构建multipart/form-data
+    const boundary = '----formdata-' + Math.random().toString(36);
+    const CRLF = '\r\n';
+
+    let body = '';
+    body += `--${boundary}${CRLF}`;
+    body += `Content-Disposition: form-data; name="file"; filename="${file.name}"${CRLF}`;
+    body += `Content-Type: ${file.type}${CRLF}`;
+    body += CRLF;
+
+    // 将body转换为Buffer，然后拼接文件数据
+    const bodyStart = Buffer.from(body, 'utf8');
+    const bodyEnd = Buffer.from(`${CRLF}--${boundary}${CRLF}Content-Disposition: form-data; name="user"${CRLF}${CRLF}api-user${CRLF}--${boundary}--${CRLF}`, 'utf8');
+
+    const finalBody = Buffer.concat([bodyStart, file.buffer, bodyEnd]);
+
+    response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.apiKey}`,
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': finalBody.length.toString(),
+      },
+      body: finalBody
+    });
+  } else {
+    console.log(`[${new Date().toISOString()}] 使用标准FormData上传`);
+    // 对于普通文件，使用标准FormData
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('user', 'api-user');
+
+    response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.apiKey}`,
+      },
+      body: formData
+    });
+  }
 
   if (!response.ok) {
     const errorText = await response.text();

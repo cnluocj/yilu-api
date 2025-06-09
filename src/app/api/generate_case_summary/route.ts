@@ -29,24 +29,18 @@ export async function POST(request: NextRequest) {
               const base64Data = imageData.data.replace(/^data:image\/[a-z]+;base64,/, '');
               const buffer = Buffer.from(base64Data, 'base64');
 
-              // 创建File-like对象 - Node.js兼容版本
-              // 使用any类型避免复杂的类型检查问题
+              // 创建简单的文件对象 - 直接使用Buffer的属性
               const file: any = {
+                // 文件数据 - 直接使用buffer
+                buffer: buffer,
+                // 文件属性
                 name: imageData.name,
                 type: imageData.type || 'image/jpeg',
                 size: buffer.length,
                 lastModified: Date.now(),
-                webkitRelativePath: '',
-                arrayBuffer: async () => buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
-                bytes: async () => new Uint8Array(buffer),
-                stream: () => new ReadableStream({
-                  start(controller) {
-                    controller.enqueue(buffer);
-                    controller.close();
-                  }
-                }),
-                text: async () => buffer.toString(),
-                slice: (start?: number, end?: number) => buffer.slice(start, end)
+                // 让FormData能够识别这是一个文件
+                constructor: { name: 'File' },
+                [Symbol.toStringTag]: 'File'
               };
 
               files.push(file);
