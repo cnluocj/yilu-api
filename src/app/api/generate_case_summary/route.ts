@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const contentType = request.headers.get('content-type') || '';
-    let userid: string, name: string, unit: string, files: File[];
+    let userid: string, name: string, unit: string, files: any[];
 
     if (contentType.includes('application/json')) {
       // JSON格式请求（小程序Base64方式）
@@ -29,10 +29,26 @@ export async function POST(request: NextRequest) {
               const base64Data = imageData.data.replace(/^data:image\/[a-z]+;base64,/, '');
               const buffer = Buffer.from(base64Data, 'base64');
 
-              // 创建File对象
-              const file = new File([buffer], imageData.name, {
-                type: imageData.type || 'image/jpeg'
-              });
+              // 创建File-like对象 - Node.js兼容版本
+              // 使用any类型避免复杂的类型检查问题
+              const file: any = {
+                name: imageData.name,
+                type: imageData.type || 'image/jpeg',
+                size: buffer.length,
+                lastModified: Date.now(),
+                webkitRelativePath: '',
+                arrayBuffer: async () => buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+                bytes: async () => new Uint8Array(buffer),
+                stream: () => new ReadableStream({
+                  start(controller) {
+                    controller.enqueue(buffer);
+                    controller.close();
+                  }
+                }),
+                text: async () => buffer.toString(),
+                slice: (start?: number, end?: number) => buffer.slice(start, end)
+              };
+
               files.push(file);
               console.log(`[${new Date().toISOString()}] 转换Base64图片: ${imageData.name}, 大小: ${buffer.length} bytes`);
             } catch (error) {
@@ -56,8 +72,10 @@ export async function POST(request: NextRequest) {
       const fileEntries = formData.getAll('files');
 
       for (const entry of fileEntries) {
-        if (entry instanceof File) {
-          files.push(entry);
+        // 在Node.js环境中，FormData的文件条目可能不是File实例
+        // 检查是否有文件的基本属性
+        if (entry && typeof entry === 'object' && 'name' in entry && 'type' in entry) {
+          files.push(entry as any);
         }
       }
     }

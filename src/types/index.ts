@@ -23,7 +23,7 @@ export interface GenerateCaseSummaryRequest {
   userid: string;
   name: string;
   unit: string;
-  files: File[];
+  files: any[]; // 使用any[]避免Node.js环境中File类型不存在的问题
 }
 
 // 小程序Base64图片数据

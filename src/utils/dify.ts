@@ -1143,7 +1143,7 @@ export function getCaseReportDifyConfig(): DifyAPIConfig {
 /**
  * 上传文件到Dify并获取upload_file_id
  */
-export async function uploadFileToDify(file: File, config: DifyAPIConfig): Promise<string> {
+export async function uploadFileToDify(file: any, config: DifyAPIConfig): Promise<string> {
   console.log(`[${new Date().toISOString()}] 开始上传文件到Dify: ${file.name}, 大小: ${file.size} bytes`);
 
   const formData = new FormData();
