@@ -1585,7 +1585,8 @@ export async function callDifyCaseTopicAPI(
 
         // 准备工作流请求参数
         const inputs = {
-          summary: request.summary
+          summary: request.summary,
+          ...(request.ext && { ext: request.ext })
         };
 
         const workflowPayload = {

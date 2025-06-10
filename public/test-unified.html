@@ -407,6 +407,11 @@
         <textarea id="case-topic-summary" placeholder="请输入病案总结内容..." style="width: 100%; min-height: 200px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
       </div>
 
+      <div class="form-group">
+        <label for="case-topic-ext">额外信息 (ext) - 可选:</label>
+        <input type="text" id="case-topic-ext" placeholder="请输入您希望提供的额外信息..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+      </div>
+
       <button id="generate-case-topic" class="submit-button">生成题目</button>
     </div>
 
@@ -1760,6 +1765,7 @@
         generateCaseTopicBtn.addEventListener('click', async () => {
           const userid = document.getElementById('case-topic-userid').value.trim();
           const summary = document.getElementById('case-topic-summary').value.trim();
+          const ext = document.getElementById('case-topic-ext').value.trim();
 
           if (!userid) {
             alert('请输入用户ID');
@@ -1771,7 +1777,12 @@
             return;
           }
 
-          await generateCaseTopic({ userid, summary });
+          const payload = { userid, summary };
+          if (ext) {
+            payload.ext = ext;
+          }
+
+          await generateCaseTopic(payload);
         });
       }
 

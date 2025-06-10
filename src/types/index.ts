@@ -44,6 +44,7 @@ export interface MiniProgramCaseSummaryRequest {
 export interface GenerateCaseTopicRequest {
   userid: string;
   summary: string;
+  ext?: string;
 }
 
 export interface GenerateCaseReportRequest {

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   try {
     // 解析请求体
     const body = await request.json();
-    const { userid, summary } = body;
+    const { userid, summary, ext } = body;
 
     // 参数验证
     if (!userid) {
@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
     // 构建请求对象
     const caseTopicRequest: GenerateCaseTopicRequest = {
       userid,
-      summary: summary.trim()
+      summary: summary.trim(),
+      ...(ext && { ext })
     };
 
     // 创建任务
