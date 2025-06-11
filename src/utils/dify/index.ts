@@ -4,7 +4,8 @@ export {
   getArticleDifyConfig,
   getCaseSummaryDifyConfig,
   getCaseTopicDifyConfig,
-  getCaseReportDifyConfig
+  getCaseReportDifyConfig,
+  getCaseParagraphOptimizeDifyConfig
 } from './utils/config';
 
 // 重新导出文件上传函数（保持向后兼容）
@@ -23,10 +24,10 @@ export { AnimationManager } from './core/animation-manager';
 export * from './utils/types';
 
 // 保持向后兼容的函数封装
-import { GenerateTitlesRequest, GenerateArticleRequest, GenerateCaseSummaryRequest, GenerateCaseTopicRequest, GenerateCaseReportRequest, DifyAPIConfig } from '@/types';
+import { GenerateTitlesRequest, GenerateArticleRequest, GenerateCaseSummaryRequest, GenerateCaseTopicRequest, GenerateCaseReportRequest, OptimizeCaseParagraphRequest, DifyAPIConfig } from '@/types';
 import { ArticleService } from './services/article-service';
 import { CaseService } from './services/case-service';
-import { getDifyConfig, getArticleDifyConfig, getCaseSummaryDifyConfig, getCaseTopicDifyConfig, getCaseReportDifyConfig } from './utils/config';
+import { getDifyConfig, getArticleDifyConfig, getCaseSummaryDifyConfig, getCaseTopicDifyConfig, getCaseReportDifyConfig, getCaseParagraphOptimizeDifyConfig } from './utils/config';
 
 /**
  * 生成标题API - 向后兼容封装
@@ -81,4 +82,15 @@ export async function callDifyCaseReportAPI(
 ): Promise<ReadableStream<Uint8Array>> {
   const service = new CaseService(config);
   return service.generateCaseReport(request);
+}
+
+/**
+ * 病案段落优化API - 向后兼容封装
+ */
+export async function callDifyCaseParagraphOptimizeAPI(
+  config: DifyAPIConfig,
+  request: OptimizeCaseParagraphRequest
+): Promise<ReadableStream<Uint8Array>> {
+  const service = new CaseService(config);
+  return service.optimizeCaseParagraph(request);
 }

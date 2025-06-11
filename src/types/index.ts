@@ -53,6 +53,13 @@ export interface GenerateCaseReportRequest {
   title: string;
 }
 
+export interface OptimizeCaseParagraphRequest {
+  userid: string;
+  paragraph: string;
+  article: string;
+  suggestion: string;
+}
+
 // Response Types
 export interface WorkflowData {
   workflow_id: string;

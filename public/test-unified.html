@@ -232,6 +232,7 @@
     <li id="tab-case-summary">病案总结</li>
     <li id="tab-case-topic">病案拟题</li>
     <li id="tab-case-report">病案报告</li>
+    <li id="tab-case-paragraph">段落优化</li>
     <li id="tab-miniprogram">小程序测试</li>
     <li id="tab-articles">文章管理</li>
     <li id="tab-quota">配额管理</li>
@@ -478,6 +479,57 @@
     <div class="result-container">
       <h3>原始响应:</h3>
       <div id="case-report-result" class="result"></div>
+    </div>
+  </div>
+
+  <!-- 病案段落优化选项卡内容 -->
+  <div id="case-paragraph-tab" class="tab-content">
+    <div class="form-container">
+      <h2>病案段落优化</h2>
+      
+      <div style="background-color: #e8f4fd; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #3498db;">
+        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">💡 功能说明</h4>
+        <p style="margin: 0; font-size: 14px; color: #555;">病案段落优化功能可以根据提供的文章上下文和优化建议，对指定段落进行智能优化，提升内容质量和表达效果。</p>
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 10px; margin-top: 10px; font-size: 12px; color: #856404;">
+          💡 示例使用场景：优化病案报告中的诊断分析段落、治疗方案段落等
+        </div>
+      </div>
+
+      <form id="case-paragraph-form">
+        <label for="case-paragraph-userid">UserID:</label>
+        <input type="text" id="case-paragraph-userid" value="wx_abcd1234efgh5678">
+
+        <div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+          <p style="margin: 0; font-size: 14px; color: #555;">示例数据:</p>
+          <button type="button" onclick="useCaseParagraphSample()" style="background-color: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-top: 5px;">一键填充示例数据</button>
+        </div>
+
+        <label for="case-paragraph-paragraph">需要优化的段落:</label>
+        <textarea id="case-paragraph-paragraph" placeholder="请输入需要优化的段落内容..." style="width: 100%; min-height: 120px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+
+        <label for="case-paragraph-article">文章全文（上下文）:</label>
+        <textarea id="case-paragraph-article" placeholder="请输入完整的文章内容，用于提供上下文..." style="width: 100%; min-height: 150px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+
+        <label for="case-paragraph-suggestion">优化建议:</label>
+        <textarea id="case-paragraph-suggestion" placeholder="请输入具体的优化建议..." style="width: 100%; min-height: 100px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+      </form>
+
+      <button id="optimize-case-paragraph" class="submit-button">开始优化段落</button>
+    </div>
+
+    <div class="progress-container" id="case-paragraph-progress-container" style="display: none;">
+      <h3>优化进度: <span id="case-paragraph-progress-value">0</span>%</h3>
+      <progress id="case-paragraph-progress-bar" value="0" max="100"></progress>
+      <div id="case-paragraph-progress-text" style="text-align: center; margin-top: 10px; font-weight: bold;">准备中...</div>
+    </div>
+
+    <div class="report-container" id="case-paragraph-container" style="display: none;">
+      <h3>优化后的段落:</h3>
+      <div id="case-paragraph-content" style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; border-left: 4px solid #1a73e8; white-space: pre-wrap; font-family: 'Courier New', monospace; max-height: 600px; overflow-y: auto; line-height: 1.6;"></div>
+    </div>
+
+    <div class="result-container">
+      <div id="case-paragraph-result" class="result"></div>
     </div>
   </div>
 
@@ -750,7 +802,7 @@
     // 页面加载时根据URL hash切换到对应标签
     document.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.substring(1);
-      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'case-report', 'miniprogram', 'articles', 'quota', 'jwt'];
+      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'case-report', 'case-paragraph', 'miniprogram', 'articles', 'quota', 'jwt'];
       
       if (hash && allowableTabs.includes(hash)) {
         switchToTab('tab-' + hash);
@@ -762,7 +814,7 @@
     // 监听URL hash变化
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.substring(1);
-      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'case-report', 'miniprogram', 'articles', 'quota', 'jwt'];
+      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'case-report', 'case-paragraph', 'miniprogram', 'articles', 'quota', 'jwt'];
       
       if (hash && allowableTabs.includes(hash)) {
         switchToTab('tab-' + hash);
@@ -2051,6 +2103,158 @@
       // 将函数暴露到全局作用域
       window.useCaseReportTitleSample = useCaseReportTitleSample;
       window.useCaseReportSummarySample = useCaseReportSummarySample;
+
+      // 病案段落优化功能
+      function useCaseParagraphSample() {
+        document.getElementById('case-paragraph-paragraph').value = "患者李某，男，45岁，因胸痛3天入院。患者3天前无明显诱因出现胸痛，疼痛位于胸骨后，呈压榨性，伴有出汗。";
+        document.getElementById('case-paragraph-article').value = "患者李某，男，45岁，因胸痛3天入院。患者3天前无明显诱因出现胸痛，疼痛位于胸骨后，呈压榨性，伴有出汗。入院查体：血压150/90mmHg，心率85次/分，心电图示V1-V4导联ST段抬高。血生化检查示肌钙蛋白I升高。诊断：急性ST段抬高型心肌梗死。给予急诊PCI治疗，术后患者症状缓解。";
+        document.getElementById('case-paragraph-suggestion').value = "请优化该段落的医学术语表达，增加症状描述的准确性和专业性，使表述更加规范和详细。";
+      }
+
+      // 病案段落优化处理
+      const optimizeCaseParagraphBtn = document.getElementById('optimize-case-paragraph');
+      if (optimizeCaseParagraphBtn) {
+        optimizeCaseParagraphBtn.addEventListener('click', async () => {
+          const userid = document.getElementById('case-paragraph-userid').value.trim();
+          const paragraph = document.getElementById('case-paragraph-paragraph').value.trim();
+          const article = document.getElementById('case-paragraph-article').value.trim();
+          const suggestion = document.getElementById('case-paragraph-suggestion').value.trim();
+
+          if (!userid || !paragraph || !article || !suggestion) {
+            alert('请填写所有必需字段');
+            return;
+          }
+
+          await optimizeCaseParagraph(userid, paragraph, article, suggestion);
+        });
+      }
+
+      async function optimizeCaseParagraph(userid, paragraph, article, suggestion) {
+        const submitBtn = document.getElementById('optimize-case-paragraph');
+        const progressContainer = document.getElementById('case-paragraph-progress-container');
+        const reportContainer = document.getElementById('case-paragraph-container');
+        const progressBar = document.getElementById('case-paragraph-progress-bar');
+        const progressValue = document.getElementById('case-paragraph-progress-value');
+        const progressText = document.getElementById('case-paragraph-progress-text');
+        const reportContent = document.getElementById('case-paragraph-content');
+        const resultDiv = document.getElementById('case-paragraph-result');
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '优化中...';
+        progressContainer.style.display = 'block';
+        reportContainer.style.display = 'none';
+        resultDiv.textContent = '';
+
+        let accumulatedResult = '';
+
+        try {
+          console.log('发送段落优化请求:', { userid, paragraph, article, suggestion });
+          
+          const response = await fetch('/api/optimize_case_paragraph', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userid,
+              paragraph,
+              article,
+              suggestion
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP ${response.status}`);
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const eventData = JSON.parse(line.substring(6));
+                  console.log('收到段落优化事件:', eventData);
+                  resultDiv.textContent += JSON.stringify(eventData) + '\n';
+
+                  if (eventData.event === 'workflow_started') {
+                    progressText.textContent = '开始优化段落...';
+                    progressBar.value = 0;
+                    progressValue.textContent = '0';
+                  } else if (eventData.event === 'workflow_running') {
+                    const progress = parseInt(eventData.data.progress || 0);
+                    progressBar.value = progress;
+                    progressValue.textContent = progress.toString();
+                    progressText.textContent = eventData.data.title || '优化段落中';
+                  } else if (eventData.event === 'text_chunk') {
+                    if (eventData.data && eventData.data.text) {
+                      accumulatedResult += eventData.data.text;
+                      reportContainer.style.display = 'block';
+                      reportContent.style.color = '#333';
+                      reportContent.textContent = accumulatedResult;
+                      // 自动滚动到底部
+                      reportContent.scrollTop = reportContent.scrollHeight;
+                    }
+                  } else if (eventData.event === 'workflow_finished') {
+                    progressBar.value = 100;
+                    progressValue.textContent = '100';
+                    
+                    if (eventData.data.status === 'failed') {
+                      progressText.textContent = '优化失败';
+                      reportContainer.style.display = 'block';
+                      reportContent.style.color = '#d32f2f';
+                      reportContent.textContent = eventData.data.result ? eventData.data.result.join('\n') : '优化失败';
+                    } else {
+                      progressText.textContent = '优化完成！';
+                      reportContainer.style.display = 'block';
+                      reportContent.style.color = '#333';
+                      
+                      // 如果有结果数据，显示它
+                      if (eventData.data.result && eventData.data.result.length > 0) {
+                        const finalResult = eventData.data.result.join('\n');
+                        if (finalResult.trim()) {
+                          reportContent.textContent = finalResult;
+                        } else if (accumulatedResult.trim()) {
+                          reportContent.textContent = accumulatedResult;
+                        } else {
+                          reportContent.textContent = '优化完成，但未收到具体结果内容。';
+                        }
+                      } else if (accumulatedResult.trim()) {
+                        reportContent.textContent = accumulatedResult;
+                      } else {
+                        reportContent.textContent = '优化完成，但未收到具体结果内容。';
+                      }
+                    }
+                  }
+                } catch (parseError) {
+                  console.error('解析事件数据失败:', parseError, line);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('优化失败:', error);
+          progressText.textContent = '优化失败';
+          reportContainer.style.display = 'block';
+          reportContent.style.color = '#d32f2f';
+          reportContent.textContent = `错误: ${error.message}`;
+          resultDiv.textContent += `错误: ${error.message}\n`;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '开始优化段落';
+        }
+      }
+
+      // 将函数暴露到全局作用域
+      window.useCaseParagraphSample = useCaseParagraphSample;
 
       // 小程序测试功能
       let miniprogramSelectedFiles = [];

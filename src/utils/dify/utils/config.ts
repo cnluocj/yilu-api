@@ -88,3 +88,21 @@ export function getCaseReportDifyConfig(): DifyAPIConfig {
     apiUrl,
   };
 }
+
+/**
+ * 获取病案段落优化专用的Dify配置
+ */
+export function getCaseParagraphOptimizeDifyConfig(): DifyAPIConfig {
+  // 病案段落优化专用API Key
+  const apiKey = process.env.CASE_PARAGRAPH_OPTIMIZE_DIFY_API_KEY || 'app-uMCwPVVAMmWZAoNRwokV7BVh';
+
+  // 使用相同的baseUrl
+  const baseUrl = process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn';
+  const apiUrl = process.env.DIFY_API_URL || 'http://sandboxai.jinzhibang.com.cn/v1';
+
+  return {
+    apiKey,
+    baseUrl,
+    apiUrl,
+  };
+}
