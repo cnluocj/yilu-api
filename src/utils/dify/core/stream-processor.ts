@@ -212,22 +212,6 @@ export class SSEStreamProcessor {
   private async handleTextChunk(eventData: DifyEventData): Promise<void> {
     console.log(`[${new Date().toISOString()}] 接收到文本块`);
 
-    // 文本块事件，可以考虑在低进度时发送进度更新
-    if (this.state.progress < 90) {
-      const newProgress = Math.min(
-        this.state.progress + this.config.progress.textChunkIncrement, 
-        90
-      );
-      
-      if (newProgress > this.state.progress) {
-        this.state.progress = newProgress;
-        const progressEvent = this.createProgressEvent(newProgress, "running");
-        
-        console.log(`[${new Date().toISOString()}] 发送文本块进度更新: ${newProgress}%`);
-        this.enqueueEvent(progressEvent);
-      }
-    }
-
     // 转发文本块事件
     if (eventData.data?.text) {
       const textChunkEvent = {
@@ -235,8 +219,8 @@ export class SSEStreamProcessor {
         task_id: this.state.taskId,
         workflow_run_id: this.state.workflowRunId,
         data: {
-          ...eventData.data,
-          title: eventData.data.title || "处理中" // 添加默认标题
+          ...eventData.data
+          // 注意：这里不应该覆盖title，应该保持原有的title或者使用外部传入的当前步骤title
         }
       };
 
