@@ -135,79 +135,86 @@ export default function ThesisOutlineForm({
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">医学硕博论文大纲生成</h2>
-        <p className="text-sm text-gray-600">
-          请填写论文相关信息，AI将为您生成专业的论文大纲结构
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 论文标题 */}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* 论文题目 */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            论文标题 <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            请输入您的论文题目
           </label>
           <input
             type="text"
             value={formData.title}
             onChange={(e) => handleInputChange('title', e.target.value)}
-            placeholder="请输入论文标题，如：基于深度学习的医学影像诊断系统在肺癌早期筛查中的应用研究"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="请输入您想要撰写的论文题目"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            required
             disabled={isGenerating}
           />
+
         </div>
 
         {/* 模型选择 */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
             选择模型
           </label>
-          <select
-            value={formData.model}
-            onChange={(e) => handleInputChange('model', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isGenerating}
-          >
+          <div className="flex space-x-2">
             {modelOptions.map((option) => (
-              <option key={option.value} value={option.value}>
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleInputChange('model', option.value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  formData.model === option.value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                disabled={isGenerating}
+              >
                 {option.label}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
-        {/* 字数选择 */}
+        {/* 论文字数 */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            选择字数
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            论文字数
           </label>
-          <select
-            value={formData.word_count}
-            onChange={(e) => handleInputChange('word_count', Number(e.target.value))}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isGenerating}
-          >
+          <div className="flex flex-wrap gap-2">
             {wordCountOptions.map((option) => (
-              <option key={option.value} value={option.value}>
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleInputChange('word_count', option.value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  formData.word_count === option.value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                disabled={isGenerating}
+              >
                 {option.label}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
-        {/* 生成按钮 */}
+
+
+        {/* 提交按钮 */}
         <div className="pt-4">
           <button
             type="submit"
             disabled={isGenerating || !formData.title.trim()}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 px-6 rounded-lg font-medium text-lg hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-lg shadow-lg"
           >
             {isGenerating ? (
               <div className="flex items-center justify-center space-x-2">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>正在生成大纲...</span>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span>🚀 免费生成大纲</span>
               </div>
             ) : (
               '🚀 免费生成大纲'
