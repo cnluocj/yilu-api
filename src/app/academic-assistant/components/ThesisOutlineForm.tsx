@@ -7,6 +7,7 @@ interface ThesisOutlineFormProps {
   onGenerationStart: () => void;
   onGenerationComplete: (result: string) => void;
   onGenerationError: () => void;
+  onStreamingUpdate: (partialResult: string) => void;
   isGenerating: boolean;
 }
 
@@ -14,6 +15,7 @@ export default function ThesisOutlineForm({
   onGenerationStart,
   onGenerationComplete,
   onGenerationError,
+  onStreamingUpdate,
   isGenerating
 }: ThesisOutlineFormProps) {
   const [formData, setFormData] = useState({
@@ -79,6 +81,7 @@ export default function ThesisOutlineForm({
       const decoder = new TextDecoder();
       let buffer = '';
       let outlineText = '';
+      let accumulatedContent = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -99,12 +102,45 @@ export default function ThesisOutlineForm({
               } else if (eventData.event === 'workflow_running') {
                 setCurrentStep('正在生成论文大纲...');
                 setProgress(50);
+                
+                // 处理流式内容更新
+                if (eventData.data?.outputs) {
+                  const outputs = eventData.data.outputs;
+                  if (typeof outputs === 'string') {
+                    accumulatedContent = outputs;
+                    onStreamingUpdate(accumulatedContent);
+                  } else if (outputs && typeof outputs === 'object' && outputs.text) {
+                    accumulatedContent = outputs.text;
+                    onStreamingUpdate(accumulatedContent);
+                  }
+                }
+              } else if (eventData.event === 'text_chunk' || eventData.event === 'agent_message') {
+                // 处理文本块流式更新
+                if (eventData.data?.text) {
+                  accumulatedContent += eventData.data.text;
+                  onStreamingUpdate(accumulatedContent);
+                } else if (eventData.data?.answer) {
+                  accumulatedContent += eventData.data.answer;
+                  onStreamingUpdate(accumulatedContent);
+                }
               } else if (eventData.event === 'workflow_finished') {
                 setCurrentStep('生成完成！');
                 setProgress(100);
                 
                 if (eventData.data?.result && Array.isArray(eventData.data.result)) {
                   outlineText = eventData.data.result.join('\n');
+                } else if (eventData.data?.outputs) {
+                  const outputs = eventData.data.outputs;
+                  if (typeof outputs === 'string') {
+                    outlineText = outputs;
+                  } else if (outputs && typeof outputs === 'object' && outputs.text) {
+                    outlineText = outputs.text;
+                  }
+                }
+                
+                // 如果有累积的流式内容，使用它
+                if (accumulatedContent && !outlineText) {
+                  outlineText = accumulatedContent;
                 }
               }
             } catch (parseError) {
@@ -114,8 +150,8 @@ export default function ThesisOutlineForm({
         }
       }
 
-      if (outlineText) {
-        onGenerationComplete(outlineText);
+      if (outlineText || accumulatedContent) {
+        onGenerationComplete(outlineText || accumulatedContent);
       } else {
         throw new Error('未收到生成结果');
       }

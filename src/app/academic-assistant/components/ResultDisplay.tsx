@@ -4,9 +4,10 @@ import { useState } from 'react';
 
 interface ResultDisplayProps {
   result: string;
+  isStreaming?: boolean;
 }
 
-export default function ResultDisplay({ result }: ResultDisplayProps) {
+export default function ResultDisplay({ result, isStreaming = false }: ResultDisplayProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -71,12 +72,20 @@ export default function ResultDisplay({ result }: ResultDisplayProps) {
       <div className="bg-gradient-to-r from-green-50 to-blue-50 px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800">论文大纲生成完成</h3>
+            {isStreaming ? (
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              </div>
+            ) : (
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            )}
+            <h3 className="text-lg font-semibold text-gray-800">
+              {isStreaming ? '正在生成论文大纲...' : '论文大纲生成完成'}
+            </h3>
           </div>
           <div className="flex space-x-2">
             <button
@@ -105,6 +114,9 @@ export default function ResultDisplay({ result }: ResultDisplayProps) {
       <div className="p-6">
         <div className="prose max-w-none">
           {formatResult(result)}
+          {isStreaming && result && (
+            <div className="inline-block w-2 h-5 bg-blue-500 animate-pulse ml-1"></div>
+          )}
         </div>
       </div>
 

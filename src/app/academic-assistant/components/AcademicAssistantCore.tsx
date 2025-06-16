@@ -10,6 +10,7 @@ export default function AcademicAssistantCore() {
   const [selectedService, setSelectedService] = useState<string | null>('thesis-outline');
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<string>('');
+  const [streamingResult, setStreamingResult] = useState<string>('');
 
   const services = [
     {
@@ -64,27 +65,36 @@ export default function AcademicAssistantCore() {
 
   const handleServiceSelect = (serviceId: string) => {
     setSelectedService(serviceId);
-    setResult(''); // 清空之前的结果
+    setResult('');
+    setStreamingResult('');
   };
 
   const handleBackToServices = () => {
     setSelectedService(null);
     setResult('');
+    setStreamingResult('');
     setIsGenerating(false);
   };
 
   const handleGenerationStart = () => {
     setIsGenerating(true);
     setResult('');
+    setStreamingResult('');
+  };
+
+  const handleStreamingUpdate = (partialResult: string) => {
+    setStreamingResult(partialResult);
   };
 
   const handleGenerationComplete = (generatedResult: string) => {
     setIsGenerating(false);
     setResult(generatedResult);
+    setStreamingResult('');
   };
 
   const handleGenerationError = () => {
     setIsGenerating(false);
+    setStreamingResult('');
   };
 
   return (
@@ -118,13 +128,19 @@ export default function AcademicAssistantCore() {
                   onGenerationStart={handleGenerationStart}
                   onGenerationComplete={handleGenerationComplete}
                   onGenerationError={handleGenerationError}
+                  onStreamingUpdate={handleStreamingUpdate}
                   isGenerating={isGenerating}
                 />
               )}
 
-              {/* 结果显示 */}
-              {result && (
-                <ResultDisplay result={result} />
+              {/* 流式结果显示 */}
+              {streamingResult && (
+                <ResultDisplay result={streamingResult} isStreaming={true} />
+              )}
+
+              {/* 最终结果显示 */}
+              {result && !streamingResult && (
+                <ResultDisplay result={result} isStreaming={false} />
               )}
             </div>
           )}
