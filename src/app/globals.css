@@ -129,3 +129,49 @@ select {
   background-repeat: no-repeat;
   background-size: 16px 16px;
 }
+
+/* iframe友好的样式 */
+.iframe-friendly {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 确保在iframe中正常显示 */
+.iframe-friendly * {
+  box-sizing: border-box;
+}
+
+/* 防止内容溢出 */
+.iframe-friendly img,
+.iframe-friendly video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 确保表单元素在iframe中正常工作 */
+.iframe-friendly input,
+.iframe-friendly textarea,
+.iframe-friendly select,
+.iframe-friendly button {
+  font-family: inherit;
+}
+
+/* 优化滚动条 */
+.iframe-friendly::-webkit-scrollbar {
+  width: 6px;
+}
+
+.iframe-friendly::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.iframe-friendly::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.iframe-friendly::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

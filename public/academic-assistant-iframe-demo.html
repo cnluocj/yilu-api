@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学术助手 iframe 嵌套演示</title>
+  <style>
+    body {
+      font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 2.5em;
+      font-weight: 300;
+    }
+    
+    .header p {
+      margin: 10px 0 0 0;
+      opacity: 0.9;
+      font-size: 1.1em;
+    }
+    
+    .iframe-container {
+      position: relative;
+      width: 100%;
+      height: 800px;
+      border: none;
+      background-color: #f8f9fa;
+    }
+    
+    .iframe-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 0;
+    }
+    
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #666;
+    }
+    
+    .loading .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .info {
+      padding: 30px;
+      background-color: #f8f9fa;
+      border-top: 1px solid #e9ecef;
+    }
+    
+    .info h2 {
+      color: #495057;
+      margin-top: 0;
+    }
+    
+    .info ul {
+      color: #6c757d;
+      line-height: 1.8;
+    }
+    
+    .info li {
+      margin-bottom: 8px;
+    }
+    
+    .code-block {
+      background-color: #f1f3f4;
+      border: 1px solid #e1e5e9;
+      border-radius: 6px;
+      padding: 16px;
+      margin: 16px 0;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 14px;
+      overflow-x: auto;
+    }
+    
+    .responsive-note {
+      background-color: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 16px;
+      margin: 20px 0;
+      border-radius: 0 6px 6px 0;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        margin: 10px;
+        border-radius: 8px;
+      }
+      
+      .header {
+        padding: 20px;
+      }
+      
+      .header h1 {
+        font-size: 2em;
+      }
+      
+      .iframe-container {
+        height: 600px;
+      }
+      
+      .info {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>AI学术助手</h1>
+      <p>iframe 嵌套演示 - 医学论文大纲生成工具</p>
+    </div>
+    
+    <div class="iframe-container">
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>正在加载学术助手...</p>
+      </div>
+      <iframe 
+        id="academic-iframe"
+        src="/academic-assistant" 
+        title="AI学术助手"
+        onload="hideLoading()"
+        style="display: none;">
+      </iframe>
+    </div>
+    
+    <div class="info">
+      <h2>🎯 功能特点</h2>
+      <ul>
+        <li><strong>专业医学论文大纲生成</strong> - 基于AI技术，生成结构化的医学硕博论文大纲</li>
+        <li><strong>iframe友好设计</strong> - 专门优化用于第三方网站嵌套使用</li>
+        <li><strong>响应式布局</strong> - 适配各种屏幕尺寸和设备</li>
+        <li><strong>实时生成</strong> - 支持流式输出，实时显示生成进度</li>
+        <li><strong>结果导出</strong> - 支持复制和下载生成的论文大纲</li>
+      </ul>
+      
+      <h2>🔧 嵌套使用方法</h2>
+      <p>在您的网站中嵌套此学术助手工具：</p>
+      <div class="code-block">
+&lt;iframe 
+  src="https://your-domain.com/academic-assistant" 
+  width="100%" 
+  height="800"
+  frameborder="0"
+  title="AI学术助手"&gt;
+&lt;/iframe&gt;
+      </div>
+      
+      <div class="responsive-note">
+        <strong>💡 响应式建议：</strong>
+        <br>建议设置iframe高度至少为800px以确保最佳用户体验。在移动设备上，工具会自动适配屏幕尺寸。
+      </div>
+      
+      <h2>📋 使用说明</h2>
+      <ul>
+        <li>填写完整的论文标题</li>
+        <li>详细描述研究模型或方法</li>
+        <li>选择合适的学位类型和预期字数</li>
+        <li>点击生成按钮，等待AI生成论文大纲</li>
+        <li>生成完成后可复制或下载结果</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    function hideLoading() {
+      const loading = document.getElementById('loading');
+      const iframe = document.getElementById('academic-iframe');
+      
+      if (loading) {
+        loading.style.display = 'none';
+      }
+      
+      if (iframe) {
+        iframe.style.display = 'block';
+      }
+    }
+    
+    // 处理iframe通信（如果需要）
+    window.addEventListener('message', function(event) {
+      // 这里可以处理来自iframe的消息
+      console.log('收到iframe消息:', event.data);
+    });
+    
+    // 错误处理
+    document.getElementById('academic-iframe').onerror = function() {
+      const loading = document.getElementById('loading');
+      if (loading) {
+        loading.innerHTML = '<p style="color: #dc3545;">加载失败，请刷新页面重试</p>';
+      }
+    };
+  </script>
+</body>
+</html>
