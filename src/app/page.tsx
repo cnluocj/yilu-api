@@ -55,6 +55,19 @@ export default function HomePage() {
   // Testing Tools Data
   const testingTools = [
     {
+      title: 'AI学术助手 iframe演示',
+      description: '演示AI学术助手如何在第三方网站中通过iframe嵌套使用。',
+      href: '/academic-assistant-iframe-demo.html',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-indigo-500">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+          <rect x="6" y="7" width="12" height="6" rx="1"></rect>
+        </svg>
+      )
+    },
+    {
       title: 'API测试平台',
       description: '本地测试接口功能，包括文章生成、标题生成、配额管理、JWT等。',
       href: '/test-unified.html', // Link to the file in public folder
