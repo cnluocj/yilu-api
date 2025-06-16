@@ -60,6 +60,13 @@ export interface OptimizeCaseParagraphRequest {
   suggestion: string;
 }
 
+export interface GenerateThesisOutlineRequest {
+  userid: string;
+  title: string;
+  model: string;
+  word_count: number;
+}
+
 // Response Types
 export interface WorkflowData {
   workflow_id: string;
@@ -100,7 +107,8 @@ export enum ServiceType {
   KP = 'kp', // 科普
   GENERATE_ARTICLE = 'generate_article',
   GENERATE_TITLE = 'generate_title',
-  GENERATE_CASE_SUMMARY = 'generate_case_summary' // 病案总结
+  GENERATE_CASE_SUMMARY = 'generate_case_summary', // 病案总结
+  GENERATE_THESIS_OUTLINE = 'generate_thesis_outline' // 论文大纲生成
 }
 
 // 添加服务配额请求

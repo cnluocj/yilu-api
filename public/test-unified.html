@@ -233,6 +233,7 @@
     <li id="tab-case-topic">病案拟题</li>
     <li id="tab-case-report">病案报告</li>
     <li id="tab-case-paragraph">段落优化</li>
+    <li id="tab-thesis-outline">论文大纲</li>
     <li id="tab-miniprogram">小程序测试</li>
     <li id="tab-articles">文章管理</li>
     <li id="tab-quota">配额管理</li>
@@ -533,6 +534,13 @@
     </div>
   </div>
 
+  <!-- 论文大纲生成选项卡内容 -->
+  <div id="thesis-outline-tab" class="tab-content">
+    <iframe src="/test-thesis-outline.html"
+            style="width: 100%; height: 800px; border: none; border-radius: 5px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+    </iframe>
+  </div>
+
   <!-- 小程序测试选项卡内容 -->
   <div id="miniprogram-tab" class="tab-content">
     <div class="form-container">
@@ -670,6 +678,7 @@
             <option value="generate_title">generate_title</option>
             <option value="generate_article">generate_article</option>
             <option value="generate_case_summary">generate_case_summary</option>
+            <option value="generate_thesis_outline">generate_thesis_outline</option>
           </select>
         </div>
         
@@ -697,6 +706,7 @@
             <option value="generate_title">generate_title</option>
             <option value="generate_article">generate_article</option>
             <option value="generate_case_summary">generate_case_summary</option>
+            <option value="generate_thesis_outline">generate_thesis_outline</option>
           </select>
         </div>
         
@@ -802,20 +812,20 @@
     // 页面加载时根据URL hash切换到对应标签
     document.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.substring(1);
-      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'case-report', 'case-paragraph', 'miniprogram', 'articles', 'quota', 'jwt'];
-      
+      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'case-report', 'case-paragraph', 'thesis-outline', 'miniprogram', 'articles', 'quota', 'jwt'];
+
       if (hash && allowableTabs.includes(hash)) {
         switchToTab('tab-' + hash);
       } else {
         switchToTab('tab-article');
       }
     });
-    
+
     // 监听URL hash变化
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.substring(1);
-      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'case-report', 'case-paragraph', 'miniprogram', 'articles', 'quota', 'jwt'];
-      
+      const allowableTabs = ['article', 'title', 'case-summary', 'case-topic', 'case-report', 'case-paragraph', 'thesis-outline', 'miniprogram', 'articles', 'quota', 'jwt'];
+
       if (hash && allowableTabs.includes(hash)) {
         switchToTab('tab-' + hash);
       }
@@ -2475,6 +2485,8 @@
       // 将函数暴露到全局作用域
       window.removeMiniprogramFile = removeMiniprogramFile;
     });
+
+
   </script>
 </body>
 </html>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>医学硕博论文大纲生成测试</title>
+  <style>
+    body {
+      font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
+    
+    h1, h2, h3 {
+      color: #1a73e8;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .form-container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    
+    button {
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    
+    button:hover {
+      background-color: #105bbc;
+    }
+    
+    button:disabled {
+      background-color: #a0a0a0;
+      cursor: not-allowed;
+    }
+    
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+    
+    .error {
+      color: #d32f2f;
+      background-color: #ffebee;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    
+    .success {
+      color: #388e3c;
+      background-color: #e8f5e9;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    
+    .progress-container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    progress {
+      width: 100%;
+      height: 20px;
+      margin-top: 10px;
+    }
+    
+    .outline-container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .outline-content {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 5px;
+      border-left: 4px solid #1a73e8;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      max-height: 600px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+    
+    .info-box {
+      background-color: #e8f4fd;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      border-left: 4px solid #3498db;
+    }
+    
+    .info-box h4 {
+      margin: 0 0 10px 0;
+      color: #2c3e50;
+    }
+    
+    .info-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #555;
+    }
+    
+    .sample-button {
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    
+    .sample-button:hover {
+      background-color: #219a52;
+    }
+    
+    .tip-box {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 5px;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+  <h1>医学硕博论文大纲生成测试</h1>
+  
+  <div class="form-container">
+    <h2>论文大纲生成</h2>
+    
+    <div class="info-box">
+      <h4>💡 功能说明</h4>
+      <p>医学硕博论文大纲生成功能可以根据论文标题、研究模型和字数要求，智能生成结构化的论文大纲，帮助研究者快速构建论文框架。</p>
+      <div class="tip-box">
+        💡 适用于医学硕士、博士论文的大纲规划和结构设计
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="thesis-outline-userid">UserID:</label>
+      <input type="text" id="thesis-outline-userid" value="wx_abcd1234efgh5678">
+    </div>
+
+    <div class="form-group">
+      <label for="thesis-outline-title">论文标题:</label>
+      <div class="info-box">
+        <h4>💡 示例论文标题</h4>
+        <p>基于深度学习的医学影像诊断系统在肺癌早期筛查中的应用研究</p>
+        <button type="button" onclick="useThesisOutlineTitleSample()" class="sample-button">使用此示例</button>
+      </div>
+      <input type="text" id="thesis-outline-title" placeholder="请输入论文标题...">
+    </div>
+
+    <div class="form-group">
+      <label for="thesis-outline-model">研究模型/方法:</label>
+      <div class="info-box">
+        <h4>💡 示例研究模型</h4>
+        <p>回顾性队列研究，采用深度学习卷积神经网络(CNN)模型，结合临床病理特征进行多模态融合分析</p>
+        <button type="button" onclick="useThesisOutlineModelSample()" class="sample-button">使用此示例</button>
+      </div>
+      <textarea id="thesis-outline-model" placeholder="请输入研究模型或方法..." style="min-height: 100px; resize: vertical;"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="thesis-outline-word-count">预期字数:</label>
+      <select id="thesis-outline-word-count">
+        <option value="30000">硕士论文 (约3万字)</option>
+        <option value="50000">博士论文 (约5万字)</option>
+        <option value="80000">博士论文 (约8万字)</option>
+        <option value="100000">博士论文 (约10万字)</option>
+      </select>
+    </div>
+
+    <button id="generate-thesis-outline">生成论文大纲</button>
+  </div>
+
+  <div class="progress-container" id="thesis-outline-progress-container">
+    <h3>生成进度: <span id="thesis-outline-progress-value">0</span>%</h3>
+    <progress id="thesis-outline-progress-bar" value="0" max="100"></progress>
+    <div id="thesis-outline-progress-text" style="text-align: center; margin-top: 10px; font-weight: bold;">准备中...</div>
+  </div>
+
+  <div class="outline-container" id="thesis-outline-container">
+    <h3>生成的论文大纲:</h3>
+    <div id="thesis-outline-content" class="outline-content"></div>
+  </div>
+
+  <div class="form-container">
+    <h3>原始响应:</h3>
+    <div id="thesis-outline-result" class="result"></div>
+  </div>
+
+  <script>
+    // 论文大纲生成示例数据填充函数
+    function useThesisOutlineTitleSample() {
+      document.getElementById('thesis-outline-title').value = '基于深度学习的医学影像诊断系统在肺癌早期筛查中的应用研究';
+    }
+
+    function useThesisOutlineModelSample() {
+      document.getElementById('thesis-outline-model').value = '回顾性队列研究，采用深度学习卷积神经网络(CNN)模型，结合临床病理特征进行多模态融合分析';
+    }
+
+    // 论文大纲生成功能
+    document.getElementById('generate-thesis-outline').addEventListener('click', async () => {
+      const generateButton = document.getElementById('generate-thesis-outline');
+      const resultDiv = document.getElementById('thesis-outline-result');
+      const progressContainer = document.getElementById('thesis-outline-progress-container');
+      const progressBar = document.getElementById('thesis-outline-progress-bar');
+      const progressValue = document.getElementById('thesis-outline-progress-value');
+      const progressText = document.getElementById('thesis-outline-progress-text');
+      const outlineContainer = document.getElementById('thesis-outline-container');
+      const outlineContent = document.getElementById('thesis-outline-content');
+      
+      // 禁用生成按钮
+      generateButton.disabled = true;
+      generateButton.textContent = '生成中...';
+      
+      // 重置UI
+      resultDiv.textContent = '';
+      progressBar.value = 0;
+      progressValue.textContent = '0';
+      progressText.textContent = '准备中...';
+      outlineContent.textContent = '';
+      progressContainer.style.display = 'block';
+      outlineContainer.style.display = 'none';
+      
+      // 收集表单数据
+      const payload = {
+        userid: document.getElementById('thesis-outline-userid').value,
+        title: document.getElementById('thesis-outline-title').value,
+        model: document.getElementById('thesis-outline-model').value,
+        word_count: parseInt(document.getElementById('thesis-outline-word-count').value)
+      };
+      
+      // 验证输入
+      if (!payload.title.trim()) {
+        alert('请输入论文标题');
+        generateButton.disabled = false;
+        generateButton.textContent = '生成论文大纲';
+        progressContainer.style.display = 'none';
+        return;
+      }
+      
+      if (!payload.model.trim()) {
+        alert('请输入研究模型或方法');
+        generateButton.disabled = false;
+        generateButton.textContent = '生成论文大纲';
+        progressContainer.style.display = 'none';
+        return;
+      }
+      
+      try {
+        // 发送请求
+        const response = await fetch('/api/generate_thesis_outline', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // 处理SSE响应
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let outlineText = '';
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          resultDiv.textContent += chunk;
+          
+          // 处理完整的事件
+          const events = buffer.split('\n\n');
+          buffer = events.pop() || ''; // 保留不完整的事件
+          
+          for (const event of events) {
+            if (event.trim().startsWith('data:')) {
+              try {
+                const eventData = JSON.parse(event.replace('data:', '').trim());
+                
+                // 更新进度条
+                if (eventData.data && eventData.data.progress) {
+                  const progress = parseInt(eventData.data.progress);
+                  progressBar.value = progress;
+                  progressValue.textContent = progress;
+                }
+                
+                // 处理不同类型的事件
+                if (eventData.event === 'workflow_started') {
+                  progressText.textContent = '开始生成论文大纲...';
+                } else if (eventData.event === 'workflow_running') {
+                  progressText.textContent = '正在生成大纲内容...';
+                } else if (eventData.event === 'text_chunk') {
+                  // 实时显示生成的文本
+                  const text = eventData.data?.text || '';
+                  if (text) {
+                    outlineText += text;
+                    outlineContainer.style.display = 'block';
+                    outlineContent.textContent = outlineText;
+                  }
+                } else if (eventData.event === 'workflow_finished') {
+                  progressBar.value = 100;
+                  progressValue.textContent = '100';
+                  progressText.textContent = '大纲生成完成！';
+                  
+                  // 显示最终结果
+                  outlineContainer.style.display = 'block';
+                  if (eventData.data && eventData.data.result) {
+                    const finalResult = Array.isArray(eventData.data.result) 
+                      ? eventData.data.result.join('\n') 
+                      : eventData.data.result;
+                    outlineContent.textContent = finalResult || outlineText;
+                  } else if (outlineText) {
+                    outlineContent.textContent = outlineText;
+                  } else {
+                    outlineContent.textContent = '大纲生成完成，但未获取到内容';
+                  }
+                }
+              } catch (parseError) {
+                console.error('解析事件失败:', parseError);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.innerHTML = `<div class="error">错误: ${error.message}</div>`;
+        progressText.textContent = '生成失败';
+      } finally {
+        // 重新启用生成按钮
+        generateButton.disabled = false;
+        generateButton.textContent = '生成论文大纲';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -106,3 +106,21 @@ export function getCaseParagraphOptimizeDifyConfig(): DifyAPIConfig {
     apiUrl,
   };
 }
+
+/**
+ * 获取论文大纲生成专用的Dify配置
+ */
+export function getThesisOutlineDifyConfig(): DifyAPIConfig {
+  // 论文大纲生成专用API Key
+  const apiKey = process.env.THESIS_OUTLINE_DIFY_API_KEY || 'app-Q03toOqAyScbnG5QNoi7KH3q';
+
+  // 使用相同的baseUrl
+  const baseUrl = process.env.DIFY_BASE_URL || 'http://sandboxai.jinzhibang.com.cn';
+  const apiUrl = process.env.DIFY_API_URL || 'http://sandboxai.jinzhibang.com.cn/v1';
+
+  return {
+    apiKey,
+    baseUrl,
+    apiUrl,
+  };
+}

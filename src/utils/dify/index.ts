@@ -5,7 +5,8 @@ export {
   getCaseSummaryDifyConfig,
   getCaseTopicDifyConfig,
   getCaseReportDifyConfig,
-  getCaseParagraphOptimizeDifyConfig
+  getCaseParagraphOptimizeDifyConfig,
+  getThesisOutlineDifyConfig
 } from './utils/config';
 
 // 重新导出文件上传函数（保持向后兼容）
@@ -14,6 +15,7 @@ export { uploadFileToDify } from './utils/upload';
 // 导出新的服务类
 export { ArticleService } from './services/article-service';
 export { CaseService } from './services/case-service';
+export { ThesisService } from './services/thesis-service';
 
 // 导出核心组件（用于高级用法）
 export { DifyAPIClient } from './core/api-client';
@@ -24,10 +26,10 @@ export { AnimationManager } from './core/animation-manager';
 export * from './utils/types';
 
 // 保持向后兼容的函数封装
-import { GenerateTitlesRequest, GenerateArticleRequest, GenerateCaseSummaryRequest, GenerateCaseTopicRequest, GenerateCaseReportRequest, OptimizeCaseParagraphRequest, DifyAPIConfig } from '@/types';
+import { GenerateTitlesRequest, GenerateArticleRequest, GenerateCaseSummaryRequest, GenerateCaseTopicRequest, GenerateCaseReportRequest, OptimizeCaseParagraphRequest, GenerateThesisOutlineRequest, DifyAPIConfig } from '@/types';
 import { ArticleService } from './services/article-service';
 import { CaseService } from './services/case-service';
-import { getDifyConfig, getArticleDifyConfig, getCaseSummaryDifyConfig, getCaseTopicDifyConfig, getCaseReportDifyConfig, getCaseParagraphOptimizeDifyConfig } from './utils/config';
+import { ThesisService } from './services/thesis-service';
 
 /**
  * 生成标题API - 向后兼容封装
@@ -93,4 +95,15 @@ export async function callDifyCaseParagraphOptimizeAPI(
 ): Promise<ReadableStream<Uint8Array>> {
   const service = new CaseService(config);
   return service.optimizeCaseParagraph(request);
+}
+
+/**
+ * 论文大纲生成API - 向后兼容封装
+ */
+export async function callDifyThesisOutlineAPI(
+  config: DifyAPIConfig,
+  request: GenerateThesisOutlineRequest
+): Promise<ReadableStream<Uint8Array>> {
+  const service = new ThesisService(config);
+  return service.generateThesisOutline(request);
 }
